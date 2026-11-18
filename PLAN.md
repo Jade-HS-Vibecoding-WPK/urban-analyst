@@ -326,11 +326,13 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
 
 - [x] **29. GitHub aktualisiert** (Mi 18.11., 20:05): Stand 3.51 (QUAVA) mit README, CLAUDE.md, PLAN.md und allen neuen Sicherungen hochgeladen; GitHub Pages liefert 3.51 (Intro, Logo, Name geprüft).
 
-### Stand Mi 18.11., 20:00 – hier weitermachen
-- Aktuelle Version: **3.51** (`index.html`), Sicherung: `versionen/urban-analyst-v3.51_2026-11-18.html`
-- **Nächster Schritt:** 3.34 testen (Höhenlinien + Hangneigung). **Do 19.11. morgens besprechen:** Starkregen (BKG-Hinweiskarte, nur als Bild → Flächen zurückrechnen), Export-Test, DXF-Layernamen ≤ 31 Zeichen, GitHub/README. Klima/Hitze eher weglassen (nur grobe Regionaldaten). Berlin nachtesten/ergänzen, sobald gdi.berlin.de läuft.
-- Danach: Lärm, weitere Themen. Offen: DXF-Layernamen ≤ 31 Zeichen, **Export-Test** (SVG/PDF/DXF), CAD-Programm erfragen.
-- Freeze: Do 19.11., 12 Uhr. Danach M10: GitHub, GitHub Pages, README.
+### Stand Mi 18.11., 20:05 (Pause) – hier weitermachen
+- Aktuelle Version: **3.51** (`index.html`, QUAVA), Sicherung: `versionen/urban-analyst-v3.51_2026-11-18.html`. GitHub + Pages auf demselben Stand (https://jade-hs-vibecoding-wpk.github.io/urban-analyst/).
+- Noch nicht vom Nutzer mit echten Daten bestätigt: 3.34 Höhenlinien/Hangneigung (Gelände) – beim nächsten Mal kurz prüfen.
+- **Nächste Schritte (vor Freeze Do 19.11., 12 Uhr):** 1. **Export-Test** SVG/PDF (Illustrator) und DXF (CAD-Programm erfragen) mit echten Daten. 2. DXF-Layernamen ≤ 31 Zeichen.
+  3. Starkregen besprechen (BKG-Hinweiskarte nur als Bild → Flächen zurückrechnen). Klima/Hitze eher weglassen.
+- Bis Abgabe Fr 20.11., 16 Uhr: README ausbauen (Funktionen, Screenshots, Quellen), Poster.
+- Bekannte Grenzen: kein Meer (nur Küstenlinie in OSM), Berlin-Dienste (gdi.berlin.de) waren am 18.11. gestört → Berlin bei Bevölkerung/Gelände nachtesten; paralleles Laden verworfen (3.38).
 
 ### Stand Di 17.11., 15:10 (Pause) – (erledigt, siehe Mi 18.11.)
 - Aktuelle Version: **3.20** (`index.html`), Sicherung: `versionen/urban-analyst-v3.20_2026-11-17.html`
