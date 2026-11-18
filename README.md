@@ -1,4 +1,4 @@
-# URBAN ANALYST
+# QUAVA
 
 Städtebauliche Standortanalyse im Browser – Uni-Projekt (Jade Hochschule, WPK Vibecoding).
 

@@ -1,7 +1,7 @@
-# PLAN – URBAN ANALYST
+# PLAN – QUAVA (früher URBAN ANALYST)
 
 ## Die Idee in einem Satz
-URBAN ANALYST lädt für einen frei gewählten Stadtausschnitt in Deutschland automatisch Geodaten aus OpenStreetMap, sortiert sie in thematische Analyse-Layer (Gebäude, Grün, Wasser, Verkehr) und exportiert sie als Plan, den man in Illustrator oder CAD weiterbearbeiten kann.
+QUAVA lädt für einen frei gewählten Stadtausschnitt in Deutschland automatisch Geodaten aus OpenStreetMap, sortiert sie in thematische Analyse-Layer (Gebäude, Grün, Wasser, Verkehr) und exportiert sie als Plan, den man in Illustrator oder CAD weiterbearbeiten kann.
 
 ## Für wen?
 Für Architektur- und Stadtplanungsstudierende, die eine städtebauliche Bestandsanalyse machen
@@ -287,8 +287,45 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
 
 - [ ] **Bekannte Grenze (bewusst so gelassen, 18.11.):** „Wasser & Gewässer“ enthält kein Meer. In OSM gibt es dafür nur die Küstenlinie (`natural=coastline`), keine Meeresfläche; Buchten (`natural=bay`), Watt und Küstenlinie werden ebenfalls nicht geladen. Mögliche Lösung später: Küstenlinie + Buchten/Watt laden, Meeresfläche aus der Küstenlinie berechnen.
 
-### Stand Mi 18.11., 16:15 – hier weitermachen
-- Aktuelle Version: **3.39** (`index.html`), Sicherung: `versionen/urban-analyst-v3.39_2026-11-18.html`
+- [x] **21. Seitenleisten einklappen** (Version 3.40, ok – „mach weiter“): Knöpfe ‹ / › am linken und rechten Kartenrand (oben unter der Suche) klappen die Leisten ein und wieder aus, die Karte wird größer. Zustand bleibt beim Neuladen erhalten. Sicherung vorher: `…v3.39_vor-seitenleisten_2026-11-18.html`
+  Danach (Schritt 2, abgesprochen): Schreibfeld „Auftrag in eigenen Worten“ + Detail-Abfrage (+) komplett entfernen; „Verlauf“ = Liste der Arbeitsschritte mit Rückgängig/Wiederholen (Strg+Z / Strg+Y).
+
+- [x] **22. Verlauf mit Rückgängig/Wiederholen, Schreibfeld entfernt** (Version 3.41, ok):
+  Entfernt: „Auftrag in eigenen Worten“ (Textfeld, Senden, Vergrößern), Detail-Abfrage (+) mit „Vorherige Abfragen“, im Kern `RULES`/`parseCommand`. Feste Einrichtungs-Bausteine (z. B. Schulen) laden weiter.
+  „Verlauf“ listet jeden Schritt (Gebiet, Ort gesucht, Baustein gewählt/abgewählt, Geladen, Sichtbarkeit, Aufteilung, Farbe, Name, Deckkraft, Untergruppe ein/aus/gelöscht, Layer gelöscht/dupliziert, Reihenfolge,
+  Element geändert/entfernt, Sonne/Schatten, Szenario/Zeitraum/Abstand, Alles geleert, Projekt geöffnet). Knöpfe ↶ ↷ im Kopf „Verlauf“, Strg+Z / Strg+Y (auch Strg+Umschalt+Z), Klick auf einen Schritt springt dorthin.
+  Rückgängig gemachte Schritte grau durchgestrichen; neuer Schritt verwirft sie. Bis 60 Schritte. Technik: Zustand je Schritt (Layer flach kopiert, Klassen/Stile tief), Element-Änderungen ohne Überschreiben.
+  Sicherung vorher: `…v3.40_vor-verlauf_2026-11-18.html`
+
+- [x] **22b. Verlauf: Neues oben** (Version 3.42, ok): Schritte und Meldungen (Laden, Hinweise) erscheinen jetzt oben im Verlauf, Älteres rutscht nach unten. Sicherung vorher: `…v3.41_vor-verlauf-oben_2026-11-18.html`
+
+- [x] **22c. Verlauf ohne Bausteinwahl** (Version 3.43, ok): Bausteine an-/abwählen (auch „Standard“, „Auswahl leeren“) erscheint nicht mehr im Verlauf und wird beim Rückgängig nicht verändert. Sicherung vorher: `…v3.42_vor-ohne-bausteinwahl_2026-11-18.html`
+
+- [x] **23. Kreis-Werkzeug, Untergruppen nicht im Verlauf, Hinweis blendet aus** (Version 3.44, ok):
+  Neues Werkzeug „◯ Kreis“ ganz links in der Leiste unten: Mittelpunkt klicken, Rand klicken (Vorschau mit Radius und Fläche), Gebiet = Kreis (72 Ecken), Name „Gezeichneter Kreis (r = … m)“.
+  Untergruppen ein/aus („alle ein/aus“) erscheinen nicht im Verlauf; Rückgängig ändert ihre Sichtbarkeit nicht. Hinweis „↶ Rückgängig: …“ und kurze Meldungen verschwinden nach 1 s (Ausblenden 0,4 s); Zeichen-Hinweise bleiben stehen.
+  Sicherung vorher: `…v3.43_vor-kreis_2026-11-18.html`
+
+- [x] **24. Esc bricht Laden ab, „Auswahl laden“, Fläche beim Zeichnen** (Version 3.45, ok): Esc = „Abbrechen“ in der Ladeanzeige. Knopf heißt „Auswahl laden (N)“, Text „Die wichtigsten Grunddaten“ entfernt.
+  Beim Zeichnen steht unten die Fläche in ha und m²: Rechteck mit Seitenlängen, Polygon ab 3 Punkten, Kreis mit Radius. Sicherung vorher: `…v3.44_vor-esc-flaeche_2026-11-18.html`
+
+- [x] **25. Lila Trennlinien links** (Version 3.46, ok): Trennstreifen unter „Neues Projekt“, „Gebiet“ und „Bausteine“ jetzt 2 px im Akzent-Lila (#8b5cf6). Sicherung vorher: `…v3.45_vor-trennlinien_2026-11-18.html`
+
+- [x] **26. Neues Logo, Projektzeile oben** (Version 3.47, ok): Logo „UA“-Kachel ersetzt durch das Nutzer-Logo (lila Zeichen, als Bild in der Datei eingebettet, 96 px, auch als Tab-Symbol).
+  Projektname (zum Ändern anklicken), Speichern ⤓, Öffnen ⤒ und Hell/Dunkel ◐ stehen jetzt in der obersten Zeile statt „URBAN ANALYST / Städtebauliche Analyse“; eigene Projektzeile entfällt. Sicherung vorher: `…v3.46_vor-logo_2026-11-18.html`
+
+- [x] **26b. Logo getauscht („Logo_besser“, gestapelte lila Flächen)** (Version 3.48, ok): weißer Hintergrund entfernt (transparent), Querformat 28 px hoch, auch als Tab-Symbol. Sicherung vorher: `…v3.47_vor-logo2_2026-11-18.html`
+
+- [x] **25b. Trennlinien dezenter** (Version 3.49, ok): lila Trennstreifen links zu 70 % durchsichtig (Lila mit 30 % Deckkraft), 14 px Abstand zu beiden Rändern, abgerundete Enden. Sicherung vorher: `…v3.48_vor-trennlinien-dezent_2026-11-18.html`
+
+- [x] **27. Intro beim Öffnen** (Version 3.50, ok): Vollbild in #0f0e13 (Hintergrund der App), Logo „QUAVA“ mit Schrift (weißer Rand entfernt, 900 px, eingebettet) blendet in 0,6 s ein, steht 1 s, dann blenden Hintergrund und Logo zusammen in 0,6 s aus; Klick überspringt. Läuft bei jedem Öffnen/Neuladen.
+  Hinweis: App heißt im Tab/Export weiterhin „URBAN ANALYST“ – ggf. mit Nutzer klären (QUAVA?). Sicherung vorher: `…v3.49_vor-intro_2026-11-18.html`
+
+- [x] **28. Name „QUAVA“ überall** (Version 3.51, ok – „passt alles“): Browser-Tab, Logo-Hinweis, SVG/PDF-Fußzeile („erstellt mit QUAVA“), DXF-Kopf, GeoJSON-LIESMICH, Projektdatei (`app: 'QUAVA'`, Endung `.quava.json`; alte URBAN-ANALYST-Projektdateien öffnen weiter), README, CLAUDE.md, PLAN.md.
+  Unverändert (technisch nötig): Ordner `urban-analyst`, GitHub-Repository `urban-analyst`, Dateinamen der Sicherungen. Sicherungen vorher: `…v3.50_vor-name-quava_2026-11-18.html`, `CLAUDE_vor-name-quava…`, `README_vor-name-quava…`
+
+### Stand Mi 18.11., 20:00 – hier weitermachen
+- Aktuelle Version: **3.51** (`index.html`), Sicherung: `versionen/urban-analyst-v3.51_2026-11-18.html`
 - **Nächster Schritt:** 3.34 testen (Höhenlinien + Hangneigung). **Do 19.11. morgens besprechen:** Starkregen (BKG-Hinweiskarte, nur als Bild → Flächen zurückrechnen), Export-Test, DXF-Layernamen ≤ 31 Zeichen, GitHub/README. Klima/Hitze eher weglassen (nur grobe Regionaldaten). Berlin nachtesten/ergänzen, sobald gdi.berlin.de läuft.
 - Danach: Lärm, weitere Themen. Offen: DXF-Layernamen ≤ 31 Zeichen, **Export-Test** (SVG/PDF/DXF), CAD-Programm erfragen.
 - Freeze: Do 19.11., 12 Uhr. Danach M10: GitHub, GitHub Pages, README.

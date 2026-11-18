@@ -1,4 +1,4 @@
-# CLAUDE.md – Projektgedächtnis URBAN ANALYST
+# CLAUDE.md – Projektgedächtnis QUAVA (früher URBAN ANALYST)
 
 ## Ziel
 Web-App für städtebauliche Bestandsanalyse: Stadtausschnitt wählen → OpenStreetMap-Daten laden →
