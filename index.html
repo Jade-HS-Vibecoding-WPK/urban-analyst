@@ -11,6 +11,8 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.1.0/turf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- Niedersachsen-Cache: fertige OSM-Daten für 10 Städte (wöchentlich neu). „async“: hängt der Server, startet die App trotzdem. Fehlt er, lädt die App wie bisher live. -->
+<script async src="https://jade-hs-vibecoding-wpk.github.io/niedersachsen-cache/nds-cache.js"></script>
 <style>
 [hidden]{display:none!important}
 :root{--bg:#0f0e13;--panel:#17161d;--panel2:#1f1d26;--line:#2a2833;--text:#ecebf1;--muted:#8d8999;--acc:#8b5cf6;--acc2:#a78bfa;--accbg:rgba(139,92,246,.14);--ok:#3ecf8e;--warn:#f5b544;--err:#f0616d;--shadow:0 8px 30px rgba(0,0,0,.45);--r:10px}
@@ -642,6 +644,16 @@ const UA = (function () {
     ring = simplifyRingTo(ring, 250);
     return ring.slice(0, -1).map(p => p[1].toFixed(6) + ' ' + p[0].toFixed(6)).join(' ');
   }
+  // Sammelabfrage: mehrere OSM-Bausteine in EINER Overpass-Abfrage. Gemessen 18.11.: Jede Abfrage wartet beim Server
+  // ca. 30–40 s, egal wie klein – 1 Sammelabfrage statt 7 einzelner spart also 6 × diese Wartezeit.
+  // Nach jedem Teil erzeugt der Server mit „make“ ein Trennzeichen (Element-Typ „ua_teil“, Name = Baustein).
+  // Dieselben Filter wie einzeln -> genau dieselben Ergebnisse (Objekte, die zu 2 Bausteinen passen, kommen in beiden vor).
+  const bundleQuery = (ids, P) => HEAD + ids.map(f => FETCHES[f].q(P) + `make ua_teil name="${f}";out;`).join('');
+  function splitBundle(js) { // Antwort wieder aufteilen -> { buildings: {elements: […]}, roads: {…}, … }
+    const parts = {}; let cur = [];
+    for (const el of (js && js.elements) || []) { if (el.type === 'ua_teil') { parts[el.tags && el.tags.name] = { elements: cur }; cur = []; } else cur.push(el); }
+    return parts; // fehlt ein Teil, lädt die App diesen Baustein einzeln
+  }
 
   /* ---------- Klassen & Farben ---------- */
   const CL = {
@@ -1078,7 +1090,10 @@ const UA = (function () {
     return out;
   }
   async function inflate(src) { const ds = new DecompressionStream('deflate'); return new Uint8Array(await new Response(new Blob([src]).stream().pipeThrough(ds)).arrayBuffer()); }
-  async function tiffBlock(buf, m) { // ein Block -> Float32Array (tw × th)
+  async function tiffBlock(buf, m) { // ein Block -> Float32Array (tw × th); rechnet im Hintergrund-Thread, wenn möglich (siehe bgRun)
+    const r = await bgRun('block', [buf, m]); return r !== undefined ? r : tiffBlockHere(buf, m);
+  }
+  async function tiffBlockHere(buf, m) { // ein Block -> Float32Array (tw × th), hier im selben Thread
     const n = m.tw * m.th * 4, src = new Uint8Array(buf);
     let b = m.cmp === 1 ? src : m.cmp === 5 ? lzwDecode(src, n) : m.cmp === 8 || m.cmp === 32946 ? await inflate(src) : null;
     if (!b) throw new Error('DGM-Kachel: unbekannte Kompression ' + m.cmp);
@@ -1275,7 +1290,7 @@ const UA = (function () {
     const lon = rad((zone - 1) * 6 - 180 + 3) + (D - (1 + 2 * T1 + C1) * D ** 3 / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * D ** 5 / 120) / c;
     return [lon * 180 / Math.PI, lat * 180 / Math.PI];
   }
-  function parseShp(buf) { // Shape-Datei: je Datensatz Liste von Ringen [[x,y],…] (Polygon / PolygonZ / PolygonM / MultiPatch)
+  function parseShp(buf, firstOnly) { // Shape-Datei: je Datensatz Liste von Ringen [[x,y],…] (Polygon / PolygonZ / PolygonM / MultiPatch); firstOnly: nur der 1. Ring
     const dv = new DataView(buf), out = []; let o = 100;
     while (o + 8 <= buf.byteLength) {
       const len = dv.getInt32(o + 4, false) * 2, c = o + 8, type = dv.getInt32(c, true);
@@ -1283,32 +1298,114 @@ const UA = (function () {
         const np = dv.getInt32(c + 36, true), npts = dv.getInt32(c + 40, true), parts = [];
         for (let i = 0; i < np; i++) parts.push(dv.getInt32(c + 44 + 4 * i, true));
         const p0 = c + 44 + 4 * np * (type === 31 ? 2 : 1), rings = []; // MultiPatch (3D, LGLN): nach den Teilen folgen noch die Teil-Typen
-        for (let k = 0; k < np; k++) { const r = [], e = k + 1 < np ? parts[k + 1] : npts; for (let i = parts[k]; i < e; i++) r.push([dv.getFloat64(p0 + 16 * i, true), dv.getFloat64(p0 + 16 * i + 8, true)]); rings.push(r); }
+        for (let k = 0; k < (firstOnly ? Math.min(1, np) : np); k++) { const r = [], e = k + 1 < np ? parts[k + 1] : npts; for (let i = parts[k]; i < e; i++) r.push([dv.getFloat64(p0 + 16 * i, true), dv.getFloat64(p0 + 16 * i + 8, true)]); rings.push(r); }
         out.push(rings);
       } else out.push(null);
       o = c + len;
     }
     return out;
   }
-  function parseDbf(buf, want) { // dBase-Tabelle: nur die gewünschten Spalten
+  function parseDbf(buf, want, rows) { // dBase-Tabelle: nur die gewünschten Spalten; rows (optional): nur diese Zeilen-Nummern (fehlende Zeile -> null)
     const d = new Uint8Array(buf), dv = new DataView(buf), n = dv.getUint32(4, true), hl = dv.getUint16(8, true), rl = dv.getUint16(10, true), fields = [];
     for (let o = 32, pos = 1; d[o] !== 0x0D && o < hl; o += 32) { let nm = ''; for (let i = 0; i < 11 && d[o + i]; i++) nm += String.fromCharCode(d[o + i]); fields.push({ nm, pos, len: d[o + 16] }); pos += d[o + 16]; }
     const sel = fields.filter(f => want.includes(f.nm)), dec = new TextDecoder('latin1'), out = [];
-    for (let k = 0; k < n; k++) { const b = hl + k * rl, r = {}; sel.forEach(f => { r[f.nm] = dec.decode(d.subarray(b + f.pos, b + f.pos + f.len)).trim(); }); out.push(r); }
+    const row = k => { const b = hl + k * rl, r = {}; sel.forEach(f => { r[f.nm] = dec.decode(d.subarray(b + f.pos, b + f.pos + f.len)).trim(); }); return r; };
+    if (rows) rows.forEach(k => out.push(k < n ? row(k) : null)); else for (let k = 0; k < n; k++) out.push(row(k));
     return out;
   }
-  async function niTileFeatures(zipBuf, JSZip, clip) { // eine Kachel -> Dachflächen als Polygone mit Höhe (nur im Gebiet)
-    const z = await JSZip.loadAsync(zipBuf), name = ext => Object.keys(z.files).find(n => n.toLowerCase().endsWith(ext));
-    if (!name('.shp') || !name('.dbf')) return [];
-    const shp = parseShp(await z.file(name('.shp')).async('arraybuffer')), dbf = parseDbf(await z.file(name('.dbf')).async('arraybuffer'), ['measHeight', 'gml_id', 'function', 'Traufhoehe']);
-    const out = [];
-    for (let i = 0; i < shp.length; i++) {
-      const rings = shp[i], r = dbf[i]; if (!rings || !r || !rings[0] || rings[0].length < 4) continue;
-      const ring = rings[0].map(p => fromUTM(p[0], p[1], 32)); const bb = bboxOf({ type: 'Polygon', coordinates: [ring] });
-      if (clip && !bboxHit(bb, clip)) continue;
-      out.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] }, properties: { hoehe: (v => isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : null)(parseFloat(r.measHeight)), gml_id: r.gml_id, funktion: r.function || null, trauf: (v => isFinite(v) && v > 0 && v < 400 ? Math.round(v * 100) / 100 : null)(parseFloat(r.Traufhoehe)), quelle: 'ni' } }); // Zahl steht als „1.489e+01“ in der Datei
+  async function unzipFiles(buf, exts, JSZip) { // ZIP -> { '.shp': ArrayBuffer, … } (je Endung die erste passende Datei)
+    const out = {};
+    if (JSZip) { const z = await JSZip.loadAsync(buf), names = Object.keys(z.files); // mit der Bibliothek JSZip (wie bisher)
+      for (const x of exts) { const nm = names.find(n => n.toLowerCase().endsWith(x)); if (nm) out[x] = await z.file(nm).async('arraybuffer'); }
+      return out; }
+    // ohne Bibliothek (z. B. im Hintergrund-Worker): Inhaltsverzeichnis am Dateiende lesen, Browser entpackt selbst („deflate-raw“)
+    const dv = new DataView(buf), u8 = new Uint8Array(buf); let e = buf.byteLength - 22;
+    while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+    if (e < 0) throw new Error('ZIP-Datei unvollständig');
+    for (let k = 0, p = dv.getUint32(e + 16, true), n = dv.getUint16(e + 10, true); k < n; k++) {
+      const meth = dv.getUint16(p + 10, true), size = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), lo = dv.getUint32(p + 42, true);
+      const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl)).toLowerCase(), x = exts.find(x => name.endsWith(x));
+      p += 46 + nl + dv.getUint16(p + 30, true) + dv.getUint16(p + 32, true);
+      if (!x || out[x]) continue;
+      const d0 = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true), data = u8.slice(d0, d0 + size);
+      if (meth === 0) out[x] = data.buffer;
+      else if (meth === 8) out[x] = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+      else throw new Error('ZIP: unbekannte Kompression ' + meth);
     }
     return out;
+  }
+  async function niTileFeatures(zipBuf, JSZip, clip) { // eine Kachel -> Dachflächen als Polygone mit Höhe (nur im Gebiet); im Hintergrund-Thread, wenn möglich
+    const r = await bgRun('tile', [zipBuf, clip]); return r !== undefined ? r : niTileHere(zipBuf, JSZip, clip);
+  }
+  async function niTileHere(zipBuf, JSZip, clip) { // dasselbe, hier im selben Thread
+    const f = await unzipFiles(zipBuf, ['.shp', '.dbf'], JSZip);
+    if (!f['.shp'] || !f['.dbf']) return [];
+    const shp = parseShp(f['.shp'], true); // je Dachfläche wird nur der erste Ring gebraucht
+    // Schnelle Vorauswahl in UTM-Metern (noch ohne Umrechnung): Dachflächen weit außerhalb des Gebiets (+100 m Sicherheitsrand) fallen gleich weg.
+    // Danach dieselbe genaue Prüfung wie bisher -> gleiches Ergebnis, aber viel weniger Umrechnungen (bei 1 km² etwa ein Drittel).
+    let u = null;
+    if (clip) { const mx = (clip[0] + clip[2]) / 2, my = (clip[1] + clip[3]) / 2, cs = [[clip[0], clip[1]], [clip[2], clip[1]], [clip[0], clip[3]], [clip[2], clip[3]], [mx, clip[1]], [mx, clip[3]], [clip[0], my], [clip[2], my]].map(p => toUTM(p[0], p[1], 32));
+      u = [Math.min(...cs.map(c => c[0])) - 100, Math.min(...cs.map(c => c[1])) - 100, Math.max(...cs.map(c => c[0])) + 100, Math.max(...cs.map(c => c[1])) + 100]; }
+    const keep = [], rings = [];
+    for (let i = 0; i < shp.length; i++) {
+      const r0 = shp[i] && shp[i][0]; if (!r0 || r0.length < 4) continue;
+      if (u) { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const p of r0) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; }
+        if (x1 < u[0] || x0 > u[2] || y1 < u[1] || y0 > u[3]) continue; }
+      const ring = r0.map(p => fromUTM(p[0], p[1], 32)); const bb = bboxOf({ type: 'Polygon', coordinates: [ring] });
+      if (clip && !bboxHit(bb, clip)) continue;
+      keep.push(i); rings.push(ring);
+    }
+    const dbf = parseDbf(f['.dbf'], ['measHeight', 'gml_id', 'function', 'Traufhoehe', 'AbsHoehe'], keep), out = []; // Tabelle nur für die Dachflächen im Gebiet lesen
+    for (let k = 0; k < keep.length; k++) {
+      const r = dbf[k]; if (!r) continue;
+      // „Traufhoehe“ steht in der Datei als Höhe über dem Meeresspiegel (NHN), „AbsHoehe“ ist die Geländehöhe.
+      // Traufhöhe über Boden = Traufhoehe − AbsHoehe (geprüft: Firsthoehe − AbsHoehe = measHeight).
+      out.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [rings[k]] }, properties: { hoehe: (v => isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : null)(parseFloat(r.measHeight)), gml_id: r.gml_id, funktion: r.function || null, trauf: (v => isFinite(v) && v > 0 && v < 400 ? Math.round(v * 100) / 100 : null)(parseFloat(r.Traufhoehe) - parseFloat(r.AbsHoehe)), quelle: 'ni' } }); // Zahl steht als „1.489e+01“ in der Datei
+    }
+    return out;
+  }
+
+  /* ---------- Rechnen im Hintergrund (Web Worker) ----------
+     ZIP entpacken + Shape lesen (LGLN-Gebäude) und GeoTIFF-Blöcke entpacken (Geländemodell) sind schwere Rechenarbeit.
+     Sie laufen in bis zu 3 Hintergrund-Threads: Die Oberfläche friert nicht ein und mehrere Prozessorkerne rechnen gleichzeitig.
+     Der Worker wird aus genau diesen Funktionen gebaut (als Text, Blob-URL) – das klappt auch bei Doppelklick auf index.html (file://).
+     Geht etwas schief (alter Browser, Fehler, keine Antwort), rechnet die App wie bisher selbst: gleiches Ergebnis, nur ruckeliger. */
+  const BG = { ws: null, url: null, idle: [], queue: [], id: 0, timer: null, off: typeof Worker === 'undefined' || typeof Blob === 'undefined' || typeof URL === 'undefined' || !URL.createObjectURL };
+  function bgSource() { // Programmtext für den Worker: die nötigen Funktionen von oben + Auftragsannahme
+    const fns = { rad, eachCoord, bboxOf, bboxHit, toUTM, fromUTM, parseShp, parseDbf, unzipFiles, niTileHere, lzwDecode, inflate, tiffBlockHere };
+    return "'use strict';\n" + Object.entries(fns).map(([n, f]) => `const ${n} = ${f};`).join('\n')
+      + '\nconst JOBS = { tile: (buf, clip) => niTileHere(buf, null, clip), block: (buf, m) => tiffBlockHere(buf, m) };'
+      + '\nself.onmessage = async e => { const { id, job, args } = e.data; try { const res = await JOBS[job](...args);'
+      + ' self.postMessage({ id, res }, res && res.buffer instanceof ArrayBuffer ? [res.buffer] : []); } catch (err) { self.postMessage({ id, err: String(err && err.message || err) }); } };';
+  }
+  function bgStop(off) { // Worker beenden (nach 20 s Pause, oder für immer bei Fehler); wartende Aufträge rechnet der Aufrufer dann selbst
+    clearTimeout(BG.timer); if (off) BG.off = true;
+    (BG.ws || []).forEach(w => { w.terminate(); if (w.job) { clearTimeout(w.job.dog); w.job.res(undefined); } });
+    BG.queue.splice(0).forEach(j => j.res(undefined));
+    if (BG.url) URL.revokeObjectURL(BG.url); BG.ws = null; BG.url = null; BG.idle = [];
+  }
+  function bgPump() { // nächsten Auftrag an einen freien Worker geben
+    clearTimeout(BG.timer);
+    while (BG.idle.length && BG.queue.length) {
+      const w = BG.idle.pop(), j = BG.queue.shift(); w.job = j;
+      j.dog = setTimeout(() => bgStop(true), 60000); // Wachhund: keine Antwort nach 60 s -> Worker aus, selbst rechnen
+      w.postMessage({ id: j.id, job: j.job, args: j.args }); // Daten werden kopiert, nicht verschoben: der Aufrufer kann notfalls selbst rechnen
+    }
+    if (BG.ws && BG.idle.length === BG.ws.length) BG.timer = setTimeout(() => bgStop(false), 20000); // nichts zu tun: Speicher freigeben
+  }
+  function bgRun(job, args) { // -> Promise: Ergebnis aus dem Hintergrund, oder undefined (dann rechnet der Aufrufer selbst)
+    if (BG.off) return Promise.resolve(undefined);
+    if (!BG.ws) try {
+      BG.url = URL.createObjectURL(new Blob([bgSource()], { type: 'text/javascript' }));
+      const n = Math.max(1, Math.min(3, ((typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2) - 1)); // ein Kern bleibt für die Oberfläche
+      BG.ws = Array.from({ length: n }, () => { const w = new Worker(BG.url);
+        w.onmessage = e => { const j = w.job; w.job = null; clearTimeout(j.dog); j.res(e.data.err != null ? undefined : e.data.res); BG.idle.push(w); bgPump(); };
+        w.onerror = e => { if (e.preventDefault) e.preventDefault(); bgStop(true); };
+        return w; });
+      BG.idle = BG.ws.slice();
+    } catch (e) { bgStop(true); return Promise.resolve(undefined); }
+    return new Promise(res => { BG.queue.push({ id: ++BG.id, job, args, res }); bgPump(); });
   }
   const berlinWfsUrl = (svc, type, b, start, count) => `https://gdi.berlin.de/services/wfs/${svc}?service=WFS&version=2.0.0&request=GetFeature&typeNames=${type}`
     + `&outputFormat=application/json&srsName=EPSG:4326&count=${count}&startIndex=${start}&bbox=${b[1].toFixed(6)},${b[0].toFixed(6)},${b[3].toFixed(6)},${b[2].toFixed(6)},urn:ogc:def:crs:EPSG::4326`;
@@ -2508,7 +2605,7 @@ const UA = (function () {
 
   return {
     ringArea, polyArea, dist, bboxOf, pointInPoly, centroid, circlePoly, simplifyRingTo, toUTM, utmZone,
-    isArea, joinWays, osmToFeatures, FETCHES, HEAD, polyString, CL, BASES, BASE_ORDER, STANDARD, ZRANK, PRESETS, makeBaseLayer, applySplit, splitOptions, attrLabel, valDE,
+    isArea, joinWays, osmToFeatures, FETCHES, HEAD, polyString, bundleQuery, splitBundle, CL, BASES, BASE_ORDER, STANDARD, ZRANK, PRESETS, makeBaseLayer, applySplit, splitOptions, attrLabel, valDE,
     PALETTE, GROUPS, ITEMS, itemTask, setClassStyle, setClassOrder, mergeClass, removeClassFeatures, customQuery, queryName, valLabel, DE, detailType, visLayers,
     buildingUse, buildingHeight, roadClass, greenClass, waterClass, landuseClass, layerStats,
     buildSVG, buildDXF, exportGeoJSON, levelsQuality, flurstBerlin, flurstNdsGml, niFlurstUrl, ewBerlin, zensusCells, zensusUrl, zensusFeature, ewSum, LAEA, Q_EW_Z, Q_HW, HW_SZ, Q_LAERM, LZ, laermUrl, laermFeatures, laermNote, Q_DGM_NI, dgmIndexUrl, dgmTiles, tiffIfd, tiffMeta, lzwDecode, tiffBlock, dgmBox, dgmRes, dgmBlocks, blockGaps, dgmGrid, gridCoarse, gridRange, dgmAutoIv, dgmContours, dgmSlopes, slopeGrid, dgmStats, HW_ORDER, hwBox, hwJobs, hwUrl, hwFeatures, hwRaw, hwDefault, hwNote, clipToBox, hwDecode, HB_BOXES, bboxHit, sunPos, sunDefault, shadowFeatures, sunPathFeatures, sunPathSamples, timeLabel, parseTimes, dmy, fnUse, fnLabel, FN_NAMES, Q_FN, inNiedersachsen, niStacUrl, niTileFeatures, fromUTM, parseShp, parseDbf, Q_AMTL_NI, berlinWfsUrl, treeFeatures, inBerlin, berlinHeightsUrl, Q_AMTL, roadWidth, bandQuality, nearestACI, safeName, isPoly, isLine, isPoint
@@ -2799,22 +2896,73 @@ if (typeof module !== 'undefined') module.exports = UA;
     $('#results').hidden = true;
   });
 
+  /* ---------- Zwischenspeicher im Browser (IndexedDB): gleiches Gebiet lädt beim nächsten Mal sofort ---------- */
+  // Gemerkt wird das fertige Ergebnis jedes Daten-Bausteins (OSM und amtlich) für GENAU dieses Gebiet, höchstens 7 Tage lang.
+  // Der Schlüssel enthält einen Fingerabdruck des App-Codes: Nach jeder neuen App-Version wird alles frisch geladen.
+  // Geht IndexedDB nicht (privates Fenster, Speicher voll, Browser verbietet es), lädt die App einfach wie bisher vom Server.
+  const PC = { DAYS: 7, MAX: 60, db: null, ready: null, code: '' };
+  const fnv = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+  PC.code = fnv([...document.scripts].map(s => s.text).join('')); // ändert sich bei jeder Code-Änderung
+  PC.ready = new Promise(res => {
+    try {
+      const rq = indexedDB.open('urban-analyst-zwischenspeicher', 1);
+      rq.onupgradeneeded = () => { const os = rq.result.createObjectStore('daten', { keyPath: 'k' }); os.createIndex('t', 't'); };
+      rq.onsuccess = () => { PC.db = rq.result; res(PC.db); pcPrune(); };
+      rq.onerror = rq.onblocked = () => res(null);
+    } catch (e) { res(null); }
+    setTimeout(() => res(null), 2500); // hängt der Speicher, nicht darauf warten
+  });
+  const pcArea = g => JSON.stringify(g.coordinates, (k, v) => typeof v === 'number' ? Math.round(v * 1e5) / 1e5 : v); // Gebiet auf ~1 m gerundet
+  const pcKey = (id, area) => id + '|' + PC.code + '|' + fnv(area);
+  async function pcGet(id, area) { // -> { data, t } oder null
+    const db = await PC.ready; if (!db) return null;
+    return new Promise(res => {
+      try {
+        const rq = db.transaction('daten').objectStore('daten').get(pcKey(id, area));
+        rq.onsuccess = () => { const r = rq.result; res(r && r.area === area && Date.now() - r.t < PC.DAYS * 864e5 ? r : null); };
+        rq.onerror = () => res(null);
+      } catch (e) { res(null); }
+    });
+  }
+  function pcPut(id, area, data) { // sofort (synchron) kopieren, bevor die App die Daten beim Zeichnen ergänzt
+    if (!PC.db || !data || data.warn) return; // unvollständige Daten (⚠ Teil fehlt) nicht merken
+    try { const tx = PC.db.transaction('daten', 'readwrite'); tx.objectStore('daten').put({ k: pcKey(id, area), area, t: Date.now(), data }); tx.oncomplete = pcPrune; tx.onerror = tx.onabort = e => { if (e && e.preventDefault) e.preventDefault(); }; }
+    catch (e) { console.warn('Zwischenspeicher: nicht gespeichert', e); }
+  }
+  function pcPrune() { // Abgelaufenes und Älteres über MAX Einträge löschen (nur Schlüssel lesen, nicht die Daten)
+    try {
+      const tx = PC.db.transaction('daten', 'readwrite'), os = tx.objectStore('daten'), keys = [];
+      os.index('t').openKeyCursor().onsuccess = e => { const c = e.target.result; if (c) { keys.push([c.primaryKey, c.key]); c.continue(); return; }
+        const old = Date.now() - PC.DAYS * 864e5; keys.forEach(([k, t], i) => { if (t < old || i < keys.length - PC.MAX) os.delete(k); }); };
+    } catch (e) { /* egal */ }
+  }
+  const pcDate = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
   /* ---------- Datenabruf Overpass ---------- */
   const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
   const HOSTINFO = { 'overpass-api.de': 'Hauptserver', 'overpass.private.coffee': 'Ersatzserver 1', 'overpass.kumi.systems': 'Ersatzserver 2' };
+  // Serverwahl (gemessen 18.11.): Ist der Hauptserver voll, antwortet er SOFORT mit 429/502/504 und bittet ausdrücklich darum,
+  // kurz zu warten und es erneut zu versuchen. Die Ersatzserver antworteten am 18.11. gar nicht (auch nach 200 s nicht).
+  // Deshalb: Hauptserver bis zu 4-mal fragen (Pausen 5 / 10 / 20 s), erst dann die Ersatzserver – mit höchstens 60 s bis zur
+  // ersten Antwort statt 200 s. (Läuft der Download schon, wird nicht abgebrochen.)
+  const TRIES = [[0, 0], [0, 5000], [0, 10000], [0, 20000], [1, 0], [2, 0]]; // [Server, Pause davor]
   async function overpass(query, prog) {
-    prog = prog || {}; let lastErr = null;
-    for (const ep of ENDPOINTS) {
-      const host = new URL(ep).host;
-      if (lastErr) { prog.note = `${prog.host} antwortet nicht (${lastErr.message}) → wechsle zu ${host}`; }
+    prog = prog || {}; let lastErr = null, n = 1;
+    for (const [e, pause] of TRIES) {
+      const ep = ENDPOINTS[e], host = new URL(ep).host;
+      if (pause) { // erneuter Versuch beim Hauptserver – nur wenn er „ausgelastet“ gemeldet hat
+        if (!lastErr || !lastErr.busy) continue;
+        Object.assign(prog, { phase: 'retry', tPhase: performance.now(), note: `Der ${HOSTINFO[host]} ist voll (${lastErr.message}) – Versuch ${++n} von 4 nach ${pause / 1000} s Pause` });
+        await new Promise(res => { const t = setTimeout(res, pause); if (S.abort) S.abort.signal.addEventListener('abort', () => { clearTimeout(t); res(); }, { once: true }); });
+      } else if (lastErr) prog.note = `${prog.host} antwortet nicht (${lastErr.message}) → wechsle zu ${host}`;
       Object.assign(prog, { host, hostInfo: HOSTINFO[host] || '', phase: 'wait', bytes: 0, tPhase: performance.now() });
       if (S.abort && S.abort.signal.aborted) break;
-      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 200000);
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), e ? 60000 : 200000);
       const stop = () => ctl.abort(); if (S.abort) S.abort.signal.addEventListener('abort', stop);
       try {
         const r = await fetch(ep, { method: 'POST', body: 'data=' + encodeURIComponent(query), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctl.signal });
         clearTimeout(to);
-        if (r.status === 429 || r.status >= 500) { lastErr = new Error(`Server ausgelastet (${r.status})`); continue; }
+        if (r.status === 429 || r.status >= 500) { lastErr = new Error(`Server ausgelastet (${r.status})`); lastErr.busy = true; continue; }
         if (!r.ok) throw new Error('Abfrage-Fehler ' + r.status + (r.status === 400 ? ' – bitte Schlüssel/Wert prüfen' : ''));
         prog.phase = 'recv'; prog.tPhase = performance.now(); prog.note = '';
         const reader = r.body.getReader(), chunks = [];
@@ -2827,11 +2975,48 @@ if (typeof module !== 'undefined') module.exports = UA;
         clearTimeout(to);
         if (S.abort && S.abort.signal.aborted) { const c = new Error('Abgebrochen'); c.cancelled = true; throw c; }
         lastErr = e.name === 'AbortError' ? new Error('Zeitüberschreitung') : e; if (/Abfrage-Fehler 400/.test(lastErr.message)) break;
+        if (e.name === 'TypeError') lastErr.busy = true; // Verbindung abgebrochen (z. B. 504 ohne CORS-Kopf) -> auch hier erneut versuchen
       } finally { if (S.abort) S.abort.signal.removeEventListener('abort', stop); }
     }
     if (S.abort && S.abort.signal.aborted) { const c = new Error('Abgebrochen'); c.cancelled = true; throw c; }
     throw lastErr || new Error('OSM-Server nicht erreichbar');
   }
+
+  /* ---------- Niedersachsen-Cache: fertige OSM-Daten von GitHub Pages (github.com/Jade-HS-Vibecoding-WPK/niedersachsen-cache) ----------
+     10 Städte in Niedersachsen mit 3 km Rand, wöchentlich aus OpenStreetMap gebaut (Datenstand bis ca. 8 Tage alt).
+     NdsCache.overpass(abfrage) antwortet wie Overpass („out geom“) – ohne Warteschlange – oder mit null
+     (Gebiet nicht abgedeckt, Cache nicht erreichbar): dann lädt die App wie bisher bei Overpass.
+     Achtung bei neuen OSM-Bausteinen: Der Cache enthält nur Objekte mit bestimmten Schlüsseln (building, highway, railway, landuse,
+     natural, amenity, shop … – Liste im README des Caches). Fragt ein Baustein nach anderen (z. B. power, barrier), liefert er LEER statt null. */
+  const ndsDate = s => s ? new Date(s).toLocaleDateString('de-DE') : 'unbekannt';
+  async function ndsAsk(ids, P) { // -> { baustein: Overpass-Antwort } (nur, was der Cache hat)
+    const stop = new Promise(res => { if (S.abort) S.abort.signal.addEventListener('abort', () => res([]), { once: true }); }); // „Abbrechen“ wirkt sofort
+    const res = await Promise.race([stop, Promise.all(ids.map(f => Promise.resolve().then(() => window.NdsCache.overpass(UA.HEAD + UA.FETCHES[f].q(P))).catch(() => null)))]);
+    if (S.abort && S.abort.signal.aborted) throw cancelErr();
+    const hits = {}; ids.forEach((f, i) => { if (res[i] && Array.isArray(res[i].elements)) hits[f] = res[i]; });
+    if (!Object.keys(hits).length) console.info('Niedersachsen-Cache: ' + (window.NdsCache.letzterGrund || 'keine Daten') + ' → lade live');
+    return hits;
+  }
+
+  /* ---------- Amtliche Daten: Abruf mit Zeitlimit ----------
+     Hängt ein Dienst, warten wir nicht ewig: nach `ms` Millisekunden wird abgebrochen und eine klare Meldung gezeigt.
+     Eine Zeitüberschreitung wird nicht noch einmal automatisch versucht (noRetry) – sonst dauert ein Ausfall doppelt so lange.
+     „Abbrechen“ (S.abort) wirkt sofort. Ergebnis: { ok, status, body } – body als Text ('text') oder ArrayBuffer ('buf'). */
+  async function getT(url, ms, as, who, headers) {
+    const user = S.abort && S.abort.signal; if (user && user.aborted) throw cancelErr();
+    const ctl = new AbortController(), stop = () => ctl.abort(); let late = false;
+    const to = setTimeout(() => { late = true; ctl.abort(); }, ms); if (user) user.addEventListener('abort', stop);
+    try { const r = await fetch(url, { signal: ctl.signal, headers }); return { ok: r.ok, status: r.status, body: as === 'buf' ? await r.arrayBuffer() : await r.text() }; }
+    catch (e) {
+      if (user && user.aborted) throw cancelErr();
+      if (late) { const t = new Error(`${who} antwortet nicht (Zeitüberschreitung nach ${Math.round(ms / 1000)} s)`); t.noRetry = true; t.timeout = true; throw t; }
+      throw new Error(who + ' nicht erreichbar');
+    } finally { clearTimeout(to); if (user) user.removeEventListener('abort', stop); }
+  }
+  // Merkzettel für EINEN Ladevorgang: schon fertige Kacheln werden beim automatischen 2. Versuch nicht noch einmal geladen.
+  // Gilt nur, solange derselbe Ladevorgang läuft (erkennbar am selben S.abort) – kein dauerhafter Zwischenspeicher.
+  let runMemo = { run: null, m: new Map() };
+  const memoOfRun = () => { if (runMemo.run !== S.abort) runMemo = { run: S.abort, m: new Map() }; return runMemo.m; };
 
   /* ---------- Amtliche Gebäudehöhen Berlin (Geoportal Berlin, WFS) ---------- */
   async function berlinWfs(fetchId, prog) { // Daten vom Geoportal Berlin (seitenweise)
@@ -2840,10 +3025,9 @@ if (typeof module !== 'undefined') module.exports = UA;
     const b = UA.bboxOf(S.selection.geometry), out = [], COUNT = 5000;
     for (const [svc, type] of F.berlin) {
       for (let start = 0; start < 300000; start += COUNT) {
-        const r = await fetch(UA.berlinWfsUrl(svc, type, b, start, COUNT), { signal: S.abort ? S.abort.signal : undefined })
-          .catch(e => { if (S.abort && S.abort.signal.aborted) { const c = new Error('Abgebrochen'); c.cancelled = true; throw c; } throw new Error('Geoportal Berlin nicht erreichbar'); });
+        const r = await getT(UA.berlinWfsUrl(svc, type, b, start, COUNT), 90000, 'text', 'Geoportal Berlin'); // höchstens 90 s je Seite
         if (!r.ok) throw new Error('Geoportal Berlin: Fehler ' + r.status);
-        prog.phase = 'recv'; const txt = await r.text(); prog.bytes += txt.length;
+        prog.phase = 'recv'; const txt = r.body; prog.bytes += txt.length;
         const fs = (JSON.parse(txt).features || []); out.push(...fs); prog.phase = 'parse'; prog.objects = out.length;
         if (fs.length < COUNT) break; // letzte Seite
       }
@@ -2853,16 +3037,15 @@ if (typeof module !== 'undefined') module.exports = UA;
 
   /* ---------- Bevölkerung: Berlin (Umweltatlas, Blöcke) oder Zensus 2022 (Gitterzellen, 6 Abfragen gleichzeitig) ---------- */
   async function bevoelkFetch(prog) {
-    const g = S.selection.geometry, b = UA.bboxOf(g), sig = S.abort ? S.abort.signal : undefined;
+    const g = S.selection.geometry, b = UA.bboxOf(g);
     const cancel = () => { const c = new Error('Abgebrochen'); c.cancelled = true; return c; };
     if (UA.inBerlin(g)) {
       Object.assign(prog, { src: 'Geoportal Berlin · Umweltatlas Einwohnerdichte 2025 (amtlich)', host: 'gdi.berlin.de', phase: 'wait', bytes: 0, tPhase: performance.now() });
       const out = [], COUNT = 5000;
       for (let start = 0; start < 100000; start += COUNT) {
-        const r = await fetch(UA.berlinWfsUrl('ua_einwohnerdichte_2025', 'ua_einwohnerdichte_2025:ua_einwohnerdichte_2025', b, start, COUNT), { signal: sig })
-          .catch(() => { if (S.abort && S.abort.signal.aborted) throw cancel(); throw new Error('Geoportal Berlin nicht erreichbar'); });
+        const r = await getT(UA.berlinWfsUrl('ua_einwohnerdichte_2025', 'ua_einwohnerdichte_2025:ua_einwohnerdichte_2025', b, start, COUNT), 90000, 'text', 'Geoportal Berlin');
         if (!r.ok) throw new Error('Geoportal Berlin: Fehler ' + r.status);
-        prog.phase = 'recv'; const txt = await r.text(); prog.bytes += txt.length; const fs = JSON.parse(txt).features || [];
+        prog.phase = 'recv'; const txt = r.body; prog.bytes += txt.length; const fs = JSON.parse(txt).features || [];
         out.push(...fs); prog.phase = 'parse'; prog.objects = out.length; if (fs.length < COUNT) break;
       }
       return UA.ewBerlin(out);
@@ -2871,26 +3054,31 @@ if (typeof module !== 'undefined') module.exports = UA;
     if (size === 100 && cells.length > 600) { size = 1000; cells = UA.zensusCells(g, size); }
     if (!cells.length) { size = 100; cells = UA.zensusCells(g, size); }
     Object.assign(prog, { src: `Zensus 2022 · ${size >= 1000 ? '1-km' : '100-m'}-Gitter (amtlich)`, host: 'www.wms.nrw.de', phase: 'recv', bytes: 0, tPhase: performance.now(), note: `${cells.length} Gitterzellen werden einzeln abgefragt …` });
-    const out = []; let i = 0, done = 0, failed = 0;
-    const worker = async () => { while (i < cells.length) { const [x, y] = cells[i++]; if (S.abort && S.abort.signal.aborted) throw cancel();
-      let txt = null; for (let k = 0; k < 2 && txt == null; k++) { try { const r = await fetch(UA.zensusUrl(x, y, size), { signal: sig }); if (r.ok) txt = await r.text(); } catch (e) { if (S.abort && S.abort.signal.aborted) throw cancel(); } }
+    const out = []; let i = 0, done = 0, failed = 0, late = 0;
+    // Je Zelle höchstens 15 s (normal: unter 0,3 s). Frühes Aufgeben, wenn der Dienst offensichtlich ausgefallen ist:
+    // mehr als 20 % der Zellen fehlgeschlagen, oder noch keine einzige Zelle geklappt, aber schon eine Zeitüberschreitung -> nicht minutenlang weiterwarten.
+    const gaveUp = () => failed > Math.max(3, cells.length * 0.2) || (late > 0 && done === failed);
+    const worker = async () => { while (i < cells.length && !gaveUp()) { const [x, y] = cells[i++]; if (S.abort && S.abort.signal.aborted) throw cancel();
+      let txt = null; for (let k = 0; k < 2 && txt == null; k++) { try { const r = await getT(UA.zensusUrl(x, y, size), 15000, 'text', 'Zensus-Dienst'); if (r.ok) txt = r.body; } catch (e) { if (e.cancelled) throw e; if (e.timeout) { late++; break; } } }
       if (txt == null) failed++; else { prog.bytes += txt.length; const f = UA.zensusFeature(x, y, size, txt); if (f) out.push(f); }
       done++; prog.objects = done; prog.note = `Gitterzelle ${done} von ${cells.length}`; } };
     await Promise.all(Array.from({ length: Math.min(6, cells.length) }, worker));
     prog.note = '';
-    if (failed > cells.length * 0.2) throw new Error(`Zensus-Dienst antwortet nicht zuverlässig (${failed} von ${cells.length} Zellen fehlgeschlagen)`);
+    if (failed > cells.length * 0.2 || gaveUp()) { const e = new Error(`Zensus-Dienst antwortet nicht zuverlässig (${failed} von ${done} abgefragten Zellen fehlgeschlagen${late ? ', Zeitüberschreitung' : ''})`); e.noRetry = late >= failed / 2; throw e; }
+    if (failed) out.warn = `${failed} von ${cells.length} Gitterzellen nicht geladen – Server antwortet nicht`; // ehrlich anzeigen und nicht im Zwischenspeicher merken
     return out;
   }
 
   /* ---------- Hochwasser: Gefahrenkarten (BfG), ArcGIS-Dienst ---------- */
   const cancelErr = () => { const c = new Error('Abgebrochen'); c.cancelled = true; return c; };
-  async function arcgisGeo(url, sig) { // eine Abfrage als GeoJSON, 2 Versuche, max. 90 s
+  async function arcgisGeo(url, sig) { // eine Abfrage als GeoJSON, 2 Versuche, max. 90 s – nach einer Zeitüberschreitung kein 2. Versuch (sonst 3 min Warten)
     let last;
     for (let k = 0; k < 2; k++) {
       const ctl = new AbortController(), stop = () => ctl.abort(), to = setTimeout(stop, 90000); if (sig) sig.addEventListener('abort', stop);
       try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error('Fehler ' + r.status); const txt = await r.text(), js = JSON.parse(txt);
         if (js.error) throw new Error(js.error.message || 'Dienstfehler'); js._bytes = txt.length; return js; }
-      catch (e) { if (sig && sig.aborted) throw cancelErr(); last = e.name === 'AbortError' ? new Error('Zeitüberschreitung') : e; }
+      catch (e) { if (sig && sig.aborted) throw cancelErr(); last = e.name === 'AbortError' ? new Error('Zeitüberschreitung') : e;
+        if (e.name === 'AbortError') { last.noRetry = true; last.timeout = true; break; } }
       finally { clearTimeout(to); if (sig) sig.removeEventListener('abort', stop); }
     }
     throw last;
@@ -2904,9 +3092,9 @@ if (typeof module !== 'undefined') module.exports = UA;
     return out;
   }
   const noRetry = msg => { const e = new Error(msg); e.noRetry = true; return e; };
-  async function fetchRange(url, a, b, sig) { // Teil einer Datei laden (2 Versuche)
-    let last; for (let k = 0; k < 2; k++) { try { const r = await fetch(url, { headers: { Range: `bytes=${a}-${b}` }, signal: sig }); if (!r.ok) throw new Error('Fehler ' + r.status);
-      const buf = await r.arrayBuffer(); return r.status === 206 ? buf : buf.slice(a, b + 1); } catch (e) { if (sig && sig.aborted) throw cancelErr(); last = e; } }
+  async function fetchRange(url, a, b) { // Teil einer Datei laden (2 Versuche, je höchstens 45 s; nach Zeitüberschreitung kein 2. Versuch)
+    let last; for (let k = 0; k < 2; k++) { try { const r = await getT(url, 45000, 'buf', 'LGLN-Geländemodell', { Range: `bytes=${a}-${b}` }); if (!r.ok) throw new Error('Fehler ' + r.status);
+      return r.status === 206 ? r.body : r.body.slice(a, b + 1); } catch (e) { if (e.cancelled || e.noRetry) throw e; last = e; } }
     throw last;
   }
   async function dgmFetch(prog) { // Geländemodell: Kachelliste -> nur benötigte Blöcke laden -> Raster im Gebiet
@@ -2914,20 +3102,33 @@ if (typeof module !== 'undefined') module.exports = UA;
     if (!UA.inNiedersachsen(g)) throw noRetry(UA.inBerlin(g) ? 'Gelände für Berlin folgt, sobald das Geoportal Berlin wieder erreichbar ist – bisher nur Niedersachsen' : 'Geländedaten (DGM1) gibt es bisher nur für Niedersachsen');
     const gb = UA.dgmBox(g, 15), res = UA.dgmRes(gb);
     Object.assign(prog, { src: 'LGLN · Digitales Geländemodell DGM1 (amtlich, 1-m-Raster)', host: 'dgm1.s3 (LGLN OpenGeoData)', phase: 'recv', bytes: 0, tPhase: performance.now(), note: 'Kachelübersicht …' });
-    const idx = await arcgisGeo(UA.dgmIndexUrl(UA.hwBox(g)), sig), tiles = Object.values(UA.dgmTiles(idx.features));
+    const idx = await arcgisGeo(UA.dgmIndexUrl(UA.hwBox(g)), sig); let tiles = Object.values(UA.dgmTiles(idx.features));
     if (!tiles.length) throw new Error('Für dieses Gebiet gibt es keine DGM-Kacheln (liegt es in Niedersachsen?)');
-    const srcs = []; let done = 0, nBlocks = 0;
+    // Kacheln (1 × 1 km, Name = Ecke unten links), die das Gebiet gar nicht berühren, überspringen: spart je eine Anfrage für den Dateikopf
+    tiles = tiles.filter(vs => !(gb[2] < vs[0].e - 1 || gb[0] > vs[0].e + 1001 || gb[3] < vs[0].n - 1 || gb[1] > vs[0].n + 1001));
+    const srcs = [], memo = memoOfRun(); let done = 0, nBlocks = 0;
     const loadTile = async versions => {
       for (const v of versions) {
-        const head = await fetchRange(v.url, 0, 32767, sig), m = UA.tiffMeta(UA.tiffIfd(head).T), need = UA.dgmBlocks(m, gb), blocks = new Map(); let gaps = false;
-        for (const bi of need) { const o = m.offs[bi], n = m.cnts[bi]; if (!n) { gaps = true; continue; }
-          const buf = await fetchRange(v.url, o, o + n - 1, sig); prog.bytes += n; const arr = await UA.tiffBlock(buf, m); blocks.set(bi, arr); if (UA.blockGaps(arr, m, bi)) gaps = true;
-          nBlocks++; prog.objects = nBlocks; }
-        srcs.push({ meta: m, blocks, year: v.year }); if (!gaps) break; // Lücken: ältere Befliegung dahinter
+        const key = 'dgm|' + v.url + '|' + gb.join(','); let t = memo.get(key); // schon im 1. Versuch geladen? (Merkzettel dieses Ladevorgangs)
+        if (!t) {
+          const head = await fetchRange(v.url, 0, 32767), m = UA.tiffMeta(UA.tiffIfd(head).T), need = UA.dgmBlocks(m, gb), blocks = new Map(); let gaps = false;
+          // Blöcke, die in der Datei direkt hintereinander liegen, kommen in EINER Anfrage (Lücken bis 64 KB werden mitgeladen) – spart Wartezeit
+          const runs = [];
+          for (const bi of need) { const o = m.offs[bi], n = m.cnts[bi]; if (!n) { gaps = true; continue; }
+            const last = runs[runs.length - 1]; if (last && o >= last.b && o - last.b <= 65536) { last.b = o + n; last.list.push(bi); } else runs.push({ a: o, b: o + n, list: [bi] }); }
+          for (const r of runs) {
+            const buf = await fetchRange(v.url, r.a, r.b - 1); prog.bytes += r.b - r.a;
+            for (const bi of r.list) { const o = m.offs[bi] - r.a, arr = await UA.tiffBlock(buf.slice(o, o + m.cnts[bi]), m); blocks.set(bi, arr); if (UA.blockGaps(arr, m, bi)) gaps = true;
+              nBlocks++; prog.objects = nBlocks; }
+          }
+          t = { meta: m, blocks, gaps }; memo.set(key, t);
+        }
+        srcs.push({ meta: t.meta, blocks: t.blocks, year: v.year }); if (!t.gaps) break; // Lücken: ältere Befliegung dahinter
       }
       done++; prog.note = `Kachel ${done} von ${tiles.length}`;
     };
     let ti = 0; await Promise.all(Array.from({ length: Math.min(4, tiles.length) }, async () => { while (ti < tiles.length) await loadTile(tiles[ti++]); }));
+    [...memo.keys()].forEach(k => { if (k.startsWith('dgm|')) memo.delete(k); }); // alles da: Merkzettel leeren (Speicher)
     prog.phase = 'parse'; prog.note = 'Raster wird berechnet …'; await tick();
     srcs.sort((a, b) => b.year - a.year);
     const grid = UA.dgmGrid(srcs, gb, res), [mn, mx] = UA.gridRange(grid); prog.note = '';
@@ -2937,13 +3138,13 @@ if (typeof module !== 'undefined') module.exports = UA;
   async function laermFetch(prog) { // Lden und Lnight gleichzeitig
     const g = S.selection.geometry, sig = S.abort ? S.abort.signal : undefined;
     if (!UA.inBerlin(g) && !UA.inNiedersachsen(g)) throw noRetry('Verkehrslärm gibt es bisher nur für Berlin und Niedersachsen');
-    const box = UA.hwBox(g), out = [], fails = [];
+    const box = UA.hwBox(g), out = [], fails = [], late = [];
     Object.assign(prog, { src: 'Umweltbundesamt · Lärmkartierung 2022 (amtlich)', host: 'datahub.uba.de', phase: 'recv', bytes: 0, tPhase: performance.now(), note: '' });
     await Promise.all(['D', 'N'].map(async z => {
       try { const fs = await arcgisBox(b => UA.laermUrl(z, b), box, sig, prog); out.push(...UA.laermFeatures({ features: fs }, z, box)); prog.objects = out.length; }
-      catch (e) { if (e.cancelled) throw e; console.warn('Lärmkarte fehlgeschlagen', z, e); fails.push(z); }
+      catch (e) { if (e.cancelled) throw e; console.warn('Lärmkarte fehlgeschlagen', z, e); fails.push(z); if (e.timeout) late.push(z); }
     }));
-    if (fails.length === 2) throw new Error('Lärmdienst des Umweltbundesamts nicht erreichbar');
+    if (fails.length === 2) { const e = new Error('Lärmdienst des Umweltbundesamts ' + (late.length === 2 ? 'antwortet nicht (Zeitüberschreitung nach 90 s)' : 'nicht erreichbar')); e.noRetry = late.length === 2; throw e; } // nur Zeitüberschreitungen: nicht noch einmal 90 s warten
     if (fails.length) out.warn = 'nicht geladen: ' + UA.LZ[fails[0]].short + ' – Server antwortet nicht';
     return out;
   }
@@ -2952,29 +3153,28 @@ if (typeof module !== 'undefined') module.exports = UA;
     if (!land) throw noRetry('Hochwasser-Gefahrenkarten gibt es bisher nur für Berlin und Niedersachsen');
     const box = UA.hwBox(g), jobs = UA.hwJobs(land, box);
     Object.assign(prog, { src: 'BfG · Hochwassergefahrenkarten der Länder (amtlich)', host: 'geoportal.bafg.de', phase: 'recv', bytes: 0, tPhase: performance.now(), note: `${jobs.length} Karten werden gleichzeitig abgefragt …` });
-    const out = [], fails = []; let done = 0;
-    await Promise.all(jobs.map(async j => {
+    const out = [], fails = []; let done = 0, next = 0, late = 0;
+    // höchstens 4 Karten gleichzeitig (bei Hamburg/Bremen sind es bis zu 10 Abfragen an denselben Server)
+    await Promise.all(Array.from({ length: Math.min(4, jobs.length) }, async () => { while (next < jobs.length) { const j = jobs[next++];
       try { const fs = await arcgisBox(b => UA.hwUrl(j.sz, j.type, j.layer, b), box, sig, prog); out.push(...UA.hwFeatures({ features: fs }, j.sz, j.type, j.layer, j.land, box)); }
-      catch (e) { if (e.cancelled) throw e; console.warn('Hochwasser-Karte fehlgeschlagen', j, e); fails.push(j); }
-      finally { done++; prog.objects = out.length; prog.note = `Karte ${done} von ${jobs.length}`; }
-    }));
+      catch (e) { if (e.cancelled) throw e; console.warn('Hochwasser-Karte fehlgeschlagen', j, e); fails.push(j); if (e.timeout) late++; }
+      finally { done++; prog.objects = out.length; prog.note = `Karte ${done} von ${jobs.length}`; } } }));
     prog.note = '';
-    if (fails.length === jobs.length) throw new Error('Hochwasserdienst der BfG nicht erreichbar');
+    if (fails.length === jobs.length) { const e = new Error('Hochwasserdienst der BfG ' + (late === jobs.length ? 'antwortet nicht (Zeitüberschreitung nach 90 s)' : 'nicht erreichbar')); e.noRetry = late === jobs.length; throw e; } // nur Zeitüberschreitungen: nicht noch einmal warten
     if (fails.length) out.warn = 'nicht geladen: ' + [...new Set(fails.map(j => UA.HW_SZ[j.sz].short + (j.type === 'CW' ? ' (Küste)' : ' (Fluss)')))].join(', ') + ' – Server antwortet nicht';
     return out;
   }
 
   /* ---------- Flurstücke: Berlin (Geoportal, JSON) oder Niedersachsen (LGLN, GML), seitenweise ---------- */
   async function katasterFetch(prog) {
-    const g = S.selection.geometry, b = UA.bboxOf(g), sig = S.abort ? S.abort.signal : undefined;
-    const fail = () => { if (S.abort && S.abort.signal.aborted) { const c = new Error('Abgebrochen'); c.cancelled = true; throw c; } throw new Error('Katasterdienst nicht erreichbar'); };
+    const g = S.selection.geometry, b = UA.bboxOf(g);
     if (UA.inBerlin(g)) {
       Object.assign(prog, { src: 'Geoportal Berlin · ALKIS Flurstücke (amtlich)', host: 'gdi.berlin.de', phase: 'wait', bytes: 0, tPhase: performance.now() });
       const out = [], COUNT = 5000;
       for (let start = 0; start < 100000; start += COUNT) {
-        const r = await fetch(UA.berlinWfsUrl('alkis_flurstuecke', 'alkis_flurstuecke:flurstuecke', b, start, COUNT), { signal: sig }).catch(fail);
+        const r = await getT(UA.berlinWfsUrl('alkis_flurstuecke', 'alkis_flurstuecke:flurstuecke', b, start, COUNT), 90000, 'text', 'Katasterdienst');
         if (!r.ok) throw new Error('Geoportal Berlin: Fehler ' + r.status);
-        prog.phase = 'recv'; const txt = await r.text(); prog.bytes += txt.length; const fs = JSON.parse(txt).features || [];
+        prog.phase = 'recv'; const txt = r.body; prog.bytes += txt.length; const fs = JSON.parse(txt).features || [];
         out.push(...fs); prog.phase = 'parse'; prog.objects = out.length; if (fs.length < COUNT) break;
       }
       return UA.flurstBerlin(out);
@@ -2982,12 +3182,22 @@ if (typeof module !== 'undefined') module.exports = UA;
     if (UA.inNiedersachsen(g)) {
       Object.assign(prog, { src: 'LGLN Niedersachsen · ALKIS Flurstücke (amtlich)', host: 'opendata.lgln.niedersachsen.de', phase: 'wait', bytes: 0, tPhase: performance.now() });
       const out = [], COUNT = 2000;
+      // Nur die Angaben anfordern, die die App nutzt (Dienst schickt sonst u. a. Kreis, Regierungsbezirk, Schlüsselnummern mit): ~16 % weniger Daten.
+      // Lehnt der Dienst das einmal ab, geht es ohne diese Einschränkung weiter (wie bisher).
+      let props = '&PROPERTYNAME=' + ['idflurst', 'flstkennz', 'gemarkung', 'gemeinde', 'flur', 'flstnrzae', 'flstnrnen', 'aktualit', 'geometrie', 'flaeche', 'lagebeztxt', 'tntxt'].map(p => 'ave:' + p).join(',');
       for (let start = 0; start < 60000; start += COUNT) {
-        const r = await fetch(UA.niFlurstUrl(b, start, COUNT), { signal: sig }).catch(fail);
+        let r = await getT(UA.niFlurstUrl(b, start, COUNT) + props, 90000, 'text', 'Katasterdienst');
+        if (props && (!r.ok || /ExceptionReport/.test(r.body.slice(0, 600)))) { props = ''; r = await getT(UA.niFlurstUrl(b, start, COUNT), 90000, 'text', 'Katasterdienst'); }
         if (!r.ok) throw new Error('LGLN: Fehler ' + r.status);
-        prog.phase = 'recv'; const txt = await r.text(); prog.bytes += txt.length; prog.phase = 'parse';
-        const res = UA.flurstNdsGml(new DOMParser().parseFromString(txt, 'text/xml')); out.push(...res.feats); prog.objects = out.length;
-        if (res.n < COUNT) break;
+        prog.phase = 'recv'; const txt = r.body; prog.bytes += txt.length; prog.phase = 'parse';
+        // Die Antwort (bis ~3 MB Text) in Häppchen zu je 100 Flurstücken lesen, mit kurzer Pause dazwischen: die Oberfläche bleibt bedienbar.
+        // Jedes Häppchen bekommt den Kopf der Originaldatei (Namensräume) -> gleiches Ergebnis wie am Stück.
+        const i0 = txt.indexOf('<wfs:member>'), i1 = txt.lastIndexOf('</wfs:member>'), parts = i0 < 0 || i1 < 0 ? [] : txt.slice(i0, i1 + 13).split('<wfs:member>').slice(1);
+        const chunks = []; if (!parts.length) chunks.push(txt);
+        for (let k = 0; k < parts.length; k += 100) chunks.push(txt.slice(0, i0) + '<wfs:member>' + parts.slice(k, k + 100).join('<wfs:member>') + '</wfs:FeatureCollection>');
+        let n = 0;
+        for (const c of chunks) { const res = UA.flurstNdsGml(new DOMParser().parseFromString(c, 'text/xml')); out.push(...res.feats); n += res.n; prog.objects = out.length; if (chunks.length > 1) await new Promise(r => setTimeout(r)); }
+        if (n < COUNT) break;
       }
       if (!out.length) throw new Error('Keine Flurstücke gefunden – das Gebiet liegt wohl außerhalb Niedersachsens (z. B. Hamburg oder Bremen). Flurstücke gibt es bisher nur für Berlin und Niedersachsen.');
       return out;
@@ -2998,16 +3208,22 @@ if (typeof module !== 'undefined') module.exports = UA;
   /* ---------- Amtliche Gebäudehöhen Niedersachsen (LGLN, Kacheln über STAC) ---------- */
   async function niHeights(prog) {
     Object.assign(prog, { src: 'LGLN Niedersachsen · 3D-Gebäudemodell LoD2 (amtlich)', host: 'lod.stac.lgln.niedersachsen.de', phase: 'wait', bytes: 0, tPhase: performance.now() });
-    const sig = S.abort ? S.abort.signal : undefined, fail = e => { if (S.abort && S.abort.signal.aborted) { const c = new Error('Abgebrochen'); c.cancelled = true; throw c; } throw new Error('LGLN nicht erreichbar'); };
-    const b = UA.bboxOf(S.selection.geometry), js = await (await fetch(UA.niStacUrl(b), { signal: sig }).catch(fail)).json();
+    const b = UA.bboxOf(S.selection.geometry), st = await getT(UA.niStacUrl(b), 30000, 'text', 'LGLN');
+    if (!st.ok) throw new Error('LGLN: Fehler ' + st.status);
+    const js = JSON.parse(st.body);
     const tiles = (js.features || []).filter(f => f.collection === 'lod2' || /lod2/i.test(f.id)).map(f => (f.assets && (f.assets['lod2-shp'] || Object.values(f.assets).find(a => /zip/.test(a.type || a.href)))) || null).filter(Boolean);
     if (tiles.length > 25) throw new Error(`Gebiet zu groß für amtliche Höhen (${tiles.length} Kacheln)`);
-    const out = [], m = 0.0005, clip = [b[0] - m, b[1] - m, b[2] + m, b[3] + m];
-    for (const a of tiles) {
-      prog.phase = 'recv'; const buf = await (await fetch(a.href, { signal: sig }).catch(fail)).arrayBuffer(); prog.bytes += buf.byteLength;
-      prog.phase = 'parse'; out.push(...await UA.niTileFeatures(buf, window.JSZip, clip)); prog.objects = out.length;
-    }
-    return out;
+    const m = 0.0005, clip = [b[0] - m, b[1] - m, b[2] + m, b[3] + m];
+    // Kacheln (je ~1 MB) bis zu 4 gleichzeitig laden statt nacheinander. Das Ergebnis behält die Reihenfolge der Kacheln (wie bisher).
+    const memo = memoOfRun(), parts = new Array(tiles.length); let next = 0, done = 0;
+    prog.phase = 'recv'; prog.note = `${tiles.length} Kacheln …`;
+    const one = async () => { while (next < tiles.length) { const k = next++, key = 'lod2|' + tiles[k].href + '|' + clip.join(',');
+      if (!memo.has(key)) { const r = await getT(tiles[k].href, 60000, 'buf', 'LGLN'); if (!r.ok) throw new Error('LGLN: Fehler ' + r.status);
+        prog.bytes += r.body.byteLength; memo.set(key, await UA.niTileFeatures(r.body, window.JSZip, clip)); }
+      parts[k] = memo.get(key); done++; prog.objects = parts.reduce((s, p) => s + (p ? p.length : 0), 0); prog.note = `Kachel ${done} von ${tiles.length}`; } };
+    await Promise.all(Array.from({ length: Math.min(4, tiles.length) }, one));
+    [...memo.keys()].forEach(k => { if (k.startsWith('lod2|')) memo.delete(k); }); // alles da: Merkzettel leeren
+    prog.note = ''; return [].concat(...parts);
   }
 
   /* ---------- Laden: Bausteine & Abfragen ---------- */
@@ -3018,18 +3234,20 @@ if (typeof module !== 'undefined') module.exports = UA;
   function phaseText(p) { // Was passiert gerade? (für Menschen erklärt)
     const now = performance.now(), dt = now - (p.tPhase || now);
     switch (p.phase) {
-      case 'cache': return 'Schon geladen – ich nutze die vorhandenen Daten.';
+      case 'cache': return p.pcT ? `Dieses Gebiet wurde am ${pcDate(p.pcT)} schon geladen – ich nutze die gespeicherten Daten (kein Server nötig).` : 'Schon geladen – ich nutze die vorhandenen Daten.';
       case 'wait': return dt > 20000 ? `Der Server durchsucht OpenStreetMap noch nach „${p.what}“ im Gebiet (${secs(dt)}). Große Gebiete dauern bis zu 1–2 Minuten …` : `Anfrage gesendet. Der Server sucht „${p.what}“ im Gebiet …`;
       case 'recv': return `Empfange Daten vom Server: <b>${mb(p.bytes || 0)}</b> …`;
       case 'parse': return p.objects ? `Wandle <b>${fmt(p.objects)}</b> OSM-Objekte in Kartenflächen und Linien um …` : 'Lese die empfangenen Daten …';
       case 'draw': return 'Sortiere in Untergruppen und zeichne den Layer auf die Karte …';
       case 'retry': return 'Alle Server sind gerade ausgelastet. Ich warte kurz und versuche es noch einmal …';
+      case 'nds': return 'Hole fertig vorbereitete OpenStreetMap-Daten aus dem Niedersachsen-Cache – ohne Warteschlange beim Overpass-Server …';
     }
     return 'Bereite die Anfrage vor …';
   }
   function frac(p) { // geschätzter Fortschritt innerhalb eines Schritts (0–1)
     const dt = performance.now() - (p.tPhase || performance.now());
     if (p.phase === 'cache') return 1;
+    if (p.phase === 'nds') return 0.05 + 0.8 * (1 - Math.exp(-dt / 1500));
     if (p.phase === 'wait') return 0.05 + 0.5 * (1 - Math.exp(-dt / 15000));
     if (p.phase === 'recv') return 0.55 + 0.3 * (1 - Math.exp(-(p.bytes || 0) / 4e6));
     if (p.phase === 'parse') return 0.9;
@@ -3041,7 +3259,7 @@ if (typeof module !== 'undefined') module.exports = UA;
     const now = performance.now();
     $('#busyTxt').textContent = `Lade ${PR.label}`;
     $('#busyTime').textContent = `Schritt ${PR.idx}/${PR.total} · ${secs(now - PR.t0)}`;
-    $('#busySrc').innerHTML = PR.phase === 'cache' ? 'Quelle: bereits geladene Daten' : PR.src ? `Quelle: <b>${esc(PR.src)}</b>` : `Quelle: OpenStreetMap · Overpass-API · <b>${esc(PR.host || '…')}</b>${PR.hostInfo ? ' (' + PR.hostInfo + ')' : ''}`;
+    $('#busySrc').innerHTML = PR.phase === 'cache' || PR.pcT ? (PR.pcT ? `Quelle: Zwischenspeicher dieses Browsers (Stand ${pcDate(PR.pcT)})` : 'Quelle: bereits geladene Daten') : PR.src ? `Quelle: <b>${esc(PR.src)}</b>` : `Quelle: OpenStreetMap · Overpass-API · <b>${esc(PR.host || '…')}</b>${PR.hostInfo ? ' (' + PR.hostInfo + ')' : ''}`;
     $('#busyPhase').innerHTML = (PR.note ? `<div class="tiny" style="color:var(--warn)">${esc(PR.note)}</div>` : '') + phaseText(PR);
     const total = ((PR.idx - 1) + frac(PR)) / PR.total;
     $('#busyBar').style.width = (total * 100).toFixed(1) + '%';
@@ -3053,7 +3271,9 @@ if (typeof module !== 'undefined') module.exports = UA;
     return S.selection;
   }
   // tasks: [{base, split?, name?}] und/oder [{query:{name, rows}}]
-  async function load(tasks) {
+  // opt.fresh = true: Zwischenspeicher im Browser nicht benutzen, alles neu vom Server holen
+  async function load(tasks, opt) {
+    opt = opt || {};
     if (S.busy) return;
     if (!tasks.length) { log({ title: 'Nichts ausgewählt', status: 'warn', body: 'Wähle mindestens einen Baustein.' }); return; }
     if (!resolveArea()) { S.pending = tasks; log({ title: 'Gebiet fehlt', status: 'warn', body: 'Wähle zuerst ein Gebiet (Suche, Rechteck, Polygon) oder stelle oben auf „Aktuelle Kartenansicht“. Danach lade ich automatisch.' }); return; }
@@ -3065,6 +3285,7 @@ if (typeof module !== 'undefined') module.exports = UA;
     const ORDER = ['sun', 'landuse', 'pois', 'bhoehe', 'nhoehe', 'buildings', 'roads', 'rail', 'stops', 'green', 'water', 'bbaeume', 'trees', 'boundaries'];
     // Jeder Baustein ist ein eigener Auftrag: fertige Layer erscheinen sofort, Fehler betreffen nur diesen einen Baustein
     const P = UA.polyString(S.selection.geometry);
+    const pa = pcArea(S.selection.geometry); let pcOldest = 0; // Zwischenspeicher: Gebiet + ältester benutzter Stand
     const baseTasks = tasks.filter(t => t.base), qTasks = tasks.filter(t => t.query);
     const fetchOf = t => UA.BASES[t.base].fetch;
     const fetches = [...new Set(baseTasks.map(fetchOf))].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
@@ -3082,6 +3303,7 @@ if (typeof module !== 'undefined') module.exports = UA;
     }
     // Bäume in Berlin: zusätzlich das amtliche Baumkataster (unsichtbar als Teil von „Bäume“)
     if (baseTasks.some(t => t.base === 'baeume') && UA.inBerlin(S.selection.geometry) && !fetches.includes('bbaeume')) { fetches.push('bbaeume'); fetches.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)); }
+    if (opt.fresh) { fetches.forEach(f => delete S.cache.data[f]); delete S.cache.data._bhDone; } // „Frisch vom Server“: auch bereits geladene Daten neu holen
     const jobs = fetches.map(f => ({ label: [...new Set(baseTasks.filter(t => fetchOf(t) === f).map(t => UA.BASES[t.base].label))].join(', ') || UA.FETCHES[f].label, fetch: f, tasks: baseTasks.filter(t => fetchOf(t) === f), helper: !baseTasks.some(t => fetchOf(t) === f) }))
       .concat(qTasks.map(t => ({ label: t.query.name, query: t.query, tasks: [t] })));
     // Angezeigt werden nur die Bausteine, die der Nutzer gewählt hat. Hilfsdaten (Flächennutzung, Nutzungs-Punkte)
@@ -3100,6 +3322,16 @@ if (typeof module !== 'undefined') module.exports = UA;
       upsertLayer(L); syncLayers(); if (S.selection) S.stats[L.id] = UA.layerStats(L, S.selection, intersect); renderAll();
       const st = S.stats[L.id]; return `${fmt(st && L.statMode !== 'none' ? st.total.count : L.features.length)} Elemente`;
     };
+    // Zwischenspeicher im Browser: Was gibt es für genau dieses Gebiet schon (höchstens 7 Tage alt)? Das braucht keinen Server.
+    const pcHit = {};
+    if (!opt.fresh) for (const f of fetches) if (!S.cache.data[f] && !UA.FETCHES[f].calc) { const h = await pcGet(f, pa); if (h) pcHit[f] = h; }
+    // OSM-Sammelabfrage: alle noch fehlenden OSM-Bausteine in EINER Abfrage (UA.bundleQuery), geladen beim ersten OSM-Baustein.
+    // Nur bis 10 km² (größere Gebiete rechnen beim Server lange, dann lieber einzeln). Klappt sie nicht: einzeln wie bisher.
+    const bundle = { ids: fetches.filter(f => UA.FETCHES[f].q && !S.cache.data[f] && !pcHit[f]), parts: null, failed: false };
+    if (bundle.ids.length < 2 || area > 10) bundle.failed = true;
+    // Vorher den Niedersachsen-Cache fragen (beim ersten OSM-Baustein, je Baustein mit seiner Einzelabfrage). Was er hat, braucht
+    // keinen Overpass-Server; der Rest läuft wie bisher. Nicht bei „Frisch vom Server laden“ und nicht außerhalb Niedersachsens.
+    const nds = { ids: !opt.fresh && window.NdsCache && UA.inNiedersachsen(S.selection.geometry) ? bundle.ids.slice() : [], hits: null }; let ndsUsed = null;
     for (let i = 0; i < jobs.length; i++) {
       const j = jobs[i], it = items[j.vi];
       if (cancelled) { if (!j.helper) { it.st = 'skip'; it.info = 'abgebrochen'; } continue; }
@@ -3112,6 +3344,9 @@ if (typeof module !== 'undefined') module.exports = UA;
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           if (j.fetch) {
+            const hit = !S.cache.data[j.fetch] && pcHit[j.fetch]; // aus dem Zwischenspeicher im Browser (ohne Server)
+            if (hit) { delete pcHit[j.fetch]; S.cache.data[j.fetch] = hit.data; PR.pcT = hit.t; pcOldest = pcOldest ? Math.min(pcOldest, hit.t) : hit.t; if (['buildings', 'bhoehe', 'nhoehe'].includes(j.fetch)) delete S.cache.data._bhDone; }
+            const vomServer = !S.cache.data[j.fetch]; // muss jetzt vom Server kommen
             if (!S.cache.data[j.fetch] && UA.FETCHES[j.fetch].nds) { S.cache.data[j.fetch] = await niHeights(PR); delete S.cache.data._bhDone; live(); await tick(); }
             else if (!S.cache.data[j.fetch] && UA.FETCHES[j.fetch].berlin) { S.cache.data[j.fetch] = await berlinWfs(j.fetch, PR); delete S.cache.data._bhDone; live(); await tick(); }
             else if (!S.cache.data[j.fetch] && UA.FETCHES[j.fetch].bevoelk) { S.cache.data[j.fetch] = await bevoelkFetch(PR); live(); await tick(); } // Einwohner
@@ -3120,12 +3355,35 @@ if (typeof module !== 'undefined') module.exports = UA;
             else if (!S.cache.data[j.fetch] && UA.FETCHES[j.fetch].hw) { S.cache.data[j.fetch] = await hochwasserFetch(PR); live(); await tick(); } // Hochwasser-Gefahrenkarten
             else if (!S.cache.data[j.fetch] && UA.FETCHES[j.fetch].kataster) { S.cache.data[j.fetch] = await katasterFetch(PR); live(); await tick(); } // amtliche Flurstücke
             else if (!S.cache.data[j.fetch] && UA.FETCHES[j.fetch].calc) { S.cache.data[j.fetch] = []; } // reine Berechnung (Sonne)
-            else if (!S.cache.data[j.fetch]) { const js = await overpass(UA.HEAD + UA.FETCHES[j.fetch].q(P), PR); live(); await tick(); S.cache.data[j.fetch] = UA.osmToFeatures(js); if (j.fetch === 'buildings') delete S.cache.data._bhDone; }
+            else if (!S.cache.data[j.fetch]) { // OpenStreetMap (Niedersachsen-Cache, sonst Overpass)
+              let js = null;
+              if (nds.ids.includes(j.fetch)) {
+                if (!nds.hits) {
+                  Object.assign(PR, { src: 'Niedersachsen-Cache (OpenStreetMap)', host: 'Niedersachsen-Cache', phase: 'nds', tPhase: performance.now() }); live();
+                  nds.hits = await ndsAsk(nds.ids, P); delete PR.src; bundle.ids = bundle.ids.filter(f => !nds.hits[f]); if (bundle.ids.length < 2) bundle.failed = true;
+                }
+                js = nds.hits[j.fetch] || null;
+                if (js) { Object.assign(PR, { src: `Niedersachsen-Cache (OpenStreetMap, Stand ${ndsDate(js.osm3s && js.osm3s.timestamp_osm_base)})`, host: 'Niedersachsen-Cache', phase: 'nds' }); live(); }
+              }
+              if (!js && !bundle.failed && bundle.ids.includes(j.fetch)) { // Teil der Sammelabfrage
+                try {
+                  if (!bundle.parts) { PR.what = bundle.ids.map(f => UA.FETCHES[f].label).join(', '); bundle.parts = UA.splitBundle(await overpass(UA.bundleQuery(bundle.ids, P), PR)); PR.what = what; }
+                  js = bundle.parts[j.fetch] || null; delete bundle.parts[j.fetch];
+                } catch (e) { if (e.cancelled) throw e; bundle.failed = true; PR.what = what; console.warn('Sammelabfrage fehlgeschlagen – lade einzeln', e); }
+              }
+              if (!js) js = await overpass(UA.HEAD + UA.FETCHES[j.fetch].q(P), PR); // einzeln (wie bisher)
+              live(); await tick(); S.cache.data[j.fetch] = UA.osmToFeatures(js); if (j.fetch === 'buildings') delete S.cache.data._bhDone;
+              if (js.nds_cache) S.cache.data[j.fetch].ndsStand = (js.osm3s && js.osm3s.timestamp_osm_base) || ''; // Herkunft merken (auch im Zwischenspeicher)
+            }
             else { PR.phase = 'cache'; live(); }
+            if (vomServer && !UA.FETCHES[j.fetch].calc) pcPut(j.fetch, pa, S.cache.data[j.fetch]); // für das nächste Mal merken (vor dem Zeichnen!)
             PR.phase = 'draw'; PR.tPhase = performance.now(); live(); await tick();
             const infos = j.tasks.map(t => { const L = initSun(UA.makeBaseLayer(t.base, S.cache.data, { id: t.id || t.base, split: monoSplit(t), name: t.name, only: t.only, onlyBy: t.onlyBy || (t.only && monoSplit(t) !== t.split ? (t.split || UA.BASES[t.base].def) : undefined), sun: S.sun || (S.sun = UA.sunDefault()), sel: S.selection && S.selection.geometry })); return (j.tasks.length > 1 ? esc(L.name) + ': ' : '') + show(L) + esc(L.hw ? UA.hwNote(L) : L.lz ? UA.laermNote(L) : ''); });
             const dw = S.cache.data[j.fetch] && S.cache.data[j.fetch].warn; if (dw) infos.push('<span style="color:var(--warn,#D9A03F)">⚠ ' + esc(dw) + '</span>');
-            if (!j.helper) it.info = infos.join(', ') + (helperFailed ? ' <span class="tiny">(Nutzung nur aus Angaben am Gebäude – Hilfsdaten waren nicht erreichbar)</span>' : '');
+            const ndsS = S.cache.data[j.fetch] && S.cache.data[j.fetch].ndsStand; if (ndsS != null) ndsUsed = ndsS; // Daten stammen aus dem Niedersachsen-Cache
+            if (!j.helper) it.info = infos.join(', ') + (helperFailed ? ' <span class="tiny">(Nutzung nur aus Angaben am Gebäude – Hilfsdaten waren nicht erreichbar)</span>' : '')
+              + (PR.pcT ? ` <span class="tiny muted">· aus dem Zwischenspeicher, Stand ${pcDate(PR.pcT)}</span>` : '')
+              + (ndsS != null ? ` <span class="tiny muted">· Quelle: Niedersachsen-Cache (OpenStreetMap, Stand ${ndsDate(ndsS)})</span>` : '');
           } else {
             const q = j.query; const js = await overpass(UA.HEAD + UA.customQuery(q.rows, P), PR); live(); await tick(); const raw = UA.osmToFeatures(js);
             PR.phase = 'draw'; PR.tPhase = performance.now(); live(); await tick();
@@ -3150,11 +3408,16 @@ if (typeof module !== 'undefined') module.exports = UA;
     }
     S.busy = false; S.abort = null; setBusy(null); $('#btnRun').disabled = false;
     const sec = fmt((performance.now() - t0) / 1000, 1) + ' s';
-    if (cancelled) draw('warn', 'Abgebrochen', '<span class="tiny muted">Bereits fertige Layer bleiben erhalten.</span>');
+    // Ehrlich anzeigen, wenn Daten aus dem Zwischenspeicher stammen – mit Knopf, um sie frisch zu laden
+    const pcNote = (pcOldest ? `<div class="tiny muted" style="margin-top:6px">Teile kamen aus dem Zwischenspeicher dieses Browsers (Stand ${pcDate(pcOldest)}), nicht frisch vom Server.</div>` : '')
+      + (ndsUsed != null ? `<div class="tiny muted" style="margin-top:6px">OpenStreetMap-Daten kamen aus dem Niedersachsen-Cache (Stand ${ndsDate(ndsUsed)}, wird wöchentlich erneuert), nicht live vom Overpass-Server.</div>` : '')
+      + (pcOldest || ndsUsed != null ? '<button class="btn sm" data-pc="1">↻ Frisch vom Server laden</button>' : '');
+    if (cancelled) draw('warn', 'Abgebrochen', '<span class="tiny muted">Bereits fertige Layer bleiben erhalten.</span>' + pcNote);
     else if (failed.length) {
-      draw('warn', `Teilweise fertig (${sec})`, `<span class="tiny muted">Die fertigen Layer siehst du schon auf der Karte. Fehlgeschlagen ist nur, was mit ✗ markiert ist – meist sind die OSM-Server kurz überlastet.</span><br><button class="btn sm primary">↻ Fehlgeschlagene erneut laden</button>`);
+      draw('warn', `Teilweise fertig (${sec})`, `<span class="tiny muted">Die fertigen Layer siehst du schon auf der Karte. Fehlgeschlagen ist nur, was mit ✗ markiert ist – meist sind die OSM-Server kurz überlastet.</span><br><button class="btn sm primary">↻ Fehlgeschlagene erneut laden</button>` + pcNote);
       card.el.querySelector('button').onclick = () => load(failed);
-    } else draw('ok', `Fertig (${sec})`, '<span class="tiny muted">Rechts unter „Layer“ → ▾ kannst du jeden Layer anders aufteilen, Untergruppen ausblenden, umbenennen, verschieben oder löschen.</span>');
+    } else draw('ok', `Fertig (${sec})`, '<span class="tiny muted">Rechts unter „Layer“ → ▾ kannst du jeden Layer anders aufteilen, Untergruppen ausblenden, umbenennen, verschieben oder löschen.</span>' + pcNote);
+    const pb = card.el.querySelector('[data-pc]'); if (pb) pb.onclick = () => load(tasks, { fresh: true });
     const okL = items.filter(i => i.st === 'ok').map(i => i.label); if (okL.length) { const lb = 'Geladen: ' + okL.join(', '); if (S.layers.some(L => L.sun)) recordLater(lb, 700); else record(lb); } // Sonne/Schatten rechnen kurz nach
   }
   const splitLabel = L => L.split.startsWith('attr:') ? 'nach ' + UA.attrLabel(L.split.slice(5)) : (UA.PRESETS[L.split] || {}).label || L.split;

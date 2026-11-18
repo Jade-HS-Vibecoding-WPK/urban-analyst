@@ -326,8 +326,24 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
 
 - [x] **29. GitHub aktualisiert** (Mi 18.11., 20:05): Stand 3.51 (QUAVA) mit README, CLAUDE.md, PLAN.md und allen neuen Sicherungen hochgeladen; GitHub Pages liefert 3.51 (Intro, Logo, Name geprüft).
 
+- [ ] **30. Schneller laden + Niedersachsen-Cache** (Version 3.52, nur im Branch `schneller-laden`, **Test steht aus**; `main` bleibt unverändert der Stand 3.51 (QUAVA), darum keine Sicherung in `versionen/`).
+  Grund (gemessen 18.11.): Fast die ganze Ladezeit war Warten beim Overpass-Server, 30–55 s **je Abfrage**, oft „Server voll“. Deshalb halfen 3.22/3.38 nicht. Der Branch ändert:
+  - **Niedersachsen-Cache** (neu): fertige OSM-Daten für 10 Städte (8 Großstädte + Wilhelmshaven, Delmenhorst, je 3 km Rand), wöchentlich neu, Repo `niedersachsen-cache` (GitHub Pages).
+    Die App fragt dort zuerst. Gebiet nicht drin, Cache nicht erreichbar oder „Frisch vom Server laden“ → wie bisher Overpass. Je Baustein steht „Quelle: Niedersachsen-Cache (OpenStreetMap, Stand …)“.
+    Ergebnis gleich wie Overpass, nur das technische OSM-Merkmal `created_by` (Name des Editors) fehlt. Daten bis ca. 8 Tage alt.
+  - **Zwischenspeicher im Browser:** gleiches Gebiet lädt beim 2. Mal in unter 1 s (bis 7 Tage, mit Hinweis und Knopf „↻ Frisch vom Server laden“).
+  - **OSM-Sammelabfrage:** alle OSM-Bausteine in 1 Overpass-Abfrage statt 7. **Serverwahl:** bei „Server voll“ kurz warten und neu fragen statt zu Ersatzservern, die nicht antworten.
+  - **Amtliche Daten:** LGLN-Höhen 4 Kacheln gleichzeitig und Rechnen im Hintergrund (Oberfläche friert nicht ein), Geländemodell weniger Anfragen, Flurstücke weniger Daten, Zeitlimits statt endlos warten.
+  - **Korrekturen:** Traufhöhe Niedersachsen jetzt über Boden statt über Meeresspiegel (war in Wilhelmshaven ca. 1,5 m, in Hannover ca. 55 m zu hoch → zu viele Geschosse geschätzt). Zensus: fehlende Gitterzellen werden mit ⚠ angezeigt.
+  Gemessen (1 km², Grundauswahl): Wilhelmshaven 1,2–2,0 s mit Cache (3.39: 5–13 min, nur Sammelabfrage: 44–55 s), Hannover-Mitte 1,4–2,4 s, Berlin weiter über Overpass (44–49 s).
+  **Testen:** 1. `index.html` doppelklicken, „Wilhelmshaven“ suchen, Rechteck (ca. 1 km²) zeichnen, Grundauswahl → „Auswahl laden“ → nach wenigen Sekunden fertig, bei jedem Baustein „Quelle: Niedersachsen-Cache (OpenStreetMap, Stand …)“.
+  2. Noch einmal „Auswahl laden“ → unter 1 s, „aus dem Zwischenspeicher“. 3. „↻ Frisch vom Server laden“ → lädt über Overpass (ca. 1 Minute, Cache-Hinweis weg).
+  4. „Hannover“ suchen, Rechteck in der Mitte, „Gebäude“ laden, beim Layer „Aufteilen nach“ → „Geschosszahl“: Farben gemischt (1–2, 3–4, 5–6, 7+); Gebäude anklicken → Tab „Element“: Traufhöhe ca. 5–25 m, nicht 60–80 m.
+  5. Berlin-Mitte laden → wie bisher über Overpass, ohne Cache-Hinweis.
+
 ### Stand Mi 18.11., 20:05 (Pause) – hier weitermachen
 - Aktuelle Version: **3.51** (`index.html`, QUAVA), Sicherung: `versionen/urban-analyst-v3.51_2026-11-18.html`. GitHub + Pages auf demselben Stand (https://jade-hs-vibecoding-wpk.github.io/urban-analyst/).
+- **Branch `schneller-laden`** (von der Kursleitung, 18./19.11.): Version **3.52** = Punkt 30 (schneller laden + Niedersachsen-Cache), **Test steht aus**. `main` = 3.51 unverändert – ob gemergt wird, entscheidest du.
 - Noch nicht vom Nutzer mit echten Daten bestätigt: 3.34 Höhenlinien/Hangneigung (Gelände) – beim nächsten Mal kurz prüfen.
 - **Nächste Schritte (vor Freeze Do 19.11., 12 Uhr):** 1. **Export-Test** SVG/PDF (Illustrator) und DXF (CAD-Programm erfragen) mit echten Daten. 2. DXF-Layernamen ≤ 31 Zeichen.
   3. Starkregen besprechen (BKG-Hinweiskarte nur als Bild → Flächen zurückrechnen). Klima/Hitze eher weglassen.
