@@ -283,6 +283,8 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
   OSM-Angaben ohne Nutzen werden beim Einlesen verworfen (`DROP_TAGS`: Kontakt, Telefon, Webseiten, Öffnungszeiten, Bezahlarten, Wikidata/Wikipedia, Fotos, Prüfdaten, fremdsprachige Namen, Marken-/Betreiber-IDs …). Download wird dadurch kaum kleiner (Overpass schickt alle Angaben), aber Speicher/Export/Liste schlanker.
   Messung Oldenburg (631 Gebäude): 537 KB gesamt, davon Angaben ~92 KB (Adressen 42, Gebäude 16, Dach 15) – die Ladezeit bestimmt fast nur der Overpass-Server (heute 73 s, überlastet). Sicherung vorher: `…v3.37_vor-aufteilung-namen_2026-11-18.html`
 
+- [x] **20. GitHub** (Mi 18.11., 16:45): ganzes Projekt hochgeladen nach https://github.com/Jade-HS-Vibecoding-WPK/urban-analyst (Branch `main`): `index.html` (3.39), `CLAUDE.md`, `PLAN.md`, `versionen/` (71 Dateien), kurzes `README.md`, `LICENSE` (Apache 2.0, war schon da). Inhalt von `index.html` auf GitHub geprüft (gleich). Offen: GitHub Pages einschalten, README ausbauen.
+
 ### Stand Mi 18.11., 16:15 – hier weitermachen
 - Aktuelle Version: **3.39** (`index.html`), Sicherung: `versionen/urban-analyst-v3.39_2026-11-18.html`
 - **Nächster Schritt:** 3.34 testen (Höhenlinien + Hangneigung). **Do 19.11. morgens besprechen:** Starkregen (BKG-Hinweiskarte, nur als Bild → Flächen zurückrechnen), Export-Test, DXF-Layernamen ≤ 31 Zeichen, GitHub/README. Klima/Hitze eher weglassen (nur grobe Regionaldaten). Berlin nachtesten/ergänzen, sobald gdi.berlin.de läuft.
