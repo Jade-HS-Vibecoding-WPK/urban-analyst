@@ -283,7 +283,9 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
   OSM-Angaben ohne Nutzen werden beim Einlesen verworfen (`DROP_TAGS`: Kontakt, Telefon, Webseiten, Öffnungszeiten, Bezahlarten, Wikidata/Wikipedia, Fotos, Prüfdaten, fremdsprachige Namen, Marken-/Betreiber-IDs …). Download wird dadurch kaum kleiner (Overpass schickt alle Angaben), aber Speicher/Export/Liste schlanker.
   Messung Oldenburg (631 Gebäude): 537 KB gesamt, davon Angaben ~92 KB (Adressen 42, Gebäude 16, Dach 15) – die Ladezeit bestimmt fast nur der Overpass-Server (heute 73 s, überlastet). Sicherung vorher: `…v3.37_vor-aufteilung-namen_2026-11-18.html`
 
-- [x] **20. GitHub** (Mi 18.11., 16:45): ganzes Projekt hochgeladen nach https://github.com/Jade-HS-Vibecoding-WPK/urban-analyst (Branch `main`): `index.html` (3.39), `CLAUDE.md`, `PLAN.md`, `versionen/` (71 Dateien), kurzes `README.md`, `LICENSE` (Apache 2.0, war schon da). Inhalt von `index.html` auf GitHub geprüft (gleich). Offen: GitHub Pages einschalten, README ausbauen.
+- [x] **20. GitHub** (Mi 18.11., 16:45): ganzes Projekt hochgeladen nach https://github.com/Jade-HS-Vibecoding-WPK/urban-analyst (Branch `main`): `index.html` (3.39), `CLAUDE.md`, `PLAN.md`, `versionen/` (71 Dateien), kurzes `README.md`, `LICENSE` (Apache 2.0, war schon da). Inhalt von `index.html` auf GitHub geprüft (gleich). **GitHub Pages läuft** (18.11., 17:00, vom Nutzer eingeschaltet, Branch `main`, Ordner `/`): https://jade-hs-vibecoding-wpk.github.io/urban-analyst/ – liefert 3.39, Karte und Bausteine geprüft. Adresse steht in der README. Offen: README ausbauen, Poster.
+
+- [ ] **Bekannte Grenze (bewusst so gelassen, 18.11.):** „Wasser & Gewässer“ enthält kein Meer. In OSM gibt es dafür nur die Küstenlinie (`natural=coastline`), keine Meeresfläche; Buchten (`natural=bay`), Watt und Küstenlinie werden ebenfalls nicht geladen. Mögliche Lösung später: Küstenlinie + Buchten/Watt laden, Meeresfläche aus der Küstenlinie berechnen.
 
 ### Stand Mi 18.11., 16:15 – hier weitermachen
 - Aktuelle Version: **3.39** (`index.html`), Sicherung: `versionen/urban-analyst-v3.39_2026-11-18.html`

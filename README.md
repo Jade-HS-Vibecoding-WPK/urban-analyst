@@ -6,7 +6,9 @@ Gebiet wählen, Bausteine laden (Gebäude, Straßen, Grün, Wasser, ÖPNV, Bäum
 
 ## Starten
 
-`index.html` herunterladen und per Doppelklick im Browser öffnen. Keine Installation, keine Anmeldung, keine API-Keys.
+**Online:** https://jade-hs-vibecoding-wpk.github.io/urban-analyst/
+
+Oder `index.html` herunterladen und per Doppelklick im Browser öffnen (Chrome/Edge). Keine Installation, keine Anmeldung, keine API-Keys.
 
 ## Daten
 
@@ -19,6 +21,7 @@ Fehlende Werte erscheinen als „unbekannt“, geschätzte Werte sind als „ges
 
 ## Ordner
 
+- `README.md` – diese Beschreibung
 - `index.html` – die App (HTML/CSS/JS, MapLibre, turf, JSZip per CDN)
 - `CLAUDE.md` – Regeln und Technik
 - `PLAN.md` – Plan, Stand, getestete Schritte
