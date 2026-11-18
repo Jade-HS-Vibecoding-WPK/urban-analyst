@@ -324,6 +324,8 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
 - [x] **28. Name „QUAVA“ überall** (Version 3.51, ok – „passt alles“): Browser-Tab, Logo-Hinweis, SVG/PDF-Fußzeile („erstellt mit QUAVA“), DXF-Kopf, GeoJSON-LIESMICH, Projektdatei (`app: 'QUAVA'`, Endung `.quava.json`; alte URBAN-ANALYST-Projektdateien öffnen weiter), README, CLAUDE.md, PLAN.md.
   Unverändert (technisch nötig): Ordner `urban-analyst`, GitHub-Repository `urban-analyst`, Dateinamen der Sicherungen. Sicherungen vorher: `…v3.50_vor-name-quava_2026-11-18.html`, `CLAUDE_vor-name-quava…`, `README_vor-name-quava…`
 
+- [x] **29. GitHub aktualisiert** (Mi 18.11., 20:05): Stand 3.51 (QUAVA) mit README, CLAUDE.md, PLAN.md und allen neuen Sicherungen hochgeladen; GitHub Pages liefert 3.51 (Intro, Logo, Name geprüft).
+
 ### Stand Mi 18.11., 20:00 – hier weitermachen
 - Aktuelle Version: **3.51** (`index.html`), Sicherung: `versionen/urban-analyst-v3.51_2026-11-18.html`
 - **Nächster Schritt:** 3.34 testen (Höhenlinien + Hangneigung). **Do 19.11. morgens besprechen:** Starkregen (BKG-Hinweiskarte, nur als Bild → Flächen zurückrechnen), Export-Test, DXF-Layernamen ≤ 31 Zeichen, GitHub/README. Klima/Hitze eher weglassen (nur grobe Regionaldaten). Berlin nachtesten/ergänzen, sobald gdi.berlin.de läuft.
