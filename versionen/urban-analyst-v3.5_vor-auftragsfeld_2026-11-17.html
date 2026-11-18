@@ -1,0 +1,2309 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>URBAN ANALYST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.1.0/turf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+[hidden]{display:none!important}
+:root{--bg:#0f0e13;--panel:#17161d;--panel2:#1f1d26;--line:#2a2833;--text:#ecebf1;--muted:#8d8999;--acc:#8b5cf6;--acc2:#a78bfa;--accbg:rgba(139,92,246,.14);--ok:#3ecf8e;--warn:#f5b544;--err:#f0616d;--shadow:0 8px 30px rgba(0,0,0,.45);--r:10px}
+[data-theme=light]{--bg:#f3f2f6;--panel:#ffffff;--panel2:#f6f5f9;--line:#e5e3ea;--text:#1d1b22;--muted:#76727f;--accbg:rgba(139,92,246,.1);--shadow:0 8px 30px rgba(40,30,70,.12)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.45 Inter,system-ui,Segoe UI,sans-serif;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+#app{display:grid;grid-template-columns:330px 1fr 320px;height:100vh}
+.panel{background:var(--panel);display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+#right{border-right:0;border-left:1px solid var(--line)}
+.spacer{flex:1}
+.muted{color:var(--muted)}.tiny{font-size:11px}.pad{padding:14px}.pad-t{padding-top:10px}
+.brand{display:flex;align-items:center;gap:10px;padding:14px 14px 10px}
+.logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#d946ef);display:grid;place-items:center;font-weight:700;color:#fff;font-size:12px;letter-spacing:.5px}
+.brand-t{font-weight:700;letter-spacing:1.6px;font-size:12.5px}.brand-s{color:var(--muted);font-size:11px}
+.proj{display:flex;gap:4px;padding:0 10px 10px;border-bottom:1px solid var(--line)}
+.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;outline:none;width:100%}
+.inp:focus{border-color:var(--acc)}
+.inp.ghost{background:transparent;border-color:transparent;font-weight:600}.inp.ghost:hover{border-color:var(--line)}
+.inp.sm{padding:6px 8px;width:auto}
+.icon-btn{background:transparent;border:1px solid transparent;border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--muted);flex:none;display:grid;place-items:center;font-size:14px}
+.icon-btn:hover{background:var(--panel2);color:var(--text);border-color:var(--line)}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}.btn.primary:hover{background:#7c4ae6}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.wide{width:100%;margin-top:10px}.btn.sm{padding:5px 10px;font-size:12px}
+.link{background:none;border:0;color:var(--acc2);cursor:pointer;font-size:11.5px;padding:0 0 0 8px}
+.sec{padding:12px 14px;border-bottom:1px solid var(--line)}
+.sec-h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}
+.num{width:18px;height:18px;border-radius:50%;background:var(--accbg);color:var(--acc2);display:grid;place-items:center;font-size:10.5px}
+.area-info{font-size:12.5px}.area-info b{color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:5px 10px;cursor:pointer;font-size:12px;user-select:none;display:flex;align-items:center;gap:6px}
+.chip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.chip.on{background:var(--accbg);border-color:var(--acc);color:var(--text)}
+.log-h{padding:12px 14px 0;margin:0}
+.log{flex:1;overflow:auto;padding:8px 12px;display:flex;flex-direction:column;gap:8px;min-height:60px}
+.msg{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:12.5px}
+.msg.user{align-self:flex-end;background:var(--accbg);border-color:transparent;max-width:90%}
+.msg .mh{display:flex;align-items:center;gap:7px;font-weight:600;margin-bottom:4px}
+.msg .st{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid var(--muted)}
+.msg .st.run{border-color:var(--acc);border-top-color:transparent;animation:sp .8s linear infinite}
+.msg .st.ok{background:var(--ok);border-color:var(--ok)}.msg .st.err{background:var(--err);border-color:var(--err)}.msg .st.warn{background:var(--warn);border-color:var(--warn)}
+.msg ul{margin:4px 0 0;padding-left:16px}.msg li{margin:1px 0}
+.msg .sugg{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.ask{border-top:1px solid var(--line);padding:10px}
+.ask textarea{width:100%;resize:none;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:9px 10px;outline:none}
+.ask textarea:focus{border-color:var(--acc)}
+.ask-foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+#mapwrap{position:relative;min-width:0}
+#map{position:absolute;inset:0}
+.float{position:absolute;z-index:5;display:flex;gap:8px}
+.tl{top:12px;left:12px;flex-direction:column;width:min(380px,calc(100% - 24px))}
+.tr{top:12px;right:12px}
+.bc{bottom:18px;left:50%;transform:translateX(-50%)}
+.search{display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:0 10px}
+.search input{flex:1;background:transparent;border:0;outline:none;padding:9px 6px}
+.s-ic{color:var(--muted);font-size:16px}
+.results{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;max-height:340px;overflow-y:auto}
+.res{padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.res:hover{background:var(--panel2)}.res:last-child{border-bottom:0}
+.res .rt{font-weight:500}.res .rs{color:var(--muted);font-size:11.5px}
+.res .ra{display:flex;gap:6px;margin-top:5px}
+.toolbar{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:5px;gap:2px;align-items:center}
+.toolbar button{background:none;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;font-size:16px;color:var(--text);min-width:58px}
+.toolbar button span{font-size:10.5px;color:var(--muted);margin-top:1px}
+.toolbar button:hover{background:var(--panel2)}
+.toolbar button.on{background:var(--accbg)}.toolbar button.on span{color:var(--acc2)}
+.toolbar .sep{width:1px;height:30px;background:var(--line);margin:0 4px}
+.hint{position:absolute;bottom:92px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--acc);border-radius:999px;padding:7px 14px;font-size:12px;box-shadow:var(--shadow);z-index:6;white-space:nowrap}
+.busy{position:absolute;top:64px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;display:flex;gap:10px;align-items:center;box-shadow:var(--shadow);z-index:6}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--acc);border-top-color:transparent;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tabs{display:flex;padding:10px 10px 0;gap:2px;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:8px 4px 9px;cursor:pointer;color:var(--muted);font-weight:500}
+.tabs button.on{color:var(--text);border-bottom-color:var(--acc)}
+.tabbody{flex:1;overflow:auto;min-height:0}
+.grp{padding:10px 12px 2px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600}
+.layer{margin:4px 8px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2)}
+.lrow{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 6px}
+.lrow .nm{flex:1;min-width:0;cursor:pointer}
+.lrow .nm b{font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .nm small{color:var(--muted);font-size:11px}
+.sw{width:16px;height:16px;border-radius:4px;flex:none;border:1px solid rgba(255,255,255,.15)}
+.eye{background:none;border:0;cursor:pointer;color:var(--text);width:24px;font-size:14px;opacity:.9}
+.eye.off{opacity:.3}
+.ldet{border-top:1px solid var(--line);padding:8px 10px 10px}
+.ldet .row{display:flex;align-items:center;gap:8px;margin:5px 0}
+.ldet .row label{width:72px;color:var(--muted);font-size:12px}
+.ldet input[type=range]{flex:1;accent-color:var(--acc)}
+.cls{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px}
+.cls input[type=color]{width:22px;height:18px;border:0;padding:0;background:none;cursor:pointer}
+.cls span{flex:1}.cls em{color:var(--muted);font-style:normal;font-size:11px}
+.lbtns{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.lbtns button{font-size:11.5px;padding:4px 8px}
+.empty{padding:24px 16px;color:var(--muted);text-align:center}
+.leg-l{padding:10px 14px 4px;font-weight:600;font-size:12px}
+.leg-i{display:flex;align-items:center;gap:9px;padding:3px 14px;font-size:12px}
+.leg-i i{width:18px;height:11px;border-radius:2px;flex:none}
+.leg-i i.ln{height:3px;border-radius:2px}.leg-i i.pt{width:9px;height:9px;border-radius:50%;margin:0 4px}
+.leg-i i.ol{background:none!important;border:1.5px dashed}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:9px 10px}
+.kpi b{display:block;font-size:17px;font-weight:600}.kpi span{color:var(--muted);font-size:11px}
+.st-l{padding:8px 14px 2px;font-weight:600;font-size:12px;display:flex}
+.st-row{display:grid;grid-template-columns:12px 1fr auto auto;gap:8px;align-items:center;padding:3px 14px;font-size:12px}
+.st-row i{width:10px;height:10px;border-radius:2px}
+.st-row em{font-style:normal;color:var(--muted);text-align:right;min-width:44px}
+.bar{height:4px;background:var(--line);border-radius:2px;margin:2px 14px 6px 34px;overflow:hidden}.bar div{height:100%}
+.note{margin:6px 12px;padding:8px 10px;border-radius:8px;background:rgba(245,181,68,.1);border:1px solid rgba(245,181,68,.35);font-size:11.5px}
+.ptab{width:100%;border-collapse:collapse;font-size:12px}
+.ptab td{padding:4px 14px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
+.ptab td:first-child{color:var(--muted);width:42%}
+.ph{padding:14px 14px 8px}.ph b{font-size:14px;display:block}.ph .tag{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px}
+.badge{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--accbg);color:var(--acc2);margin-left:4px}
+.badge.est{background:rgba(245,181,68,.15);color:var(--warn)}.badge.na{background:rgba(240,97,109,.13);color:var(--err)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;z-index:50}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:min(560px,94vw);padding:16px 18px;box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;font-weight:600;font-size:15px;margin-bottom:12px}
+.card-f{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.grid2{display:grid;grid-template-columns:96px 1fr;gap:10px 12px;align-items:start}
+.grid2>label{color:var(--muted);padding-top:7px}
+.formats{display:flex;flex-direction:column;gap:4px}
+.formats label{display:flex;gap:8px;align-items:baseline;padding:5px 8px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
+.formats small{color:var(--muted)}
+.opts{display:flex;flex-direction:column;gap:5px;padding-top:6px}
+.maplibregl-ctrl-group{background:var(--panel)!important;border:1px solid var(--line);box-shadow:var(--shadow)!important}
+.maplibregl-ctrl-group button{filter:var(--ctrl-filter,none)}
+[data-theme=dark] .maplibregl-ctrl-group button .maplibregl-ctrl-icon{filter:invert(1)}
+.maplibregl-ctrl-attrib{background:var(--panel)!important;color:var(--muted)}.maplibregl-ctrl-attrib a{color:var(--muted)!important}
+.maplibregl-ctrl-scale{background:var(--panel)!important;color:var(--text)!important;border-color:var(--muted)!important}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+@media (max-width:1100px){#app{grid-template-columns:290px 1fr 270px}}
+
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px;margin-bottom:8px}
+.seg button{flex:1;background:none;border:0;border-radius:6px;padding:6px 4px;cursor:pointer;color:var(--muted);font-size:12px}
+.seg button.on{background:var(--accbg);color:var(--text)}
+details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
+.views{margin-top:8px}.views summary{cursor:pointer;font-size:12px;color:var(--muted)}.views summary:before,#qBox summary:after{content:'▸';margin-right:6px}
+.views[open] summary:before{content:'▾'}#qBox summary:after{margin-left:auto;margin-right:0}#qBox[open] summary:after{content:'▾'}
+.vadd{display:flex;gap:6px;margin:8px 0 4px}.vadd .inp{flex:1;width:auto}
+.vitem{display:flex;align-items:center;gap:4px;padding:4px 0;border-bottom:1px solid var(--line);font-size:12px}
+.vitem span{flex:1;cursor:pointer}.vitem span:hover{color:var(--acc2)}
+.vitem button{background:none;border:1px solid var(--line);border-radius:6px;color:var(--muted);cursor:pointer;padding:2px 6px;font-size:11px}
+.vitem button:hover{color:var(--text);border-color:var(--muted)}
+.qhead{display:grid;grid-template-columns:44px 1fr 1fr 26px;gap:4px;font-size:11px;color:var(--muted);margin:10px 0 4px}.qhead span:first-child{grid-column:2}
+.qrow{display:grid;grid-template-columns:44px 1fr 1fr 26px;gap:4px;margin-bottom:4px;align-items:center}
+.qrow .inp{padding:5px 7px;font-size:12px}.qrow select{padding:4px 2px;font-size:11px}
+.qrow .x{background:none;border:0;color:var(--muted);cursor:pointer}
+.qbtns{display:flex;align-items:center;gap:8px;margin-top:6px}
+.ask{position:relative}.ask-top{display:flex;align-items:center;margin-bottom:4px}
+.ask-help{display:none;margin:6px 2px}
+#left{position:relative}
+.ask.big{position:absolute;left:0;right:0;bottom:0;top:120px;background:var(--panel);z-index:20;display:flex;flex-direction:column;box-shadow:0 -10px 30px rgba(0,0,0,.35)}
+.ask.big textarea{flex:1;font-size:14px;line-height:1.55}.ask.big .ask-help{display:block}
+.cls{flex-wrap:wrap}.cls .eye{width:18px;font-size:12px}.cls input.lbl{flex:1;min-width:60px;background:transparent;border:1px solid transparent;border-radius:5px;padding:2px 4px;color:var(--text);font-size:12px}
+.cls input.lbl:hover,.cls input.lbl:focus{border-color:var(--line);outline:none}
+.cls.off input.lbl,.cls.off em{opacity:.4}
+.cls .more{background:none;border:0;color:var(--muted);cursor:pointer;padding:0 2px}
+.cmenu{flex-basis:100%;display:flex;gap:6px;align-items:center;padding:4px 0 6px 26px}
+.cmenu select{flex:1;font-size:11px;padding:3px}
+.ldet select.inp{width:100%}
+.clsbar{display:flex;gap:10px;margin:6px 0 2px;font-size:11px}
+#left{overflow:hidden}
+.lscroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column}
+.lscroll .log{flex:1 0 auto;overflow:visible;min-height:120px}
+#left .ask{flex:none;background:var(--panel)}
+.btn{white-space:nowrap}
+.qhead,.qrow{grid-template-columns:62px 1fr 1fr 22px}
+.ask.big{position:absolute;left:0;right:0;top:0;bottom:0}
+
+.icon-btn.plus{font-size:18px;color:var(--acc2);border-color:var(--line)}
+.icon-btn.plus.on{background:var(--accbg);border-color:var(--acc)}
+.qpanel{position:absolute;left:12px;bottom:16px;width:min(440px,calc(100% - 24px));z-index:8;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;max-height:calc(100% - 90px);overflow:auto}
+.busy .btn{margin-left:4px}
+.handle{cursor:grab;color:var(--muted);user-select:none;font-size:13px;letter-spacing:-2px;padding:0 2px;opacity:.6}
+.handle:hover{opacity:1;color:var(--text)}
+.layer.drag,.cls.drag{opacity:.35}
+.layer.over-top{box-shadow:0 -3px 0 var(--acc)}.layer.over-bot{box-shadow:0 3px 0 var(--acc)}
+.cls.over-top{box-shadow:inset 0 2px 0 var(--acc)}.cls.over-bot{box-shadow:inset 0 -2px 0 var(--acc)}
+.trash{background:none;border:0;color:var(--muted);cursor:pointer;padding:2px;display:grid;place-items:center;border-radius:5px}
+.trash:hover{color:var(--err);background:rgba(240,97,109,.12)}
+.trash svg{width:14px;height:14px}
+.msg .btn{margin-top:6px}
+.cls .handle{flex:none}
+.cls{gap:6px}
+.qpanel{bottom:92px}
+
+.jobs{list-style:none;padding-left:0!important}.jobs li{margin:3px 0}.spin.sm{display:inline-block;width:10px;height:10px;border-width:2px;vertical-align:-1px}
+
+.sec-h.toggle{cursor:pointer;user-select:none;margin-bottom:8px}
+.sec-h.toggle:hover{color:var(--text)}
+.sec-h .chev{transition:transform .15s;font-size:11px}
+.sec.closed .sec-h .chev{transform:rotate(-90deg)}
+.sec.closed .sec-h{margin-bottom:0}
+.sec.closed .sec-body{display:none}
+.sec-h .sum{text-transform:none;letter-spacing:0;font-weight:500;font-size:11.5px;color:var(--acc2);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.gtabs button{background:none;border:1px solid transparent;border-radius:7px;padding:4px 8px;font-size:11.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:5px}
+.gtabs button:hover{color:var(--text);background:var(--panel2)}
+.gtabs button.on{background:var(--accbg);color:var(--text);border-color:var(--acc)}
+.gtabs .cnt{background:var(--acc);color:#fff;border-radius:999px;font-size:10px;padding:0 5px;min-width:16px;text-align:center}
+.modfoot{display:flex;align-items:center;margin-top:8px}
+.chip small{color:var(--muted);font-size:10.5px}
+.sec-h .chev{display:inline-block;width:14px;text-align:center;transform:none!important;font-size:12px}
+.sec-h .chev::after{content:'⌄';position:relative;top:-3px}
+.sec.closed .sec-h .chev::after{content:'›';top:0;font-size:15px}
+
+.busy{flex-direction:column;align-items:stretch;gap:6px;border-radius:14px;padding:12px 14px;width:min(460px,calc(100% - 40px))}
+.b-top{display:flex;align-items:center;gap:10px}
+.b-top b{font-weight:600}
+.b-src{color:var(--acc2)}
+.b-phase{font-size:12.5px}
+.pbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;position:relative}
+.pbar div{height:100%;width:0;background:linear-gradient(90deg,var(--acc),#d946ef);border-radius:3px;transition:width .4s ease}
+.pbar.wait div{background-image:repeating-linear-gradient(45deg,var(--acc) 0 10px,#a78bfa 10px 20px);background-size:28px 28px;animation:stripes .8s linear infinite}
+@keyframes stripes{to{background-position:28px 0}}
+.b-steps span{margin-right:8px}.b-steps .on{color:var(--text);font-weight:600}.b-steps .ok{color:var(--ok)}.b-steps .err{color:var(--err)}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ========== LINKE SEITENLEISTE ========== -->
+  <aside id="left" class="panel">
+   <div class="lscroll" id="lscroll">
+    <div class="brand">
+      <div class="logo">UA</div>
+      <div><div class="brand-t">URBAN ANALYST</div><div class="brand-s">Städtebauliche Analyse</div></div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="btnTheme" title="Hell / Dunkel">◐</button>
+    </div>
+    <div class="proj">
+      <input id="projName" class="inp ghost" value="Neues Projekt" title="Projektname">
+      <button class="icon-btn" id="btnSaveProj" title="Projekt speichern (.json)">⤓</button>
+      <button class="icon-btn" id="btnOpenProj" title="Projekt öffnen">⤒</button>
+      <input type="file" id="fileProj" accept=".json,application/json" hidden>
+    </div>
+
+    <section class="sec fold" id="secArea">
+      <div class="sec-h toggle" data-sec="area" title="Ein-/Ausklappen"><span class="num">1</span> Gebiet<div class="spacer"></div><span class="sum" id="sumArea"></span><span class="chev"></span></div>
+      <div class="sec-body">
+      <div class="seg" id="areaMode">
+        <button data-m="sel" class="on" title="Gezeichnetes Rechteck/Polygon oder Ort aus der Suche">Gezeichnetes Gebiet</button>
+        <button data-m="view" title="Es wird genau das geladen, was gerade auf der Karte zu sehen ist">Aktuelle Kartenansicht</button>
+      </div>
+      <div id="areaInfo" class="area-info muted"></div>
+      <details class="views" id="viewsBox">
+        <summary>Gespeicherte Ansichten <span id="viewCount" class="badge">0</span></summary>
+        <div class="vadd"><input id="viewName" class="inp sm" placeholder="Name, z. B. Kreuzberg Süd"><button class="btn sm primary" id="btnSaveView" title="Aktuelle Kartenansicht speichern">+ Speichern</button></div>
+        <div id="viewList"></div>
+      </details>
+      </div>
+    </section>
+
+    <section class="sec fold" id="secMods">
+      <div class="sec-h toggle" data-sec="mods" title="Ein-/Ausklappen"><span class="num">2</span> Bausteine<div class="spacer"></div><span class="sum" id="sumMods"></span><span class="chev"></span></div>
+      <div class="sec-body">
+        <div class="gtabs" id="gtabs"></div>
+        <div id="modules" class="chips"></div>
+        <div class="modfoot"><span class="tiny muted" id="modHint"></span><div class="spacer"></div><button class="link" id="btnStd">Standard</button><button class="link" id="btnNone">Auswahl leeren</button></div>
+        <button id="btnRun" class="btn primary wide">Ausgewählte laden</button>
+      </div>
+    </section>
+
+    <div class="sec-h log-h"><span class="num">3</span> Verlauf</div>
+    <div id="log" class="log"></div>
+   </div>
+
+    <div class="ask" id="askBox">
+      <div class="ask-top"><span class="tiny muted">Auftrag in eigenen Worten</span><div class="spacer"></div><button class="icon-btn plus" id="btnQuery" title="Detail-Abfrage öffnen (wie QuickOSM)">+</button><button class="icon-btn" id="btnExpand" title="Eingabefeld vergrößern / verkleinern">⤢</button></div>
+      <textarea id="ask" rows="3" placeholder="z. B. „Lade alle Gebäude, getrennt nach Nutzung und Höhe. Zeig mir außerdem Kirchen, Hotels, Grünflächen und Wasser.“"></textarea>
+      <div class="ask-help tiny muted">Erkannt werden u. a.: <b>Gebäude, Gebäudetyp, Nutzung, Höhe, Geschosse, Straßen, Bahn, ÖPNV, Grün, Wasser, Flächennutzung, Bäume, Bezirke</b> sowie <b>Kirchen, Hotels, Schulen, Kitas, Krankenhäuser, Ärzte, Apotheken, Supermärkte, Gastronomie, Spielplätze, Parkplätze, Kultur, Sportanlagen</b> oder „alles“. Strg + Enter = senden.</div>
+      <div class="ask-foot"><span class="muted tiny">Schlagwort-Erkennung · keine KI</span><button id="btnAsk" class="btn primary sm">Senden ➜</button></div>
+    </div>
+  </aside>
+
+  <!-- ========== KARTE ========== -->
+  <main id="mapwrap">
+    <div id="map"></div>
+    <div class="float tl">
+      <div class="search">
+        <span class="s-ic">⌕</span>
+        <input id="search" placeholder="Stadt, Bezirk, Ortsteil oder Adresse …" autocomplete="off">
+      </div>
+      <div id="results" class="results" hidden></div>
+    </div>
+    <div class="float tr">
+      <select id="basemap" class="inp sm" title="Hintergrundkarte">
+        <option value="dark">Karte dunkel</option>
+        <option value="light">Karte hell</option>
+        <option value="voyager">Karte farbig</option>
+        <option value="basemap">basemap.de (amtlich, BKG)</option>
+        <option value="sat">Luftbild (Esri)</option>
+        <option value="none">Ohne Hintergrund</option>
+      </select>
+      <button class="btn primary" id="btnExport">⤓ Export</button>
+    </div>
+    <div class="float bc toolbar" id="toolbar">
+      <button data-tool="rect" title="Rechteck zeichnen">▭<span>Rechteck</span></button>
+      <button data-tool="poly" title="Polygon zeichnen">⬠<span>Polygon</span></button>
+      <button data-tool="view" title="Aktuellen Kartenausschnitt als festes Gebiet übernehmen">⛶<span>Ausschnitt</span></button>
+      <button data-tool="saveview" title="Aktuelle Ansicht speichern">☆<span>Ansicht +</span></button>
+      <i class="sep"></i>
+      <button data-tool="zoomsel" title="Auf Gebiet zoomen">◎<span>Zoom</span></button>
+      <button data-tool="clear" title="Gebiet und Ergebnisse entfernen">✕<span>Leeren</span></button>
+    </div>
+    <div id="qPanel" class="qpanel" hidden>
+      <div class="card-h" style="margin-bottom:4px">Detail-Abfrage <span class="muted tiny" style="font-weight:400;margin-left:6px">wie QuickOSM</span><div class="spacer"></div><button class="icon-btn" id="qClose" title="Schließen">✕</button></div>
+      <div class="tiny muted">Lädt genau die OSM-Objekte, die du beschreibst, im gewählten Gebiet.</div>
+      <div class="qhead"><span>Schlüssel</span><span>Wert</span></div>
+      <div id="qRows"></div>
+      <datalist id="dlKeys"></datalist><datalist id="dlVals"></datalist>
+      <div class="qbtns"><button class="btn sm" id="qAdd">+ Zeile</button><a class="link" target="_blank" href="https://wiki.openstreetmap.org/wiki/DE:Map_Features">Welche Schlüssel gibt es? ↗</a><div class="spacer"></div><button class="btn sm primary" id="qRun">▶ Abfrage starten</button></div>
+      <div class="tiny muted" style="margin:10px 0 4px">Vorherige Abfragen</div>
+      <div id="qHist"></div>
+    </div>
+    <div id="hint" class="hint" hidden></div>
+    <div id="busy" class="busy" hidden>
+      <div class="b-top"><div class="spin"></div><b id="busyTxt">Lade Daten …</b><span class="spacer"></span><span id="busyTime" class="muted tiny"></span><button class="btn sm" id="btnCancel">Abbrechen</button></div>
+      <div class="b-src tiny" id="busySrc"></div>
+      <div class="b-phase" id="busyPhase"></div>
+      <div class="pbar"><div id="busyBar"></div></div>
+      <div class="b-steps tiny muted" id="busySteps"></div>
+    </div>
+  </main>
+
+  <!-- ========== RECHTE SEITENLEISTE ========== -->
+  <aside id="right" class="panel">
+    <div class="tabs" id="tabs">
+      <button data-tab="layers" class="on">Layer</button>
+      <button data-tab="legend">Legende</button>
+      <button data-tab="stats">Statistik</button>
+      <button data-tab="props">Element</button>
+    </div>
+    <div class="tabbody" id="tab-layers"><div id="layerList"></div></div>
+    <div class="tabbody" id="tab-legend" hidden><div id="legend"></div></div>
+    <div class="tabbody" id="tab-stats" hidden><div id="stats"></div></div>
+    <div class="tabbody" id="tab-props" hidden><div id="props" class="muted pad">Klicke auf ein Gebäude, eine Fläche oder Straße in der Karte.</div></div>
+  </aside>
+</div>
+
+<!-- ========== EXPORT-DIALOG ========== -->
+<div id="dlg" class="modal" hidden>
+  <div class="card">
+    <div class="card-h">Export<div class="spacer"></div><button class="icon-btn" data-close>✕</button></div>
+    <div class="grid2">
+      <label>Format</label>
+      <div class="formats" id="fmt">
+        <label><input type="radio" name="fmt" value="svg" checked><b>SVG</b><small>für Illustrator · Ebenen bleiben erhalten</small></label>
+        <label><input type="radio" name="fmt" value="pdf"><b>PDF</b><small>über den Druckdialog („Als PDF speichern“)</small></label>
+        <label><input type="radio" name="fmt" value="dxf"><b>DXF</b><small>für CAD / Rhino / Illustrator · in Metern</small></label>
+        <label><input type="radio" name="fmt" value="geojson"><b>GeoJSON (ZIP)</b><small>für QGIS · ein File pro Layer</small></label>
+        <label><input type="radio" name="fmt" value="png"><b>PNG</b><small>Bildschirmfoto der Karte</small></label>
+      </div>
+      <label>Planname</label><input id="exTitle" class="inp" value="Analyseplan">
+      <label>Maßstab</label>
+      <select id="exScale" class="inp"><option>1000</option><option>2500</option><option>5000</option><option selected>10000</option><option>15000</option><option>20000</option><option>25000</option></select>
+      <label>Optionen</label>
+      <div class="opts">
+        <label><input type="checkbox" id="exVisible" checked> nur sichtbare Layer</label>
+        <label><input type="checkbox" id="exClip" checked> auf Untersuchungsgebiet zuschneiden (SVG/PDF)</label>
+        <label><input type="checkbox" id="exLegend" checked> Legende, Titel, Maßstab & Nordpfeil (SVG/PDF)</label>
+        <label><input type="checkbox" id="exReal"> echte UTM-Koordinaten (DXF)</label>
+      </div>
+    </div>
+    <div id="exInfo" class="muted tiny pad-t"></div>
+    <div class="card-f"><button class="btn" data-close>Abbrechen</button><button class="btn primary" id="btnDoExport">Exportieren</button></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   URBAN ANALYST – Kernlogik (ohne Karte, ohne Bildschirm)
+   Hier passiert die eigentliche Analyse: OSM-Daten umwandeln,
+   klassifizieren, Flächen messen, Pläne (SVG/DXF) erzeugen.
+   ===================================================================== */
+const UA = (function () {
+  'use strict';
+  const R = 6378137;
+  const rad = d => d * Math.PI / 180;
+
+  /* ---------- Geometrie-Helfer ---------- */
+  const eq = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
+
+  function ringArea(c) { // Fläche eines Rings auf der Kugel (m²)
+    let a = 0; const n = c.length;
+    if (n > 2) {
+      for (let i = 0; i < n; i++) {
+        let lo, mi, up;
+        if (i === n - 2) { lo = n - 2; mi = n - 1; up = 0; }
+        else if (i === n - 1) { lo = n - 1; mi = 0; up = 1; }
+        else { lo = i; mi = i + 1; up = i + 2; }
+        a += (rad(c[up][0]) - rad(c[lo][0])) * Math.sin(rad(c[mi][1]));
+      }
+      a = a * R * R / 2;
+    }
+    return Math.abs(a);
+  }
+  function polyArea(g) {
+    if (!g) return 0;
+    const one = rings => rings.length ? Math.max(0, ringArea(rings[0]) - rings.slice(1).reduce((s, r) => s + ringArea(r), 0)) : 0;
+    if (g.type === 'Polygon') return one(g.coordinates);
+    if (g.type === 'MultiPolygon') return g.coordinates.reduce((s, p) => s + one(p), 0);
+    return 0;
+  }
+  function dist(a, b) { // Haversine in m
+    const dLat = rad(b[1] - a[1]), dLon = rad(b[0] - a[0]);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[1])) * Math.cos(rad(b[1])) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function eachCoord(g, fn) {
+    if (!g) return;
+    const t = g.type, c = g.coordinates;
+    if (t === 'Point') fn(c);
+    else if (t === 'LineString' || t === 'MultiPoint') c.forEach(fn);
+    else if (t === 'Polygon' || t === 'MultiLineString') c.forEach(r => r.forEach(fn));
+    else if (t === 'MultiPolygon') c.forEach(p => p.forEach(r => r.forEach(fn)));
+  }
+  function bboxOf(g) {
+    const b = [Infinity, Infinity, -Infinity, -Infinity];
+    eachCoord(g, p => { if (p[0] < b[0]) b[0] = p[0]; if (p[1] < b[1]) b[1] = p[1]; if (p[0] > b[2]) b[2] = p[0]; if (p[1] > b[3]) b[3] = p[1]; });
+    return b;
+  }
+  const bboxHit = (a, b) => !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
+  function pointInRing(p, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if (((yi > p[1]) !== (yj > p[1])) && (p[0] < (xj - xi) * (p[1] - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+  function pointInPoly(p, g) {
+    const inP = rings => pointInRing(p, rings[0]) && !rings.slice(1).some(h => pointInRing(p, h));
+    if (g.type === 'Polygon') return inP(g.coordinates);
+    if (g.type === 'MultiPolygon') return g.coordinates.some(inP);
+    return false;
+  }
+  function centroid(g) { // Schwerpunkt (für Linien/Punkte: Mittel)
+    if (g.type === 'Point') return g.coordinates;
+    if (g.type === 'Polygon' || g.type === 'MultiPolygon') {
+      const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
+      let best = null, bestA = -1;
+      for (const p of polys) { const a = ringArea(p[0]); if (a > bestA) { bestA = a; best = p[0]; } }
+      let x = 0, y = 0, A = 0;
+      for (let i = 0, j = best.length - 1; i < best.length; j = i++) {
+        const f = best[j][0] * best[i][1] - best[i][0] * best[j][1];
+        x += (best[j][0] + best[i][0]) * f; y += (best[j][1] + best[i][1]) * f; A += f;
+      }
+      if (Math.abs(A) < 1e-14) return best[0];
+      return [x / (3 * A), y / (3 * A)];
+    }
+    let sx = 0, sy = 0, n = 0; eachCoord(g, p => { sx += p[0]; sy += p[1]; n++; });
+    return [sx / n, sy / n];
+  }
+  function circlePoly(c, r, steps = 40) { // Kreis als Polygon (Einzugsradius)
+    const pts = [];
+    const lat = rad(c[1]), lon = rad(c[0]), d = r / R;
+    for (let i = 0; i <= steps; i++) {
+      const brg = 2 * Math.PI * (i % steps) / steps;
+      const la = Math.asin(Math.sin(lat) * Math.cos(d) + Math.cos(lat) * Math.sin(d) * Math.cos(brg));
+      const lo = lon + Math.atan2(Math.sin(brg) * Math.sin(d) * Math.cos(lat), Math.cos(d) - Math.sin(lat) * Math.sin(la));
+      pts.push([lo * 180 / Math.PI, la * 180 / Math.PI]);
+    }
+    return { type: 'Polygon', coordinates: [pts] };
+  }
+  function simplifyLine(pts, tol) { // Douglas-Peucker
+    if (pts.length < 3) return pts.slice();
+    const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+    const stack = [[0, pts.length - 1]];
+    while (stack.length) {
+      const [s, e] = stack.pop(); let maxD = 0, idx = -1;
+      const [x1, y1] = pts[s], [x2, y2] = pts[e]; const dx = x2 - x1, dy = y2 - y1; const L = dx * dx + dy * dy;
+      for (let i = s + 1; i < e; i++) {
+        let t = L ? ((pts[i][0] - x1) * dx + (pts[i][1] - y1) * dy) / L : 0; t = Math.max(0, Math.min(1, t));
+        const ddx = pts[i][0] - (x1 + t * dx), ddy = pts[i][1] - (y1 + t * dy); const d2 = ddx * ddx + ddy * ddy;
+        if (d2 > maxD) { maxD = d2; idx = i; }
+      }
+      if (idx > 0 && maxD > tol * tol) { keep[idx] = 1; stack.push([s, idx], [idx, e]); }
+    }
+    return pts.filter((_, i) => keep[i]);
+  }
+  function simplifyRingTo(ring, maxPts) {
+    let tol = 0.00002, r = ring;
+    while (r.length > maxPts && tol < 1) { r = simplifyLine(ring, tol); tol *= 2; }
+    if (!eq(r[0], r[r.length - 1])) r.push(r[0]);
+    return r;
+  }
+
+  /* ---------- UTM (ETRS89 ≈ WGS84) für Pläne in Metern ---------- */
+  const utmZone = lon => Math.floor((lon + 180) / 6) + 1;
+  function toUTM(lon, lat, zone) {
+    const a = 6378137, f = 1 / 298.257223563, k0 = 0.9996;
+    const e2 = f * (2 - f), ep2 = e2 / (1 - e2);
+    const lon0 = rad((zone - 1) * 6 - 180 + 3), phi = rad(lat);
+    const s = Math.sin(phi), c = Math.cos(phi), t = Math.tan(phi);
+    const N = a / Math.sqrt(1 - e2 * s * s), T = t * t, C = ep2 * c * c, A = c * (rad(lon) - lon0);
+    const M = a * ((1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 ** 3 / 256) * phi
+      - (3 * e2 / 8 + 3 * e2 * e2 / 32 + 45 * e2 ** 3 / 1024) * Math.sin(2 * phi)
+      + (15 * e2 * e2 / 256 + 45 * e2 ** 3 / 1024) * Math.sin(4 * phi)
+      - (35 * e2 ** 3 / 3072) * Math.sin(6 * phi));
+    const x = k0 * N * (A + (1 - T + C) * A ** 3 / 6 + (5 - 18 * T + T * T + 72 * C - 58 * ep2) * A ** 5 / 120) + 500000;
+    const y = k0 * (M + N * t * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A ** 4 / 24 + (61 - 58 * T + T * T + 600 * C - 330 * ep2) * A ** 6 / 720));
+    return [x, y];
+  }
+
+  /* ---------- OSM (Overpass JSON) -> GeoJSON ---------- */
+  const NOT_AREA_NATURAL = ['coastline', 'tree_row', 'cliff', 'ridge', 'arete', 'valley', 'gorge', 'tree'];
+  function isArea(t) {
+    if (t.area === 'no') return false;
+    if (t.area === 'yes') return true;
+    if (t.highway || t.barrier) return false;
+    if (t.building || t['building:part'] || t.landuse || t.amenity || t.water || t.shop || t.military || t.boundary || t.place || t.tourism) return true;
+    if (t.leisure && t.leisure !== 'track' && t.leisure !== 'slipway') return true;
+    if (t.natural && !NOT_AREA_NATURAL.includes(t.natural)) return true;
+    if (t.waterway && ['riverbank', 'dock', 'boatyard', 'dam'].includes(t.waterway)) return true;
+    if (t.man_made && !['pier', 'embankment', 'pipeline', 'breakwater', 'groyne'].includes(t.man_made)) return true;
+    return false;
+  }
+  function joinWays(ways) { // Liniensegmente zu geschlossenen Ringen verbinden
+    const pool = ways.filter(w => w.length > 1).map(w => w.slice());
+    const rings = [];
+    while (pool.length) {
+      let ring = pool.shift(); let guard = 0;
+      while (!eq(ring[0], ring[ring.length - 1]) && guard++ < 100000) {
+        const end = ring[ring.length - 1], start = ring[0]; let found = false;
+        for (let i = 0; i < pool.length; i++) {
+          const w = pool[i];
+          if (eq(w[0], end)) ring = ring.concat(w.slice(1));
+          else if (eq(w[w.length - 1], end)) ring = ring.concat(w.slice().reverse().slice(1));
+          else if (eq(w[w.length - 1], start)) ring = w.slice(0, -1).concat(ring);
+          else if (eq(w[0], start)) ring = w.slice().reverse().slice(0, -1).concat(ring);
+          else continue;
+          pool.splice(i, 1); found = true; break;
+        }
+        if (!found) break;
+      }
+      if (ring.length >= 4 && eq(ring[0], ring[ring.length - 1])) rings.push(ring);
+    }
+    return rings;
+  }
+  const feat = (geometry, tags, id) => ({ type: 'Feature', geometry, properties: Object.assign({ osm_id: id }, tags) });
+  function osmToFeatures(json) {
+    const out = [];
+    for (const el of (json && json.elements) || []) {
+      const t = el.tags || {}; const id = el.type + '/' + el.id;
+      if (el.type === 'node') {
+        if (el.lat == null) continue;
+        out.push(feat({ type: 'Point', coordinates: [el.lon, el.lat] }, t, id));
+      } else if (el.type === 'way') {
+        const c = (el.geometry || []).filter(Boolean).map(p => [p.lon, p.lat]);
+        if (c.length < 2) continue;
+        const closed = c.length >= 4 && eq(c[0], c[c.length - 1]);
+        if (closed && isArea(t)) out.push(feat({ type: 'Polygon', coordinates: [c] }, t, id));
+        else out.push(feat({ type: 'LineString', coordinates: c }, t, id));
+      } else if (el.type === 'relation') {
+        if (!['multipolygon', 'boundary', 'building'].includes(t.type)) continue;
+        const outers = [], inners = [];
+        for (const m of el.members || []) {
+          if (m.type !== 'way' || !m.geometry) continue;
+          if (m.role === 'part' || m.role === 'subarea' || m.role === 'admin_centre' || m.role === 'label') continue;
+          const c = m.geometry.filter(Boolean).map(p => [p.lon, p.lat]);
+          (m.role === 'inner' ? inners : outers).push(c);
+        }
+        const oR = joinWays(outers), iR = joinWays(inners);
+        if (!oR.length) continue;
+        const polys = oR.map(r => [r]);
+        for (const ir of iR) { const p = polys.find(pl => pointInRing(ir[0], pl[0])); if (p) p.push(ir); }
+        const geom = polys.length === 1 ? { type: 'Polygon', coordinates: polys[0] } : { type: 'MultiPolygon', coordinates: polys };
+        out.push(feat(geom, t, id));
+      }
+    }
+    return out;
+  }
+  const isPoly = g => g && (g.type === 'Polygon' || g.type === 'MultiPolygon');
+  const isLine = g => g && (g.type === 'LineString' || g.type === 'MultiLineString');
+  const isPoint = g => g && g.type === 'Point';
+
+  /* ---------- Overpass-Abfragen (Datenbeschaffung) ---------- */
+  const HEAD = '[out:json][timeout:150][maxsize:536870912];';
+  const FETCHES = {
+    buildings: { label: 'Gebäude', q: P => `(way["building"](poly:"${P}");relation["building"](poly:"${P}"););out geom;` },
+    roads: { label: 'Straßen & Wege', q: P => `way["highway"](poly:"${P}");out geom;` },
+    rail: { label: 'Bahnstrecken', q: P => `way["railway"~"^(rail|light_rail|subway|tram|narrow_gauge|disused|abandoned|monorail)$"](poly:"${P}");out geom;` },
+    stops: { label: 'Haltestellen', q: P => `(node["highway"="bus_stop"](poly:"${P}");node["railway"~"^(station|halt|tram_stop)$"](poly:"${P}");node["public_transport"="station"](poly:"${P}"););out;` },
+    green: {
+      label: 'Grün- & Freiflächen', q: P => {
+        const L = '^(park|garden|playground|recreation_ground|pitch|sports_centre|nature_reserve|dog_park|golf_course)$';
+        const U = '^(grass|forest|meadow|allotments|cemetery|recreation_ground|farmland|orchard|village_green|flowerbed|greenfield|vineyard|plant_nursery)$';
+        const N = '^(wood|scrub|grassland|heath|wetland|beach|sand)$';
+        return `(way["leisure"~"${L}"](poly:"${P}");relation["leisure"~"${L}"](poly:"${P}");way["landuse"~"${U}"](poly:"${P}");relation["landuse"~"${U}"](poly:"${P}");way["natural"~"${N}"](poly:"${P}");relation["natural"~"${N}"](poly:"${P}");way["amenity"="grave_yard"](poly:"${P}"););out geom;`;
+      }
+    },
+    water: { label: 'Gewässer', q: P => `(way["natural"="water"](poly:"${P}");relation["natural"="water"](poly:"${P}");way["waterway"~"^(riverbank|dock|river|canal|stream|ditch|drain)$"](poly:"${P}");relation["waterway"="riverbank"](poly:"${P}");way["landuse"~"^(basin|reservoir)$"](poly:"${P}");relation["landuse"~"^(basin|reservoir)$"](poly:"${P}"););out geom;` },
+    landuse: { label: 'Flächennutzung', q: P => `(way["landuse"](poly:"${P}");relation["landuse"](poly:"${P}");way["amenity"~"^(school|university|college|kindergarten|hospital)$"](poly:"${P}");relation["amenity"~"^(school|university|college|kindergarten|hospital)$"](poly:"${P}");way["military"](poly:"${P}");relation["military"](poly:"${P}"););out geom;` },
+    trees: { label: 'Bäume', q: P => `(node["natural"="tree"](poly:"${P}");way["natural"="tree_row"](poly:"${P}"););out geom;` },
+    boundaries: { label: 'Verwaltungsgrenzen', q: P => `relation["boundary"="administrative"]["admin_level"~"^(8|9|10)$"](poly:"${P}");out geom;` }
+  };
+  function polyString(selGeom) { // Untersuchungsgebiet als Overpass-"poly"
+    let ring;
+    if (selGeom.type === 'Polygon') ring = selGeom.coordinates[0];
+    else { let best = 0; for (const p of selGeom.coordinates) { const a = ringArea(p[0]); if (a > best) { best = a; ring = p[0]; } } }
+    ring = simplifyRingTo(ring, 250);
+    return ring.slice(0, -1).map(p => p[1].toFixed(6) + ' ' + p[0].toFixed(6)).join(' ');
+  }
+
+  /* ---------- Klassen & Farben ---------- */
+  const CL = {
+    gebaeude: [{ key: 'geb', label: 'Gebäude', color: '#9C7BD6' }],
+    nutzung: [
+      { key: 'wohnen', label: 'Wohnen', color: '#E2B33C' },
+      { key: 'gemischt', label: 'Wohnen + Gewerbe (gemischt)', color: '#8E6BB0' },
+      { key: 'gewerbe', label: 'Gewerbe & Einzelhandel', color: '#D98CB3' },
+      { key: 'industrie', label: 'Industrie & Lager', color: '#8B6A55' },
+      { key: 'oeffentlich', label: 'Öffentliche Einrichtungen', color: '#E8D2A6' },
+      { key: 'bildung', label: 'Bildung, Gesundheit & Soziales', color: '#E5875A' },
+      { key: 'religion', label: 'Religion', color: '#C77D9E' },
+      { key: 'militaer', label: 'Militär', color: '#6E6A78' },
+      { key: 'neben', label: 'Nebengebäude (Garagen, Schuppen)', color: '#A6A3AD' },
+      { key: 'unbekannt', label: 'Nutzung unbekannt', color: '#55525C' }
+    ],
+    hoehe: [
+      { key: 'h1', label: 'bis 10 m', color: '#F3DDB0' },
+      { key: 'h2', label: '10–20 m', color: '#E3A562' },
+      { key: 'h3', label: '20–30 m', color: '#B8613B' },
+      { key: 'h4', label: 'über 30 m', color: '#6E2B2B' },
+      { key: 'hx', label: 'Höhe unbekannt', color: '#55525C' }
+    ],
+    strassen: [
+      { key: 'bund', label: 'Autobahn / Bundesstraße', color: '#F08A4B', width: 5 },
+      { key: 'haupt', label: 'Hauptstraße', color: '#F2B544', width: 4 },
+      { key: 'haupt2', label: '2. Hauptstraße', color: '#F5CF7A', width: 3.2 },
+      { key: 'sammel', label: 'Sammelstraße', color: '#F4E0A8', width: 2.6 },
+      { key: 'neben', label: 'Nebenstraße / Wohnstraße', color: '#D8D3E3', width: 1.8 },
+      { key: 'service', label: 'Servicestraße / Zufahrt', color: '#A9A3B8', width: 1.1 },
+      { key: 'fuzo', label: 'Fußgängerzone', color: '#E8C36A', width: 2.4 },
+      { key: 'fuss', label: 'Fußweg', color: '#C59BD6', width: 0.9 },
+      { key: 'rad', label: 'Radweg', color: '#6FB6E8', width: 1.1 },
+      { key: 'wirtschaft', label: 'Wirtschaftsweg', color: '#8C7B6B', width: 0.9 }
+    ],
+    bahn: [
+      { key: 'fern', label: 'Eisenbahn / S-Bahn', color: '#E86FA0', width: 2.4 },
+      { key: 'ubahn', label: 'U-Bahn', color: '#4C7FD9', width: 2.2 },
+      { key: 'tram', label: 'Straßenbahn', color: '#E0453A', width: 1.6 },
+      { key: 'still', label: 'Stillgelegte Gleise', color: '#8A8794', width: 1.2 }
+    ],
+    oepnv: [
+      { key: 'bahnhof', label: 'Bahnhof / S-Bahn', color: '#E86FA0', r: 6 },
+      { key: 'ubahn', label: 'U-Bahn-Station', color: '#4C7FD9', r: 5 },
+      { key: 'tram', label: 'Straßenbahn-Haltestelle', color: '#E0453A', r: 4 },
+      { key: 'bus', label: 'Bushaltestelle', color: '#B07FE0', r: 3 }
+    ],
+    radien: [
+      { key: 'r300', label: '300 m Radius (Bus, Tram)', color: '#B07FE0' },
+      { key: 'r600', label: '600 m Radius (U-/S-Bahn, Bahnhof)', color: '#4C7FD9' }
+    ],
+    gruen: [
+      { key: 'park', label: 'Park / Grünanlage', color: '#6E9F5D' },
+      { key: 'wald', label: 'Wald', color: '#3F6B3F' },
+      { key: 'wiese', label: 'Rasen / Wiese', color: '#9DC47E' },
+      { key: 'gehoelz', label: 'Gehölz / Gestrüpp', color: '#7F9A62' },
+      { key: 'kleingarten', label: 'Kleingärten', color: '#C4D89A' },
+      { key: 'privat', label: 'Privatgarten', color: '#B7CF9C' },
+      { key: 'friedhof', label: 'Friedhof', color: '#2F4A35' },
+      { key: 'sport', label: 'Sport & Spiel', color: '#8FC1A0' },
+      { key: 'landwirtschaft', label: 'Landwirtschaft', color: '#D8CF8A' },
+      { key: 'schutz', label: 'Schutzgebiet / Feuchtgebiet', color: '#A3B8A0' },
+      { key: 'strand', label: 'Strand / Sand', color: '#E9DDB0' }
+    ],
+    wasser: [
+      { key: 'fluss', label: 'Fluss / Kanal (Fläche)', color: '#6BB7E8', width: 2.5 },
+      { key: 'see', label: 'See / Teich', color: '#8FD3F0' },
+      { key: 'hafen', label: 'Hafenbecken', color: '#5A9FCF' },
+      { key: 'becken', label: 'Becken / Speicher', color: '#A6C8DC' },
+      { key: 'fluss_l', label: 'Fluss (Linie)', color: '#4FA3DE', width: 2.5 },
+      { key: 'kanal_l', label: 'Kanal (Linie)', color: '#4FA3DE', width: 2 },
+      { key: 'bach_l', label: 'Bach / Graben', color: '#7CC0EA', width: 1 }
+    ],
+    flaechen: [
+      { key: 'wohnen', label: 'Wohnbauflächen', color: '#E2B33C' },
+      { key: 'gewerbe', label: 'Gewerbe & Handel', color: '#D98CB3' },
+      { key: 'industrie', label: 'Industrie', color: '#8B5A3C' },
+      { key: 'gemeinbedarf', label: 'Gemeinbedarf (Schule, Klinik …)', color: '#E8D2A6' },
+      { key: 'militaer', label: 'Militär', color: '#9A8FB0' },
+      { key: 'bahn', label: 'Bahnflächen', color: '#C9A27E' },
+      { key: 'hafen', label: 'Hafen', color: '#B05A3C' },
+      { key: 'baustelle', label: 'Baustelle / Brache', color: '#BDB7A5' },
+      { key: 'gruen', label: 'Grün- & Erholungsflächen', color: '#9DC47E' },
+      { key: 'landwirtschaft', label: 'Landwirtschaft', color: '#D8CF8A' },
+      { key: 'sonstige', label: 'Sonstige', color: '#8E8A96' }
+    ],
+    baeume: [
+      { key: 'baum', label: 'Einzelbaum', color: '#4E8F4A', r: 2 },
+      { key: 'baumreihe', label: 'Baumreihe', color: '#4E8F4A', width: 2 }
+    ],
+    grenzen: [
+      { key: 'gemeinde', label: 'Gemeinde / Stadt', color: '#F2EDF7', width: 2.5 },
+      { key: 'bezirk', label: 'Bezirk', color: '#E7DDF5', width: 2 },
+      { key: 'ortsteil', label: 'Ortsteil / Viertel', color: '#BCA8DE', width: 1.4 }
+    ]
+  };
+
+  /* ---------- Klassifizierung ---------- */
+  const S = arr => new Set(arr);
+  const B_WOHN = S(['house', 'residential', 'apartments', 'detached', 'semidetached_house', 'terrace', 'bungalow', 'farm', 'villa', 'dormitory', 'static_caravan', 'houseboat']);
+  const B_GEW = S(['commercial', 'retail', 'office', 'supermarket', 'kiosk', 'hotel', 'shop', 'mall', 'bank']);
+  const B_IND = S(['industrial', 'warehouse', 'factory', 'manufacture', 'hangar', 'storage_tank', 'silo', 'depot', 'workshop']);
+  const B_OEFF = S(['public', 'civic', 'government', 'townhall', 'train_station', 'transportation', 'fire_station', 'police', 'courthouse', 'museum', 'library', 'stadium', 'grandstand', 'theatre', 'post_office', 'pavilion']);
+  const B_BILD = S(['school', 'university', 'college', 'kindergarten', 'hospital', 'clinic', 'sports_hall', 'sports_centre', 'childcare', 'nursing_home']);
+  const B_REL = S(['church', 'chapel', 'mosque', 'synagogue', 'temple', 'cathedral', 'religious', 'monastery', 'shrine']);
+  const B_NEB = S(['garage', 'garages', 'shed', 'carport', 'roof', 'hut', 'greenhouse', 'service', 'parking', 'barn', 'stable', 'cabin', 'container', 'toilets', 'transformer_tower', 'bunker_shelter', 'outbuilding']);
+  const A_BILD = S(['school', 'university', 'college', 'kindergarten', 'hospital', 'clinic', 'doctors', 'social_facility', 'childcare', 'community_centre', 'nursing_home']);
+  const A_OEFF = S(['townhall', 'police', 'fire_station', 'courthouse', 'library', 'theatre', 'post_office', 'public_building', 'arts_centre', 'museum']);
+  const A_GEW = S(['restaurant', 'cafe', 'bar', 'pub', 'fast_food', 'bank', 'pharmacy', 'cinema', 'nightclub', 'marketplace']);
+  const A_REL = S(['place_of_worship', 'monastery']);
+
+  function buildingUse(t) { // -> {cls, q}
+    const b = t.building, use = t['building:use'];
+    if (t.military || b === 'military' || b === 'bunker') return { cls: 'militaer', q: 'OSM-Tag' };
+    if (B_REL.has(b) || A_REL.has(t.amenity)) return { cls: 'religion', q: 'OSM-Tag' };
+    if (B_BILD.has(b) || A_BILD.has(t.amenity)) return { cls: 'bildung', q: 'OSM-Tag' };
+    const wohn = B_WOHN.has(b) || use === 'residential';
+    const gew = B_GEW.has(b) || !!t.shop || !!t.office || A_GEW.has(t.amenity) || use === 'commercial' || use === 'retail';
+    if (wohn && (t.shop || t.office || A_GEW.has(t.amenity))) return { cls: 'gemischt', q: 'OSM-Tag' };
+    if (wohn) return { cls: 'wohnen', q: 'OSM-Tag' };
+    if (gew) return { cls: 'gewerbe', q: 'OSM-Tag' };
+    if (B_IND.has(b) || use === 'industrial') return { cls: 'industrie', q: 'OSM-Tag' };
+    if (B_OEFF.has(b) || A_OEFF.has(t.amenity) || use === 'public') return { cls: 'oeffentlich', q: 'OSM-Tag' };
+    if (B_NEB.has(b)) return { cls: 'neben', q: 'OSM-Tag' };
+    return { cls: 'unbekannt', q: 'keine Angabe' };
+  }
+  function parseNum(v) {
+    if (v == null || v === '') return null;
+    const s = String(v).replace(',', '.'); const m = s.match(/\d+(\.\d+)?/);
+    if (!m) return null; let n = parseFloat(m[0]);
+    if (/ft|'/.test(s)) n *= 0.3048;
+    return isFinite(n) && n > 0 ? n : null;
+  }
+  function buildingHeight(t) { // -> {h, levels, q}
+    const levels = parseNum(t['building:levels']);
+    const h = parseNum(t.height);
+    if (h != null) return { h, levels, q: 'OSM-Angabe (height)' };
+    if (levels != null) {
+      const roof = parseNum(t['roof:levels']) || 0;
+      return { h: Math.round((levels + roof * 0.5) * 3 * 10) / 10, levels, q: 'geschätzt: Geschosse × 3 m' };
+    }
+    return { h: null, levels: null, q: 'keine Angabe' };
+  }
+  const heightClass = h => h == null ? 'hx' : h <= 10 ? 'h1' : h <= 20 ? 'h2' : h <= 30 ? 'h3' : 'h4';
+
+  function roadClass(t) {
+    const h = t.highway; if (!h) return null;
+    if (/^(motorway|trunk)(_link)?$/.test(h)) return 'bund';
+    if (/^primary(_link)?$/.test(h)) return 'haupt';
+    if (/^secondary(_link)?$/.test(h)) return 'haupt2';
+    if (/^tertiary(_link)?$/.test(h)) return 'sammel';
+    if (['residential', 'unclassified', 'living_street', 'road'].includes(h)) return 'neben';
+    if (h === 'service') return 'service';
+    if (h === 'pedestrian') return 'fuzo';
+    if (h === 'cycleway') return 'rad';
+    if (h === 'path' && t.bicycle === 'designated' && t.foot !== 'designated') return 'rad';
+    if (['footway', 'path', 'steps', 'bridleway'].includes(h)) return 'fuss';
+    if (h === 'track') return 'wirtschaft';
+    return null;
+  }
+  function railClass(t) {
+    const r = t.railway;
+    if (r === 'subway') return 'ubahn';
+    if (r === 'tram') return 'tram';
+    if (r === 'disused' || r === 'abandoned') return 'still';
+    if (r === 'rail' || r === 'light_rail' || r === 'narrow_gauge' || r === 'monorail') return 'fern';
+    return null;
+  }
+  function stopClass(t) {
+    if (t.station === 'subway' || t.subway === 'yes') return 'ubahn';
+    if (t.railway === 'station' || t.railway === 'halt') return t.station === 'subway' ? 'ubahn' : 'bahnhof';
+    if (t.railway === 'tram_stop' || t.tram === 'yes') return 'tram';
+    if (t.highway === 'bus_stop' || t.bus === 'yes') return 'bus';
+    if (t.public_transport === 'station') return 'bahnhof';
+    return null;
+  }
+  function greenClass(t) {
+    const l = t.leisure, u = t.landuse, n = t.natural;
+    if (u === 'cemetery' || t.amenity === 'grave_yard') return 'friedhof';
+    if (u === 'forest' || n === 'wood') return 'wald';
+    if (u === 'allotments') return 'kleingarten';
+    if (l === 'garden') return (t.access === 'private' || t.garden_type === 'residential') ? 'privat' : 'park';
+    if (['park', 'recreation_ground', 'dog_park'].includes(l) || ['village_green', 'recreation_ground'].includes(u)) return 'park';
+    if (['playground', 'pitch', 'sports_centre', 'golf_course'].includes(l)) return 'sport';
+    if (['grass', 'meadow', 'flowerbed', 'greenfield'].includes(u) || n === 'grassland') return 'wiese';
+    if (n === 'scrub' || n === 'heath') return 'gehoelz';
+    if (['farmland', 'orchard', 'vineyard', 'plant_nursery'].includes(u)) return 'landwirtschaft';
+    if (l === 'nature_reserve' || n === 'wetland') return 'schutz';
+    if (n === 'beach' || n === 'sand') return 'strand';
+    return null;
+  }
+  function waterClass(t, geom) {
+    if (isLine(geom)) {
+      if (t.waterway === 'river') return 'fluss_l';
+      if (t.waterway === 'canal') return 'kanal_l';
+      if (['stream', 'ditch', 'drain'].includes(t.waterway)) return 'bach_l';
+      return null;
+    }
+    if (!isPoly(geom)) return null;
+    if (t.waterway === 'dock' || t.water === 'harbour' || t.water === 'dock' || t.harbour) return 'hafen';
+    if (['basin', 'reservoir'].includes(t.landuse) || ['basin', 'reservoir', 'wastewater', 'pool', 'reflecting_pool'].includes(t.water)) return 'becken';
+    if (t.waterway === 'riverbank' || ['river', 'canal', 'stream', 'oxbow', 'lock', 'moat'].includes(t.water)) return 'fluss';
+    if (t.natural === 'water' || t.waterway) return 'see';
+    return null;
+  }
+  function landuseClass(t) {
+    const u = t.landuse;
+    if (t.military || u === 'military') return 'militaer';
+    if (['school', 'university', 'college', 'kindergarten', 'hospital'].includes(t.amenity) || ['education', 'religious', 'institutional', 'civic'].includes(u)) return 'gemeinbedarf';
+    if (u === 'residential') return 'wohnen';
+    if (['commercial', 'retail'].includes(u)) return 'gewerbe';
+    if (u === 'industrial') return t.industrial === 'port' ? 'hafen' : 'industrie';
+    if (u === 'port' || u === 'harbour') return 'hafen';
+    if (u === 'railway') return 'bahn';
+    if (['construction', 'brownfield', 'landfill'].includes(u)) return 'baustelle';
+    if (['grass', 'forest', 'meadow', 'recreation_ground', 'village_green', 'cemetery', 'allotments', 'flowerbed', 'greenfield'].includes(u)) return 'gruen';
+    if (['farmland', 'farmyard', 'orchard', 'vineyard', 'plant_nursery', 'greenhouse_horticulture'].includes(u)) return 'landwirtschaft';
+    if (u) return 'sonstige';
+    return null;
+  }
+  const LANDUSE_TO_USE = { wohnen: 'wohnen', gewerbe: 'gewerbe', industrie: 'industrie', militaer: 'militaer', gemeinbedarf: 'oeffentlich', hafen: 'industrie' };
+
+  /* ---------- Übersetzungen von OSM-Werten (für Klassen-Namen) ---------- */
+  const DE = {
+    building: {
+      yes: 'Gebäude ohne Typangabe', house: 'Einfamilienhaus', detached: 'Freistehendes Haus', semidetached_house: 'Doppelhaushälfte', terrace: 'Reihenhaus',
+      apartments: 'Mehrfamilienhaus', residential: 'Wohngebäude', bungalow: 'Bungalow', villa: 'Villa', dormitory: 'Wohnheim', farm: 'Bauernhaus', houseboat: 'Hausboot',
+      commercial: 'Geschäftsgebäude', retail: 'Einzelhandel', office: 'Bürogebäude', supermarket: 'Supermarkt', kiosk: 'Kiosk', hotel: 'Hotel', mall: 'Einkaufszentrum',
+      industrial: 'Industriegebäude', warehouse: 'Lagerhalle', factory: 'Fabrik', manufacture: 'Produktion', hangar: 'Hangar', silo: 'Silo', storage_tank: 'Tank', depot: 'Depot', workshop: 'Werkstatt',
+      public: 'Öffentliches Gebäude', civic: 'Öffentliches Gebäude', government: 'Behörde', townhall: 'Rathaus', train_station: 'Bahnhofsgebäude', transportation: 'Verkehrsgebäude',
+      fire_station: 'Feuerwache', police: 'Polizei', museum: 'Museum', library: 'Bibliothek', theatre: 'Theater', stadium: 'Stadion', grandstand: 'Tribüne', pavilion: 'Pavillon',
+      school: 'Schule', university: 'Universität', college: 'Hochschule', kindergarten: 'Kita', hospital: 'Krankenhaus', clinic: 'Klinik', sports_hall: 'Sporthalle', sports_centre: 'Sportzentrum',
+      church: 'Kirche', chapel: 'Kapelle', cathedral: 'Dom / Kathedrale', mosque: 'Moschee', synagogue: 'Synagoge', temple: 'Tempel', religious: 'Religiöses Gebäude', monastery: 'Kloster',
+      military: 'Militärgebäude', bunker: 'Bunker', garage: 'Garage', garages: 'Garagen', carport: 'Carport', shed: 'Schuppen', roof: 'Überdachung', hut: 'Hütte', greenhouse: 'Gewächshaus',
+      service: 'Technikgebäude', parking: 'Parkhaus', barn: 'Scheune', stable: 'Stall', cabin: 'Laube / Hütte', container: 'Container', toilets: 'Toiletten', construction: 'Im Bau',
+      ruins: 'Ruine', transformer_tower: 'Trafoturm', water_tower: 'Wasserturm', tower: 'Turm', bridge: 'Brückenbauwerk', boathouse: 'Bootshaus', castle: 'Schloss / Burg', palace: 'Palast'
+    },
+    amenity: {
+      school: 'Schule', kindergarten: 'Kita', university: 'Universität', college: 'Hochschule', hospital: 'Krankenhaus', clinic: 'Klinik', doctors: 'Arztpraxis', dentist: 'Zahnarzt', pharmacy: 'Apotheke',
+      place_of_worship: 'Kirche / Gotteshaus', townhall: 'Rathaus', police: 'Polizei', fire_station: 'Feuerwache', library: 'Bibliothek', theatre: 'Theater', cinema: 'Kino', arts_centre: 'Kulturzentrum',
+      community_centre: 'Gemeindezentrum', social_facility: 'Soziale Einrichtung', nursing_home: 'Pflegeheim', restaurant: 'Restaurant', cafe: 'Café', bar: 'Bar', pub: 'Kneipe', fast_food: 'Imbiss',
+      bank: 'Bank', post_office: 'Post', marketplace: 'Markt', parking: 'Parkplatz', bicycle_parking: 'Fahrradstellplatz', fuel: 'Tankstelle', courthouse: 'Gericht', prison: 'Gefängnis',
+      grave_yard: 'Friedhof', childcare: 'Kinderbetreuung', music_school: 'Musikschule', nightclub: 'Club', embassy: 'Botschaft', toilets: 'Toiletten', bench: 'Bank (Sitz)', waste_basket: 'Mülleimer',
+      recycling: 'Recycling', charging_station: 'Ladestation', car_sharing: 'Carsharing', bicycle_rental: 'Fahrradverleih', drinking_water: 'Trinkbrunnen', vending_machine: 'Automat'
+    },
+    highway: {
+      motorway: 'Autobahn', trunk: 'Bundesstraße (Schnellstraße)', primary: 'Hauptstraße', secondary: '2. Hauptstraße', tertiary: 'Sammelstraße', residential: 'Wohnstraße',
+      unclassified: 'Nebenstraße', living_street: 'Verkehrsberuhigter Bereich', service: 'Zufahrt / Servicestraße', pedestrian: 'Fußgängerzone', footway: 'Fußweg', path: 'Weg',
+      cycleway: 'Radweg', steps: 'Treppe', track: 'Wirtschaftsweg', bridleway: 'Reitweg', construction: 'Straße im Bau', bus_stop: 'Bushaltestelle', platform: 'Bahnsteig', corridor: 'Innengang',
+      motorway_link: 'Autobahnauffahrt', trunk_link: 'Auffahrt', primary_link: 'Hauptstraße (Abzweig)', secondary_link: '2. Hauptstraße (Abzweig)', tertiary_link: 'Sammelstraße (Abzweig)', elevator: 'Aufzug', proposed: 'Geplant'
+    },
+    landuse: { residential: 'Wohnen', commercial: 'Gewerbe', retail: 'Einzelhandel', industrial: 'Industrie', military: 'Militär', railway: 'Bahnfläche', construction: 'Baustelle', brownfield: 'Brache',
+      grass: 'Rasen', forest: 'Wald', meadow: 'Wiese', allotments: 'Kleingärten', cemetery: 'Friedhof', recreation_ground: 'Erholungsfläche', farmland: 'Acker', farmyard: 'Hof', orchard: 'Obstwiese',
+      religious: 'Religiöse Fläche', education: 'Bildung', garages: 'Garagenhof', flowerbed: 'Beet', village_green: 'Dorfanger', basin: 'Becken', reservoir: 'Speicher', port: 'Hafen', greenfield: 'Bauerwartungsland' },
+    leisure: { park: 'Park', garden: 'Garten', playground: 'Spielplatz', pitch: 'Sportplatz', sports_centre: 'Sportzentrum', recreation_ground: 'Erholungsfläche', nature_reserve: 'Naturschutzgebiet',
+      dog_park: 'Hundeauslauf', golf_course: 'Golfplatz', swimming_pool: 'Schwimmbecken', stadium: 'Stadion', marina: 'Marina', track: 'Laufbahn', fitness_station: 'Fitnessgeräte', picnic_table: 'Picknicktisch' },
+    natural: { wood: 'Wald', scrub: 'Gestrüpp', grassland: 'Grasland', heath: 'Heide', wetland: 'Feuchtgebiet', beach: 'Strand', sand: 'Sand', water: 'Wasser', tree: 'Baum', tree_row: 'Baumreihe' },
+    railway: { rail: 'Eisenbahn', light_rail: 'S-Bahn / Stadtbahn', subway: 'U-Bahn', tram: 'Straßenbahn', disused: 'Stillgelegt', abandoned: 'Aufgelassen', narrow_gauge: 'Schmalspur',
+      station: 'Bahnhof', halt: 'Haltepunkt', tram_stop: 'Tramhaltestelle', platform: 'Bahnsteig' },
+    waterway: { river: 'Fluss', canal: 'Kanal', stream: 'Bach', ditch: 'Graben', drain: 'Entwässerungsgraben', riverbank: 'Flussfläche', dock: 'Hafenbecken' },
+    tourism: { hotel: 'Hotel', hostel: 'Hostel', guest_house: 'Pension', apartment: 'Ferienwohnung', museum: 'Museum', gallery: 'Galerie', attraction: 'Sehenswürdigkeit', artwork: 'Kunstwerk', viewpoint: 'Aussichtspunkt', information: 'Information' },
+    shop: { supermarket: 'Supermarkt', bakery: 'Bäckerei', convenience: 'Späti / Kiosk', clothes: 'Bekleidung', hairdresser: 'Friseur', kiosk: 'Kiosk', mall: 'Einkaufszentrum', department_store: 'Kaufhaus', butcher: 'Metzgerei', books: 'Buchhandlung' }
+  };
+  const valLabel = (key, v) => v === '' || v == null ? '(ohne Angabe)' : (DE[key] && DE[key][v]) || v;
+  const PALETTE = ['#E2B33C', '#9C7BD6', '#5DB8A8', '#E5875A', '#6FB6E8', '#D98CB3', '#9DC47E', '#F2D16B', '#B07FE0', '#E06C6C', '#7FA0D8', '#C9A27E', '#8FC1A0', '#F0A3C4', '#A8B85A', '#73C2D9', '#D7A5E8', '#BFA06A', '#6E9F5D', '#E8C36A'];
+
+  /* Gebäudetyp (detailliert): nutzt building, amenity, tourism, shop, office … */
+  function detailType(t) {
+    if (t.amenity === 'place_of_worship') {
+      const r = t.religion; return r === 'muslim' ? 'mosque' : r === 'jewish' ? 'synagogue' : r === 'christian' || !r ? 'church' : 'religious';
+    }
+    const A = ['school', 'kindergarten', 'university', 'college', 'hospital', 'clinic', 'townhall', 'police', 'fire_station', 'library', 'theatre', 'cinema', 'community_centre', 'social_facility', 'nursing_home', 'courthouse', 'post_office', 'arts_centre', 'parking'];
+    if (A.includes(t.amenity)) return t.amenity === 'parking' ? 'parking' : t.amenity;
+    if (t.tourism === 'hotel' || t.tourism === 'hostel' || t.tourism === 'guest_house') return 'hotel';
+    if (t.tourism === 'museum') return 'museum';
+    if (t.shop === 'supermarket') return 'supermarket';
+    if (t.shop === 'mall' || t.shop === 'department_store') return 'mall';
+    const b = t.building;
+    if ((b === 'yes' || !b) && t.shop) return 'retail';
+    if ((b === 'yes' || !b) && t.office) return 'office';
+    if ((b === 'yes' || !b) && ['restaurant', 'cafe', 'bar', 'pub', 'fast_food', 'bank'].includes(t.amenity)) return 'commercial';
+    if ((b === 'yes' || !b) && t['building:use']) return t['building:use'];
+    return b || 'yes';
+  }
+  const TYPE_LABEL = v => (DE.building[v] || DE.amenity[v] || v);
+
+  /* ---------- Bausteine (einzelne Datentypen wie in QuickOSM) ---------- */
+  const BASES = {
+    gebaeude: { label: 'Gebäude', group: 'Gebäude', fetch: 'buildings', keep: f => isPoly(f.geometry) && f.properties.building, presets: ['typ', 'nutzung', 'hoehe', 'geschosse', 'einheitlich'], def: 'typ', color: '#9C7BD6', statMode: 'centroid' },
+    strassen: { label: 'Straßen & Wege', group: 'Verkehr', fetch: 'roads', keep: f => isLine(f.geometry) && roadClass(f.properties), presets: ['hierarchie', 'einheitlich'], def: 'hierarchie', color: '#D8D3E3' },
+    bahn: { label: 'Bahn & Gleise', group: 'Verkehr', fetch: 'rail', keep: f => isLine(f.geometry), presets: ['bahn', 'einheitlich'], def: 'bahn', color: '#E86FA0' },
+    oepnv: { label: 'ÖPNV-Haltestellen', group: 'Verkehr', fetch: 'stops', keep: f => isPoint(f.geometry) && stopClass(f.properties), presets: ['oepnv', 'einheitlich'], def: 'oepnv', color: '#B07FE0' },
+    gruen: { label: 'Grün- & Freiflächen', group: 'Freiraum', fetch: 'green', keep: f => isPoly(f.geometry) && greenClass(f.properties), presets: ['gruen', 'einheitlich'], def: 'gruen', color: '#6E9F5D' },
+    wasser: { label: 'Wasser & Gewässer', group: 'Wasser', fetch: 'water', keep: f => waterClass(f.properties, f.geometry), presets: ['wasser', 'einheitlich'], def: 'wasser', color: '#6BB7E8' },
+    flaechen: { label: 'Flächennutzung', group: 'Nutzung', fetch: 'landuse', keep: f => isPoly(f.geometry) && landuseClass(f.properties), presets: ['flaechen', 'einheitlich'], def: 'flaechen', color: '#C9A27E', opacity: 0.7 },
+    baeume: { label: 'Bäume', group: 'Freiraum', fetch: 'trees', keep: f => isPoint(f.geometry) || isLine(f.geometry), presets: ['baeume', 'einheitlich'], def: 'baeume', color: '#4E8F4A' },
+    grenzen: { label: 'Bezirke & Ortsteile', group: 'Grenzen', fetch: 'boundaries', keep: f => isPoly(f.geometry) && ['8', '9', '10'].includes(f.properties.admin_level), presets: ['grenzen'], def: 'grenzen', color: '#BCA8DE', outlineOnly: true, statMode: 'none' },
+    abfrage: { label: 'Eigene Abfrage', group: 'Eigene Abfragen', fetch: null, keep: () => true, presets: ['einheitlich'], def: 'einheitlich', color: '#F2D16B' }
+  };
+  const BASE_ORDER = ['gebaeude', 'strassen', 'bahn', 'gruen', 'wasser', 'flaechen', 'oepnv', 'baeume', 'grenzen'];
+  const STANDARD = ['gebaeude', 'strassen', 'bahn', 'gruen', 'wasser'];
+  // Zeichenreihenfolge (unten -> oben)
+  const ZRANK = { flaechen: 0, gruen: 1, wasser: 2, bahn: 3, strassen: 4, gebaeude: 5, baeume: 6, abfrage: 7, oepnv: 8, grenzen: 9 };
+
+  /* Voreinstellungen zum Aufteilen (wie „Vektorlayer teilen“ / kategorisierter Stil) */
+  const PRESETS = {
+    einheitlich: { label: 'Einheitlich (eine Farbe)' },
+    typ: { label: 'Gebäudetyp (detailliert)', dynamic: true },
+    nutzung: { label: 'Nutzung (Gruppen)', cls: 'nutzung' },
+    hoehe: { label: 'Gebäudehöhe', cls: 'hoehe' },
+    geschosse: { label: 'Geschosszahl', cls: 'geschosse' },
+    hierarchie: { label: 'Straßenhierarchie', cls: 'strassen' },
+    bahn: { label: 'Bahnart', cls: 'bahn' },
+    oepnv: { label: 'Verkehrsmittel', cls: 'oepnv' },
+    gruen: { label: 'Freiraumtyp', cls: 'gruen' },
+    wasser: { label: 'Gewässertyp', cls: 'wasser' },
+    flaechen: { label: 'Nutzungsart', cls: 'flaechen' },
+    baeume: { label: 'Baum / Baumreihe', cls: 'baeume' },
+    grenzen: { label: 'Verwaltungsebene', cls: 'grenzen' }
+  };
+  CL.geschosse = [
+    { key: 'g1', label: '1–2 Geschosse', color: '#F3DDB0' }, { key: 'g2', label: '3–4 Geschosse', color: '#E3A562' },
+    { key: 'g3', label: '5–6 Geschosse', color: '#B8613B' }, { key: 'g4', label: '7 und mehr Geschosse', color: '#6E2B2B' }, { key: 'gx', label: 'Geschosse unbekannt', color: '#55525C' }
+  ];
+
+  const SKIP_KEYS = /^(osm_id|name|name:.*|addr:.*|source.*|ref.*|wikidata|wikipedia|website|phone|email|opening_hours|note|fixme|description|check_date.*|survey.*|contact:.*|image|url|start_date|operator:wikidata|brand:wikidata|_.*)$/;
+  function splitOptions(L) { // Welche Aufteilungen bietet dieser Layer an?
+    const base = BASES[L.base]; const opts = base.presets.map(p => ({ value: p, label: PRESETS[p].label }));
+    const cnt = {}; const vals = {};
+    for (const f of L.raw) for (const k in f.properties) { if (SKIP_KEYS.test(k)) continue; cnt[k] = (cnt[k] || 0) + 1; (vals[k] = vals[k] || new Set()).add(f.properties[k]); }
+    const keys = Object.keys(cnt).filter(k => vals[k].size >= 1 && vals[k].size <= 400 && cnt[k] >= Math.max(1, L.raw.length * 0.01)).sort((a, b) => cnt[b] - cnt[a]).slice(0, 40);
+    keys.forEach(k => opts.push({ value: 'attr:' + k, label: `Attribut: ${k} (${cnt[k]}×)` }));
+    return opts;
+  }
+
+  function classifyPreset(preset, f, ctx) { // -> {cls, q?, props?}
+    const t = f.properties, g = f.geometry;
+    switch (preset) {
+      case 'einheitlich': return { cls: 'alle' };
+      case 'typ': return { cls: detailType(t) };
+      case 'nutzung': {
+        let r = buildingUse(t);
+        if (r.cls === 'unbekannt' && ctx.lu && ctx.lu.length) {
+          const c = centroid(g);
+          const hit = ctx.lu.find(x => c[0] >= x.b[0] && c[0] <= x.b[2] && c[1] >= x.b[1] && c[1] <= x.b[3] && pointInPoly(c, x.f.geometry));
+          if (hit) r = { cls: LANDUSE_TO_USE[hit.cls], q: 'abgeleitet aus Flächennutzung' };
+        }
+        return { cls: r.cls, q: r.q, props: { nutzung_quelle: r.q } };
+      }
+      case 'hoehe': { const r = buildingHeight(t); return { cls: heightClass(r.h), q: r.q, props: { hoehe_m: r.h, geschosse: r.levels, hoehe_quelle: r.q } }; }
+      case 'geschosse': { const l = parseNum(t['building:levels']); return { cls: l == null ? 'gx' : l <= 2 ? 'g1' : l <= 4 ? 'g2' : l <= 6 ? 'g3' : 'g4', q: l == null ? 'keine Angabe' : 'OSM-Angabe (building:levels)' }; }
+      case 'hierarchie': return { cls: roadClass(t) };
+      case 'bahn': return { cls: railClass(t) || 'fern' };
+      case 'oepnv': return { cls: stopClass(t) };
+      case 'gruen': return { cls: greenClass(t) };
+      case 'wasser': return { cls: waterClass(t, g) };
+      case 'flaechen': return { cls: landuseClass(t) };
+      case 'baeume': return { cls: isPoint(g) ? 'baum' : 'baumreihe' };
+      case 'grenzen': { const l = t.admin_level; return { cls: l === '8' ? 'gemeinde' : l === '9' ? 'bezirk' : 'ortsteil' }; }
+    }
+    return { cls: 'alle' };
+  }
+
+  /* Layer neu aufteilen. Eigene Änderungen (Farbe, Name, sichtbar, zusammengeführt) bleiben erhalten. */
+  function applySplit(L, mode, ctx) {
+    ctx = ctx || {}; L.split = mode; L.styles = L.styles || {}; L.merges = L.merges || {};
+    const base = BASES[L.base]; const st = L.styles[mode] = L.styles[mode] || {}; const mg = L.merges[mode] = L.merges[mode] || {};
+    if (mode === 'nutzung' && ctx.landuse) ctx.lu = ctx.landuse.filter(f => isPoly(f.geometry)).map(f => ({ f, cls: landuseClass(f.properties), b: bboxOf(f.geometry), a: polyArea(f.geometry) })).filter(x => LANDUSE_TO_USE[x.cls]).sort((a, b) => a.a - b.a);
+    const attrKey = mode.startsWith('attr:') ? mode.slice(5) : null;
+    const feats = []; const counts = {};
+    for (const f of L.raw) {
+      let r;
+      if (attrKey) { const v = f.properties[attrKey]; r = { cls: v == null || v === '' ? '__leer' : String(v) }; }
+      else r = classifyPreset(mode, f, ctx);
+      if (!r || !r.cls) r = { cls: '__andere' };
+      let cls = r.cls; while (mg[cls]) cls = mg[cls];
+      const p = Object.assign({}, f.properties, r.props || {}, { _cls: cls }); if (r.q) p._q = r.q;
+      feats.push({ type: 'Feature', geometry: f.geometry, properties: p }); counts[cls] = (counts[cls] || 0) + 1;
+    }
+    let classes;
+    const preset = PRESETS[mode];
+    if (mode === 'einheitlich') classes = [{ key: 'alle', label: L.name, color: base.color }];
+    else if (preset && preset.cls) classes = CL[preset.cls].map(c => Object.assign({}, c));
+    else { // dynamisch: Klassen aus den Daten, sortiert nach Häufigkeit
+      const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+      const top = keys.slice(0, 39), rest = keys.slice(39);
+      if (rest.length) feats.forEach(f => { if (rest.includes(f.properties._cls)) f.properties._cls = '__andere'; });
+      classes = top.map((k, i) => {
+        let color = PALETTE[i % PALETTE.length];
+        if (mode === 'typ') { const u = buildingUse({ building: k, amenity: k }).cls; const baseC = (CL.nutzung.find(c => c.key === u) || {}).color; if (baseC && k !== 'yes') color = shade(baseC, (i % 4) * 0.12 - 0.12); if (k === 'yes') color = '#7B7785'; }
+        const label = k === '__leer' ? '(ohne Angabe)' : mode === 'typ' ? TYPE_LABEL(k) : valLabel(attrKey, k);
+        return { key: k, label, color };
+      });
+      if (rest.length) classes.push({ key: '__andere', label: `Andere (${rest.length} Werte)`, color: '#8E8A96' });
+    }
+    if (counts.__andere && !classes.some(c => c.key === '__andere')) classes.push({ key: '__andere', label: 'Nicht zugeordnet', color: '#6B6B75' });
+    classes = classes.filter(c => !mg[c.key]);
+    const ord = L.order && L.order[mode]; // eigene Reihenfolge (per Maus gezogen) wiederherstellen
+    if (ord) classes.sort((a, b) => { const ia = ord.indexOf(a.key), ib = ord.indexOf(b.key); return (ia < 0 ? 1e6 : ia) - (ib < 0 ? 1e6 : ib); });
+    classes.forEach(c => { c.visible = true; Object.assign(c, st[c.key] || {}); });
+    feats.forEach((f, i) => { f.properties._i = i; });
+    L.features = feats; L.classes = classes;
+    return L;
+  }
+  function shade(hex, amt) { // Farbe heller (+) oder dunkler (-)
+    const n = parseInt(hex.slice(1), 16); let r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+    const f = v => Math.max(0, Math.min(255, Math.round(amt >= 0 ? v + (255 - v) * amt : v * (1 + amt))));
+    return '#' + [f(r), f(g), f(b)].map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+  function setClassStyle(L, key, patch) { // Farbe/Name/Sichtbarkeit einer Klasse ändern und merken
+    const c = L.classes.find(x => x.key === key); if (!c) return; Object.assign(c, patch);
+    const st = L.styles[L.split] = L.styles[L.split] || {}; st[key] = Object.assign(st[key] || {}, patch);
+  }
+  function setClassOrder(L, keys) { L.order = L.order || {}; L.order[L.split] = keys.slice(); const m = {}; L.classes.forEach(c => { m[c.key] = c; }); L.classes = keys.map(k => m[k]).filter(Boolean); }
+  function mergeClass(L, from, to) { L.merges[L.split] = L.merges[L.split] || {}; L.merges[L.split][from] = to; }
+  function removeClassFeatures(L, key) { // Elemente einer Klasse endgültig aus dem Layer entfernen
+    const ids = new Set(L.features.filter(f => f.properties._cls === key).map(f => f.properties.osm_id));
+    L.raw = L.raw.filter(f => !ids.has(f.properties.osm_id));
+  }
+
+  function makeBaseLayer(baseId, data, opt) {
+    opt = opt || {}; const B = BASES[baseId];
+    let raw = (opt.raw || data[B.fetch] || []).filter(B.keep);
+    if (opt.only) { // nur bestimmte Untergruppen übernehmen (z. B. nur Kirchen)
+      const mode = opt.onlyBy || opt.split || B.def, ctx = { landuse: data.landuse };
+      if (mode === 'nutzung' && data.landuse) ctx.lu = data.landuse.filter(f => isPoly(f.geometry)).map(f => ({ f, cls: landuseClass(f.properties), b: bboxOf(f.geometry), a: polyArea(f.geometry) })).filter(x => LANDUSE_TO_USE[x.cls]).sort((a, b) => a.a - b.a);
+      raw = raw.filter(f => { const r = classifyPreset(mode, f, ctx); return r && opt.only.includes(r.cls); });
+    }
+    const L = { id: opt.id || baseId, base: baseId, name: opt.name || B.label, group: B.group, raw, visible: true, opacity: B.opacity || 0.85,
+      statMode: B.statMode || 'clip', outlineOnly: !!B.outlineOnly, styles: {}, merges: {}, query: opt.query || null, subset: !!opt.only };
+    return applySplit(L, opt.split || B.def, { landuse: data.landuse });
+  }
+
+  /* ---------- Baustein-Katalog: Gruppen-Tabs mit einzeln wählbaren Bausteinen ---------- */
+  // base = lädt Rohdaten (gemeinsam genutzt), only = nur diese Untergruppen, query = eigene OSM-Abfrage (ODER-verknüpft)
+  const GROUPS = [
+    { id: 'basis', label: 'Grundauswahl', items: BASE_ORDER.map(b => ({ id: b, base: b, label: BASES[b].label })) },
+    { id: 'geb', label: 'Gebäude', items: [
+      { id: 'geb_alle', label: 'Alle Gebäude (Schwarzplan)', base: 'gebaeude', split: 'einheitlich' },
+      { id: 'geb_typ', label: 'Gebäudetypen', base: 'gebaeude', split: 'typ' },
+      { id: 'geb_nutzung', label: 'Gebäudenutzung', base: 'gebaeude', split: 'nutzung' },
+      { id: 'geb_hoehe', label: 'Gebäudehöhen', base: 'gebaeude', split: 'hoehe' },
+      { id: 'geb_geschosse', label: 'Geschosszahl', base: 'gebaeude', split: 'geschosse' },
+      { id: 'geb_wohnen', label: 'Wohngebäude', base: 'gebaeude', split: 'nutzung', only: ['wohnen', 'gemischt'] },
+      { id: 'geb_gewerbe', label: 'Gewerbe & Handel', base: 'gebaeude', split: 'nutzung', only: ['gewerbe', 'gemischt'] },
+      { id: 'geb_industrie', label: 'Industrie & Lager', base: 'gebaeude', split: 'nutzung', only: ['industrie'] },
+      { id: 'geb_oeff', label: 'Öffentliche Gebäude', base: 'gebaeude', split: 'nutzung', only: ['oeffentlich', 'bildung'] },
+      { id: 'geb_kirchen', label: 'Kirchen & Gotteshäuser', base: 'gebaeude', split: 'typ', only: ['church', 'chapel', 'cathedral', 'mosque', 'synagogue', 'temple', 'religious', 'monastery'] },
+      { id: 'geb_neben', label: 'Garagen & Nebengebäude', base: 'gebaeude', split: 'nutzung', only: ['neben'] }
+    ] },
+    { id: 'verkehr', label: 'Verkehr', items: [
+      { id: 'str_alle', label: 'Alle Straßen & Wege', base: 'strassen', split: 'hierarchie' },
+      { id: 'str_haupt', label: 'Hauptverkehrsstraßen', base: 'strassen', split: 'hierarchie', only: ['bund', 'haupt', 'haupt2', 'sammel'] },
+      { id: 'str_neben', label: 'Neben- & Wohnstraßen', base: 'strassen', split: 'hierarchie', only: ['neben', 'service'] },
+      { id: 'str_fuss', label: 'Fußwege & Fußgängerzonen', base: 'strassen', split: 'hierarchie', only: ['fuss', 'fuzo'] },
+      { id: 'str_rad', label: 'Radwege', base: 'strassen', split: 'hierarchie', only: ['rad'] },
+      { id: 'bahn_alle', label: 'Bahn & Gleise', base: 'bahn', split: 'bahn' },
+      { id: 'bahn_fern', label: 'Eisenbahn & S-Bahn', base: 'bahn', split: 'bahn', only: ['fern'] },
+      { id: 'bahn_u', label: 'U-Bahn', base: 'bahn', split: 'bahn', only: ['ubahn'] },
+      { id: 'bahn_tram', label: 'Straßenbahn', base: 'bahn', split: 'bahn', only: ['tram'] },
+      { id: 'oepnv_alle', label: 'ÖPNV-Haltestellen', base: 'oepnv', split: 'oepnv' },
+      { id: 'q_parken', label: 'Parkplätze & Parkhäuser', query: [['amenity', 'parking']] },
+      { id: 'q_rad', label: 'Fahrradstellplätze & Leihräder', query: [['amenity', 'bicycle_parking'], ['amenity', 'bicycle_rental']] },
+      { id: 'q_laden', label: 'Ladestationen & Carsharing', query: [['amenity', 'charging_station'], ['amenity', 'car_sharing']] }
+    ] },
+    { id: 'frei', label: 'Grün & Freiraum', items: [
+      { id: 'gruen_alle', label: 'Alle Grün- & Freiflächen', base: 'gruen', split: 'gruen' },
+      { id: 'gruen_park', label: 'Parks & Grünanlagen', base: 'gruen', split: 'gruen', only: ['park'] },
+      { id: 'gruen_wald', label: 'Wald & Gehölz', base: 'gruen', split: 'gruen', only: ['wald', 'gehoelz'] },
+      { id: 'gruen_wiese', label: 'Rasen & Wiesen', base: 'gruen', split: 'gruen', only: ['wiese'] },
+      { id: 'gruen_klein', label: 'Kleingärten & Privatgärten', base: 'gruen', split: 'gruen', only: ['kleingarten', 'privat'] },
+      { id: 'gruen_friedhof', label: 'Friedhöfe', base: 'gruen', split: 'gruen', only: ['friedhof'] },
+      { id: 'gruen_sport', label: 'Sport & Spiel', base: 'gruen', split: 'gruen', only: ['sport'] },
+      { id: 'q_spiel', label: 'Spielplätze', query: [['leisure', 'playground']] },
+      { id: 'gruen_landw', label: 'Landwirtschaft', base: 'gruen', split: 'gruen', only: ['landwirtschaft'] },
+      { id: 'baeume', label: 'Bäume & Baumreihen', base: 'baeume' }
+    ] },
+    { id: 'wasser', label: 'Wasser', items: [
+      { id: 'wasser_alle', label: 'Alle Gewässer', base: 'wasser', split: 'wasser' },
+      { id: 'wasser_fluss', label: 'Flüsse & Kanäle', base: 'wasser', split: 'wasser', only: ['fluss', 'fluss_l', 'kanal_l'] },
+      { id: 'wasser_see', label: 'Seen & Teiche', base: 'wasser', split: 'wasser', only: ['see'] },
+      { id: 'wasser_hafen', label: 'Hafenbecken', base: 'wasser', split: 'wasser', only: ['hafen'] },
+      { id: 'wasser_bach', label: 'Bäche & Gräben', base: 'wasser', split: 'wasser', only: ['bach_l'] }
+    ] },
+    { id: 'nutzung', label: 'Nutzung & Einrichtungen', items: [
+      { id: 'fl_alle', label: 'Flächennutzung', base: 'flaechen', split: 'flaechen' },
+      { id: 'fl_wohnen', label: 'Wohnbauflächen', base: 'flaechen', split: 'flaechen', only: ['wohnen'] },
+      { id: 'fl_gewerbe', label: 'Gewerbe- & Industrieflächen', base: 'flaechen', split: 'flaechen', only: ['gewerbe', 'industrie', 'hafen'] },
+      { id: 'fl_gemein', label: 'Gemeinbedarfsflächen', base: 'flaechen', split: 'flaechen', only: ['gemeinbedarf'] },
+      { id: 'q_bildung', label: 'Schulen, Kitas & Hochschulen', query: [['amenity', 'school'], ['amenity', 'kindergarten'], ['amenity', 'university'], ['amenity', 'college']] },
+      { id: 'q_gesund', label: 'Krankenhäuser, Ärzte & Apotheken', query: [['amenity', 'hospital'], ['amenity', 'clinic'], ['amenity', 'doctors'], ['amenity', 'pharmacy']] },
+      { id: 'q_einkauf', label: 'Supermärkte & Einkauf', query: [['shop', 'supermarket'], ['shop', 'convenience'], ['shop', 'mall'], ['shop', 'department_store']] },
+      { id: 'q_gastro', label: 'Gastronomie', query: [['amenity', 'restaurant'], ['amenity', 'cafe'], ['amenity', 'bar'], ['amenity', 'pub'], ['amenity', 'fast_food']] },
+      { id: 'q_kultur', label: 'Kultur & Freizeit', query: [['tourism', 'museum'], ['amenity', 'theatre'], ['amenity', 'cinema'], ['amenity', 'arts_centre'], ['amenity', 'library']] },
+      { id: 'q_hotel', label: 'Hotels & Unterkünfte', query: [['tourism', 'hotel'], ['tourism', 'hostel'], ['tourism', 'guest_house']] },
+      { id: 'q_oeff', label: 'Polizei, Feuerwehr & Rathaus', query: [['amenity', 'police'], ['amenity', 'fire_station'], ['amenity', 'townhall']] },
+      { id: 'grenzen', label: 'Bezirke & Ortsteile', base: 'grenzen' }
+    ] }
+  ];
+  const ITEMS = {}; GROUPS.forEach(g => g.items.forEach(it => { ITEMS[it.id] = Object.assign({ group: g.id }, it); }));
+  function itemTask(id) { // Baustein -> Ladeauftrag
+    const it = ITEMS[id]; if (!it) return null;
+    if (it.query) return { query: { name: it.label, rows: it.query.map(([k, v], i) => ({ key: k, value: v, op: i ? 'ODER' : 'UND' })) } };
+    const isBase = BASES[id] && it.base === id;
+    return { base: it.base, split: it.split, only: it.only, id: isBase ? it.base : id, name: isBase ? undefined : it.label };
+  }
+
+  /* ---------- Eigene Abfrage (wie QuickOSM: Schlüssel = Wert) ---------- */
+  const qs = s => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  function customQuery(rows, P) { // rows: [{key, value, op:'UND'|'ODER'}]
+    const groups = [[]];
+    rows.filter(r => r.key && r.key.trim()).forEach((r, i) => { if (i > 0 && r.op === 'ODER') groups.push([]); groups[groups.length - 1].push(r); });
+    const stmts = groups.filter(g => g.length).map(g => 'nwr' + g.map(r => r.value && r.value.trim() ? `["${qs(r.key.trim())}"="${qs(r.value.trim())}"]` : `["${qs(r.key.trim())}"]`).join('') + `(poly:"${P}");`);
+    if (!stmts.length) throw new Error('Bitte mindestens einen Schlüssel angeben');
+    return `(${stmts.join('')});out geom;`;
+  }
+  const queryName = rows => rows.filter(r => r.key).map((r, i) => (i ? (r.op === 'ODER' ? ' oder ' : ' + ') : '') + valLabel(r.key, r.value) + (r.value ? '' : ` (alle ${r.key})`)).join('');
+
+  /* Begriffe, die im Auftrag erkannt werden und zu einer eigenen Abfrage werden */
+  const TERMS = [
+    [/kirche|gotteshaus|moschee|synagoge/, 'Kirchen & Gotteshäuser', [['amenity', 'place_of_worship']]],
+    [/hotel|unterkunft|hostel|pension/, 'Hotels & Unterkünfte', [['tourism', 'hotel'], ['tourism', 'hostel'], ['tourism', 'guest_house']]],
+    [/schule/, 'Schulen', [['amenity', 'school']]],
+    [/kita|kindergarten|kinderbetreuung/, 'Kitas', [['amenity', 'kindergarten']]],
+    [/universitaet|hochschule|uni /, 'Hochschulen', [['amenity', 'university'], ['amenity', 'college']]],
+    [/krankenhaus|klinik/, 'Krankenhäuser', [['amenity', 'hospital'], ['amenity', 'clinic']]],
+    [/arzt|aerzte|praxis/, 'Arztpraxen', [['amenity', 'doctors'], ['amenity', 'dentist']]],
+    [/apotheke/, 'Apotheken', [['amenity', 'pharmacy']]],
+    [/supermarkt|lebensmittel|einkauf/, 'Supermärkte', [['shop', 'supermarket']]],
+    [/restaurant|gastronomie|cafe|kneipe/, 'Gastronomie', [['amenity', 'restaurant'], ['amenity', 'cafe'], ['amenity', 'bar'], ['amenity', 'pub'], ['amenity', 'fast_food']]],
+    [/spielplatz|spielplaetze/, 'Spielplätze', [['leisure', 'playground']]],
+    [/parkplatz|parkplaetze|parkhaus/, 'Parkplätze', [['amenity', 'parking']]],
+    [/museum|museen|theater|kultur/, 'Kultur', [['tourism', 'museum'], ['amenity', 'theatre'], ['amenity', 'arts_centre'], ['amenity', 'cinema']]],
+    [/polizei|feuerwehr|rathaus|behoerde/, 'Öffentliche Einrichtungen', [['amenity', 'police'], ['amenity', 'fire_station'], ['amenity', 'townhall']]],
+    [/ladestation|carsharing/, 'Ladestationen & Carsharing', [['amenity', 'charging_station'], ['amenity', 'car_sharing']]],
+    [/sportplatz|sporthalle|sportanlage/, 'Sportanlagen', [['leisure', 'pitch'], ['leisure', 'sports_centre']]]
+  ];
+
+  /* ---------- Auftrag in natürlicher Sprache (Schlagworte, keine KI) ---------- */
+  function parseCommand(text) {
+    const s = ' ' + text.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss') + ' ';
+    const bases = new Set(), splits = {}; const addSplit = (b, p) => { bases.add(b); (splits[b] = splits[b] || []).includes(p) || splits[b].push(p); };
+    if (/alles|komplett|vollstaendig|quickosm|gesamt|standard|staedtebauliche (analyse|struktur)|bestandsanalyse/.test(s)) STANDARD.forEach(b => bases.add(b));
+    if (/gebaeude|bebauung|baustruktur|schwarzplan|bauweise|koernung|grundriss|bauten/.test(s)) bases.add('gebaeude');
+    if (/gebaeudetyp|typologie|gebaeudearten/.test(s)) addSplit('gebaeude', 'typ');
+    if (/gebaeudenutzung|nutzung der gebaeude|gebaeudefunktion/.test(s) || (/nutzung/.test(s) && /gebaeude/.test(s) && !/flaechennutzung|landnutzung/.test(s))) addSplit('gebaeude', 'nutzung');
+    if (/hoehe|hoehen|hochhaus/.test(s)) addSplit('gebaeude', 'hoehe');
+    if (/geschoss|stockwerk|etage/.test(s)) addSplit('gebaeude', 'geschosse');
+    if (/flaechennutzung|landnutzung|nutzungsflaech|nutzungsart/.test(s)) bases.add('flaechen');
+    if (/nutzung/.test(s) && !splits.gebaeude && !bases.has('flaechen')) { addSplit('gebaeude', 'nutzung'); bases.add('flaechen'); }
+    if (/strasse|verkehr|erschliessung|wege|radweg|fussweg|strassennetz|hierarchie|mobilitaet/.test(s)) bases.add('strassen');
+    if (/bahn|gleis|schiene|tram/.test(s)) bases.add('bahn');
+    if (/oepnv|nahverkehr|haltestelle|bus|u-bahn|s-bahn|erreichbar/.test(s)) bases.add('oepnv');
+    if (/gruen|park|freiraum|wald|vegetation|friedhof|kleingarten|wiese/.test(s)) bases.add('gruen');
+    if (/wasser|fluss|kanal|see |seen|hafen|gewaesser|ufer|kueste/.test(s)) bases.add('wasser');
+    if (/baum|baeume|baumbestand/.test(s)) bases.add('baeume');
+    if (/bezirk|ortsteil|viertel|grenze|stadtteil/.test(s)) bases.add('grenzen');
+    const queries = TERMS.filter(([re]) => re.test(s)).map(([, name, tags]) => ({ name, rows: tags.map(([k, v], i) => ({ key: k, value: v, op: i ? 'ODER' : 'UND' })) }));
+    const UNS = [[/laerm/, 'Lärm'], [/hitze|waerme|klima/, 'Hitzezonen'], [/starkregen/, 'Starkregen'], [/hochwasser|ueberschwemm|flut/, 'Hochwasser'],
+      [/einkommen|sozial|miete|kaufkraft|armut/, 'Einkommen & Sozialdaten'], [/verkehrsdichte|verkehrsaufkommen|verkehrsmenge/, 'Verkehrsdichte'],
+      [/blockrand|zeilenbau|solitaer/, 'Bebauungstypen (Block/Zeile/Solitär)']];
+    const unsupported = UNS.filter(([re]) => re.test(s)).map(u => u[1]);
+    return { bases: BASE_ORDER.filter(b => bases.has(b)), splits, queries, unsupported };
+  }
+
+  /* ---------- Statistik ---------- */
+  function clippedLength(g, sel, sb) {
+    const lines = g.type === 'LineString' ? [g.coordinates] : g.coordinates; let len = 0;
+    for (const l of lines) for (let i = 1; i < l.length; i++) {
+      const a = l[i - 1], b = l[i], d = dist(a, b);
+      const n = Math.min(200, Math.max(1, Math.ceil(d / 10))); // lange Segmente in 10-m-Stücke teilen
+      for (let j = 0; j < n; j++) {
+        const t = (j + 0.5) / n, m = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        if (m[0] >= sb[0] && m[0] <= sb[2] && m[1] >= sb[1] && m[1] <= sb[3] && pointInPoly(m, sel)) len += d / n;
+      }
+    }
+    return len;
+  }
+  function isConvex(ring) {
+    let sign = 0; const n = ring.length - 1; if (n < 3) return false;
+    for (let i = 0; i < n; i++) {
+      const a = ring[i], b = ring[(i + 1) % n], c = ring[(i + 2) % n];
+      const z = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+      if (Math.abs(z) < 1e-18) continue; const sg = z > 0 ? 1 : -1;
+      if (sign && sg !== sign) return false; sign = sg;
+    }
+    return true;
+  }
+  function clipRing(ring, clip) { // Sutherland-Hodgman (Gebiet muss konvex sein)
+    let out = ring.slice(0, -1); const c = clip.slice(0, -1);
+    const ccw = ringSigned(clip) > 0;
+    const inside = (p, a, b) => { const z = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]); return ccw ? z >= 0 : z <= 0; };
+    const ix = (p, q, a, b) => { const A1 = q[1] - p[1], B1 = p[0] - q[0], C1 = A1 * p[0] + B1 * p[1], A2 = b[1] - a[1], B2 = a[0] - b[0], C2 = A2 * a[0] + B2 * a[1], d = A1 * B2 - A2 * B1; return d === 0 ? p : [(B2 * C1 - B1 * C2) / d, (A1 * C2 - A2 * C1) / d]; };
+    for (let i = 0; i < c.length && out.length; i++) {
+      const a = c[i], b = c[(i + 1) % c.length], inp = out; out = [];
+      for (let j = 0; j < inp.length; j++) {
+        const P = inp[j], Q = inp[(j + 1) % inp.length], pin = inside(P, a, b), qin = inside(Q, a, b);
+        if (pin) { out.push(P); if (!qin) out.push(ix(P, Q, a, b)); } else if (qin) out.push(ix(P, Q, a, b));
+      }
+    }
+    return out.length >= 3 ? out.concat([out[0]]) : null;
+  }
+  function ringSigned(r) { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] - r[i][0]) * (r[j][1] + r[i][1]); return a; }
+  function clipArea(g, clip) {
+    const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates; let a = 0;
+    for (const p of polys) { const o = clipRing(p[0], clip); if (!o) continue; a += ringArea(o); for (const h of p.slice(1)) { const hc = clipRing(h, clip); if (hc) a -= ringArea(hc); } }
+    return Math.max(0, a);
+  }
+  function layerStats(L, selection, intersect) {
+    const sel = selection.geometry, sb = bboxOf(sel), selArea = polyArea(sel);
+    const by = {}; L.classes.forEach(c => { by[c.key] = { count: 0, area: 0, len: 0 }; });
+    let approx = false;
+    const convex = sel.type === 'Polygon' && isConvex(sel.coordinates[0]);
+    for (const f of L.features) {
+      const g = f.geometry, s = by[f.properties._cls]; if (!s || L.statMode === 'none') continue;
+      if (isPoly(g)) {
+        const fb = bboxOf(g); if (!bboxHit(fb, sb)) continue;
+        let a = 0;
+        if (L.statMode === 'centroid') { if (pointInPoly(centroid(g), sel)) a = polyArea(g); }
+        else {
+          let all = true; eachCoord(g, p => { if (all && !pointInPoly(p, sel)) all = false; });
+          if (all) a = polyArea(g);
+          else if (convex) a = clipArea(g, sel.coordinates[0]);
+          else if (intersect) { try { const ix = intersect(f, selection); a = ix ? polyArea(ix.geometry) : 0; } catch (e) { approx = true; a = pointInPoly(centroid(g), sel) ? polyArea(g) : 0; } }
+          else { approx = true; a = pointInPoly(centroid(g), sel) ? polyArea(g) : 0; }
+        }
+        if (a > 0) { s.count++; s.area += a; }
+      } else if (isLine(g)) {
+        const len = clippedLength(g, sel, sb); if (len > 0) { s.count++; s.len += len; }
+      } else if (isPoint(g)) {
+        if (pointInPoly(g.coordinates, sel)) s.count++;
+      }
+    }
+    const total = { count: 0, area: 0, len: 0 };
+    Object.values(by).forEach(s => { total.count += s.count; total.area += s.area; total.len += s.len; });
+    // Datenqualität (Herkunft der Werte)
+    const quality = {};
+    if (L.statMode !== 'none') for (const f of L.features) if (f.properties._q) quality[f.properties._q] = (quality[f.properties._q] || 0) + 1;
+    return { selArea, classes: by, total, approx, quality };
+  }
+
+  /* ---------- Plan-Export: Projektion ---------- */
+  function planFrame(selection) {
+    const c = centroid(selection.geometry); const zone = utmZone(c[0]);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    eachCoord(selection.geometry, p => { const [x, y] = toUTM(p[0], p[1], zone); minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
+    return { zone, minX, minY, maxX, maxY, proj: p => toUTM(p[0], p[1], zone) };
+  }
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const safeName = s => String(s).replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
+
+  /* ---------- SVG (für Illustrator: jede Ebene = eigene Gruppe/Ebene) ---------- */
+  const visLayers = layers => layers.map(L => { const vis = new Set(L.classes.filter(c => c.visible !== false).map(c => c.key)); return Object.assign({}, L, { classes: L.classes.filter(c => vis.has(c.key)), features: L.features.filter(f => vis.has(f.properties._cls)) }); }).filter(L => L.features.length);
+  function buildSVG(layers, selection, opt) {
+    layers = visLayers(layers);
+    opt = Object.assign({ scale: 10000, clip: true, legend: true, title: 'Analyseplan', subtitle: '', date: '' }, opt || {});
+    const F = planFrame(selection); const k = 1000 / opt.scale; // mm pro Meter
+    const M = 12, mapW = (F.maxX - F.minX) * k, mapH = (F.maxY - F.minY) * k;
+    const legW = opt.legend ? 75 : 0, titleH = opt.legend ? 26 : 0;
+    const W = mapW + 2 * M + legW, H = mapH + 2 * M + titleH;
+    const T = p => { const [x, y] = F.proj(p); return ((x - F.minX) * k + M).toFixed(2) + ' ' + ((F.maxY - y) * k + M).toFixed(2); };
+    const ringD = r => 'M' + r.map(T).join('L') + 'Z';
+    const lineD = l => 'M' + l.map(T).join('L');
+    const pathD = g => g.type === 'Polygon' ? g.coordinates.map(ringD).join('') : g.type === 'MultiPolygon' ? g.coordinates.map(p => p.map(ringD).join('')).join('')
+      : g.type === 'LineString' ? lineD(g.coordinates) : g.type === 'MultiLineString' ? g.coordinates.map(lineD).join('') : '';
+    const out = [];
+    out.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+    out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W.toFixed(1)}mm" height="${H.toFixed(1)}mm" viewBox="0 0 ${W.toFixed(2)} ${H.toFixed(2)}">`);
+    out.push(`<defs><clipPath id="Gebiet_Clip"><path d="${pathD(selection.geometry)}"/></clipPath></defs>`);
+    out.push(`<g id="Hintergrund"><rect x="0" y="0" width="${W.toFixed(2)}" height="${H.toFixed(2)}" fill="#ffffff"/></g>`);
+    out.push(`<g id="Karte"${opt.clip ? ' clip-path="url(#Gebiet_Clip)"' : ''}>`);
+    for (const L of layers) {
+      out.push(`<g id="${safeName(L.name)}">`);
+      for (const c of L.classes.slice().reverse()) {
+        const fs = L.features.filter(f => f.properties._cls === c.key); if (!fs.length) continue;
+        const polys = fs.filter(f => isPoly(f.geometry)), lines = fs.filter(f => isLine(f.geometry)), pts = fs.filter(f => isPoint(f.geometry));
+        out.push(`<g id="${safeName(L.name + '_' + c.label)}">`);
+        if (polys.length) {
+          const st = L.outlineOnly ? `fill="none" stroke="${c.color}" stroke-width="${((c.width || 1.5) * 0.25).toFixed(2)}" stroke-dasharray="1.5 1"` : `fill="${c.color}" fill-opacity="${L.opacity}" fill-rule="evenodd"`;
+          out.push(`<path ${st} d="${polys.map(f => pathD(f.geometry)).join('')}"/>`);
+        }
+        if (lines.length) out.push(`<path fill="none" stroke="${c.color}" stroke-width="${((c.width || 1.2) * 0.22).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" d="${lines.map(f => pathD(f.geometry)).join('')}"/>`);
+        if (pts.length) {
+          const r = ((c.r || 3) * 0.22).toFixed(2);
+          out.push(pts.map(f => { const [x, y] = T(f.geometry.coordinates).split(' '); return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.color}"/>`; }).join(''));
+        }
+        out.push(`</g>`);
+      }
+      out.push(`</g>`);
+    }
+    out.push(`</g>`);
+    out.push(`<g id="Untersuchungsgebiet"><path d="${pathD(selection.geometry)}" fill="none" stroke="#1d1b22" stroke-width="0.5" stroke-dasharray="2 1.2"/></g>`);
+    if (opt.legend) {
+      const x0 = M + mapW + 10; let y = M + 4; const L2 = [];
+      L2.push(`<g id="Legende" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`);
+      L2.push(`<text x="${x0}" y="${y}" font-size="5" font-weight="700">LEGENDE</text>`); y += 8;
+      for (const L of layers.slice().reverse()) {
+        const used = L.classes.filter(c => L.features.some(f => f.properties._cls === c.key)); if (!used.length) continue;
+        if (y > M + mapH + titleH - 10) break;
+        L2.push(`<text x="${x0}" y="${y}" font-size="3" font-weight="700">${esc(L.name.toUpperCase())}</text>`); y += 5;
+        for (const c of used) {
+          const geomLine = L.features.some(f => f.properties._cls === c.key && isLine(f.geometry)) && !L.features.some(f => f.properties._cls === c.key && isPoly(f.geometry));
+          const geomPt = L.features.some(f => f.properties._cls === c.key && isPoint(f.geometry));
+          if (geomPt) L2.push(`<circle cx="${x0 + 3}" cy="${y - 1.2}" r="1.4" fill="${c.color}"/>`);
+          else if (geomLine) L2.push(`<line x1="${x0}" y1="${y - 1.2}" x2="${x0 + 7}" y2="${y - 1.2}" stroke="${c.color}" stroke-width="${Math.max(0.4, (c.width || 1.2) * 0.3).toFixed(2)}" stroke-linecap="round"/>`);
+          else if (L.outlineOnly) L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="none" stroke="${c.color === '#F2EDF7' || c.color === '#E7DDF5' ? '#777' : c.color}" stroke-width="0.4" stroke-dasharray="1 0.6"/>`);
+          else L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="${c.color}" fill-opacity="${Math.max(L.opacity, 0.35)}"/>`);
+          L2.push(`<text x="${x0 + 10}" y="${y}" font-size="2.6">${esc(c.label)}</text>`); y += 4.6;
+        }
+        y += 3;
+      }
+      L2.push(`</g>`); out.push(L2.join(''));
+      // Planlayout: Titel, Maßstab, Nordpfeil, Quellen
+      const ty = M + mapH + 10;
+      const sbM = [50, 100, 200, 250, 500, 1000, 2000].find(v => v * k >= 25) || 2000; const sbW = sbM * k;
+      out.push(`<g id="Planlayout" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`
+        + `<text x="${M}" y="${ty + 3}" font-size="8" font-weight="700">${esc(opt.title.toUpperCase())}</text>`
+        + (opt.subtitle ? `<text x="${M}" y="${ty + 9}" font-size="3">${esc(opt.subtitle)}</text>` : '')
+        + `<text x="${M}" y="${ty + 14}" font-size="2.3" fill="#555">Kartengrundlage: © OpenStreetMap-Mitwirkende (ODbL) · erstellt mit URBAN ANALYST${opt.date ? ' · ' + esc(opt.date) : ''} · UTM Zone ${F.zone}N</text>`
+        + `<text x="${M}" y="${ty + 17.5}" font-size="2.3" fill="#555">Hinweis: Fehlende OSM-Angaben sind als „unbekannt“ markiert; geschätzte Werte sind in den Attributen gekennzeichnet.</text>`
+        + `<g id="Massstab"><rect x="${(M + mapW - sbW).toFixed(2)}" y="${ty}" width="${(sbW / 2).toFixed(2)}" height="1.5" fill="#1d1b22"/><rect x="${(M + mapW - sbW / 2).toFixed(2)}" y="${ty}" width="${(sbW / 2).toFixed(2)}" height="1.5" fill="none" stroke="#1d1b22" stroke-width="0.3"/>`
+        + `<text x="${(M + mapW - sbW).toFixed(2)}" y="${ty + 5.5}" font-size="2.4">0</text><text x="${(M + mapW).toFixed(2)}" y="${ty + 5.5}" font-size="2.4" text-anchor="end">${sbM} m</text>`
+        + `<text x="${(M + mapW).toFixed(2)}" y="${ty + 12}" font-size="4" font-weight="700" text-anchor="end">M 1:${opt.scale}</text></g>`
+        + `<g id="Nordpfeil" transform="translate(${(M + mapW + 18).toFixed(2)} ${ty + 2})"><circle cx="0" cy="5" r="6" fill="none" stroke="#1d1b22" stroke-width="0.4"/><path d="M0 0 L2.4 8 L0 6.4 L-2.4 8 Z" fill="#1d1b22"/><text x="0" y="-2" font-size="3" text-anchor="middle" font-weight="700">N</text></g>`
+        + `</g>`);
+    }
+    out.push(`</svg>`);
+    return { svg: out.join('\n'), widthMM: W, heightMM: H };
+  }
+
+  /* ---------- DXF R12 (für CAD, Rhino, Illustrator) ---------- */
+  function aciTable() {
+    const t = [];
+    const base = { 1: [255, 0, 0], 2: [255, 255, 0], 3: [0, 255, 0], 4: [0, 255, 255], 5: [0, 0, 255], 6: [255, 0, 255], 8: [128, 128, 128], 9: [192, 192, 192] };
+    Object.keys(base).forEach(k => t.push([+k, base[k]]));
+    const V = [1, 1, 0.65, 0.65, 0.5, 0.5, 0.3, 0.3, 0.15, 0.15];
+    for (let i = 10; i < 250; i++) {
+      const h = (Math.floor(i / 10) - 1) * 15, d = i % 10, v = V[d], s = d % 2 ? 0.5 : 1;
+      const f = n => { const kk = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(kk, 4 - kk, 1)); };
+      t.push([i, [f(5), f(3), f(1)].map(x => Math.round(x * 255))]);
+    }
+    [[250, 51], [251, 91], [252, 132], [253, 173], [254, 214], [255, 255]].forEach(([i, g]) => t.push([i, [g, g, g]]));
+    return t;
+  }
+  let ACI = null;
+  function nearestACI(hex) {
+    ACI = ACI || aciTable();
+    const n = parseInt(hex.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+    let best = 7, bd = Infinity;
+    for (const [i, [R2, G2, B2]] of ACI) { const d = (r - R2) ** 2 + (g - G2) ** 2 + (b - B2) ** 2; if (d < bd) { bd = d; best = i; } }
+    return best;
+  }
+  function buildDXF(layers, selection, opt) {
+    layers = visLayers(layers);
+    opt = Object.assign({ realCoords: false }, opt || {});
+    const F = planFrame(selection); const ox = opt.realCoords ? 0 : F.minX, oy = opt.realCoords ? 0 : F.minY;
+    const P = p => { const [x, y] = F.proj(p); return [(x - ox).toFixed(3), (y - oy).toFixed(3)]; };
+    const L = []; const push = (...a) => { for (let i = 0; i < a.length; i += 2) L.push(String(a[i]), String(a[i + 1])); };
+    const layerDefs = [['Untersuchungsgebiet', 7]];
+    for (const ly of layers) for (const c of ly.classes) if (ly.features.some(f => f.properties._cls === c.key)) layerDefs.push([safeName(ly.name + '_' + c.label), nearestACI(c.color)]);
+    push(999, `URBAN ANALYST DXF - Einheit: Meter - UTM Zone ${F.zone}N (ETRS89)`);
+    push(999, opt.realCoords ? 'Echte UTM-Koordinaten' : `Ursprung (0/0) = UTM E ${F.minX.toFixed(2)} N ${F.minY.toFixed(2)}`);
+    push(999, 'Daten: (c) OpenStreetMap-Mitwirkende, ODbL');
+    push(0, 'SECTION', 2, 'HEADER', 9, '$ACADVER', 1, 'AC1009', 0, 'ENDSEC');
+    push(0, 'SECTION', 2, 'TABLES');
+    push(0, 'TABLE', 2, 'LTYPE', 70, 1, 0, 'LTYPE', 2, 'CONTINUOUS', 70, 0, 3, 'Solid line', 72, 65, 73, 0, 40, '0.0', 0, 'ENDTAB');
+    push(0, 'TABLE', 2, 'LAYER', 70, layerDefs.length);
+    for (const [n, c] of layerDefs) push(0, 'LAYER', 2, n, 70, 0, 62, c, 6, 'CONTINUOUS');
+    push(0, 'ENDTAB', 0, 'ENDSEC');
+    push(0, 'SECTION', 2, 'ENTITIES');
+    const poly = (coords, layer, closed) => {
+      let pts = coords; if (closed && pts.length > 1 && eq(pts[0], pts[pts.length - 1])) pts = pts.slice(0, -1);
+      if (pts.length < 2) return;
+      push(0, 'POLYLINE', 8, layer, 66, 1, 10, '0.0', 20, '0.0', 30, '0.0', 70, closed ? 1 : 0);
+      for (const p of pts) { const [x, y] = P(p); push(0, 'VERTEX', 8, layer, 10, x, 20, y, 30, '0.0'); }
+      push(0, 'SEQEND', 8, layer);
+    };
+    const sg = selection.geometry; (sg.type === 'Polygon' ? [sg.coordinates] : sg.coordinates).forEach(p => p.forEach(r => poly(r, 'Untersuchungsgebiet', true)));
+    let n = 0;
+    for (const ly of layers) for (const f of ly.features) {
+      const c = ly.classes.find(cc => cc.key === f.properties._cls); if (!c) continue;
+      const lname = safeName(ly.name + '_' + c.label), g = f.geometry;
+      if (g.type === 'Polygon') g.coordinates.forEach(r => poly(r, lname, true));
+      else if (g.type === 'MultiPolygon') g.coordinates.forEach(p => p.forEach(r => poly(r, lname, true)));
+      else if (g.type === 'LineString') poly(g.coordinates, lname, false);
+      else if (g.type === 'MultiLineString') g.coordinates.forEach(l => poly(l, lname, false));
+      else if (g.type === 'Point') { const [x, y] = P(g.coordinates); push(0, 'CIRCLE', 8, lname, 10, x, 20, y, 30, '0.0', 40, (c.r || 3) >= 5 ? '5.0' : '2.0'); }
+      n++;
+    }
+    push(0, 'ENDSEC', 0, 'EOF');
+    return { dxf: L.join('\r\n') + '\r\n', count: n, layers: layerDefs.length };
+  }
+
+  /* ---------- GeoJSON-Export (QGIS) ---------- */
+  function exportGeoJSON(L) {
+    const lab = {}; L.classes.forEach(c => { lab[c.key] = c.label; });
+    return {
+      type: 'FeatureCollection', name: safeName(L.name),
+      features: L.features.map(f => {
+        const p = {}; for (const k in f.properties) if (k[0] !== '_') p[k] = f.properties[k];
+        p.klasse = f.properties._cls; p.klasse_name = lab[f.properties._cls] || ''; p.farbe = (L.classes.find(c => c.key === f.properties._cls) || {}).color || '';
+        if (f.properties._q) p.datenherkunft = f.properties._q;
+        return { type: 'Feature', geometry: f.geometry, properties: p };
+      })
+    };
+  }
+
+  return {
+    ringArea, polyArea, dist, bboxOf, pointInPoly, centroid, circlePoly, simplifyRingTo, toUTM, utmZone,
+    isArea, joinWays, osmToFeatures, FETCHES, HEAD, polyString, CL, BASES, BASE_ORDER, STANDARD, ZRANK, PRESETS, makeBaseLayer, applySplit, splitOptions,
+    PALETTE, GROUPS, ITEMS, itemTask, setClassStyle, setClassOrder, mergeClass, removeClassFeatures, customQuery, queryName, valLabel, DE, detailType, visLayers,
+    buildingUse, buildingHeight, roadClass, greenClass, waterClass, landuseClass, layerStats, parseCommand,
+    buildSVG, buildDXF, exportGeoJSON, nearestACI, safeName, isPoly, isLine, isPoint
+  };
+})();
+if (typeof module !== 'undefined') module.exports = UA;
+
+</script>
+<script>
+/* =====================================================================
+   URBAN ANALYST – Bedienoberfläche & Karte
+   ===================================================================== */
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const fmt = (n, d = 0) => Number(n).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const tick = () => new Promise(r => setTimeout(r, 20));
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* egal */ } } };
+
+  if (!window.maplibregl) {
+    document.body.innerHTML = '<div style="padding:40px;font:15px sans-serif;color:#eee;background:#111;height:100vh">Die Kartenbibliothek konnte nicht geladen werden. Bitte prüfe deine Internetverbindung und lade die Seite neu (F5).</div>';
+    return;
+  }
+
+  /* ---------- Zustand ---------- */
+  const S = {
+    selection: null, areaMode: 'sel', layers: [], cache: { key: null, data: {} }, chosen: new Set(UA.STANDARD),
+    selectedRef: null, theme: 'dark', basemap: 'dark', abort: null, styleReady: false, open: {}, cmenu: null, busy: false, pending: null, stats: {},
+    views: store.get('ua_views', []), history: store.get('ua_history', []),
+    qrows: [{ key: 'building', value: 'church', op: 'UND' }], qn: 0, gtab: 'basis', folded: store.get('ua_folded', {})
+  };
+
+  /* ---------- Hintergrundkarten ---------- */
+  const raster = (tiles, attribution, paint, maxzoom = 19) => ({
+    version: 8, sources: { bg: { type: 'raster', tiles, tileSize: 256, attribution, maxzoom } },
+    layers: [{ id: 'bg-color', type: 'background', paint: { 'background-color': S.theme === 'dark' ? '#141318' : '#f2efe9' } }, { id: 'bg', type: 'raster', source: 'bg', paint: paint || {} }]
+  });
+  const STYLES = {
+    dark: () => 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    light: () => 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    voyager: () => 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+    basemap: () => raster(['https://sgx.geodatenzentrum.de/wmts_basemapde/tile/1.0.0/de_basemapde_web_raster_farbe/default/GLOBAL_WEBMERCATOR/{z}/{y}/{x}.png'], '© basemap.de / BKG (CC BY 4.0)', {}, 18),
+    sat: () => raster(['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], 'Luftbild: Esri, Maxar, Earthstar Geographics', {}, 19),
+    none: () => ({ version: 8, sources: {}, layers: [{ id: 'bg-color', type: 'background', paint: { 'background-color': S.theme === 'dark' ? '#141318' : '#ffffff' } }] })
+  };
+  const map = new maplibregl.Map({
+    container: 'map', style: STYLES.dark(), center: [13.405, 52.515], zoom: 12,
+    preserveDrawingBuffer: true, attributionControl: { compact: true }
+  });
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+  map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+  map.on('error', e => {
+    if (e && e.error && !e.tile && !e.sourceId && /style/i.test(String(e.error.message)) && S.basemap !== 'none' && !S.styleReady) { // nur wenn der Kartenstil selbst nicht lädt
+      log({ title: 'Hintergrundkarte nicht erreichbar', status: 'warn', body: 'Ich zeige die Karte ohne Hintergrund an. Deine Daten funktionieren trotzdem.' });
+      setBasemap('none');
+    }
+  });
+  // Kartenwechsel: Stil komplett neu laden (diff:false), danach eigene Layer wieder einsetzen.
+  // Wichtig: Beim Ereignis 'style.load' meldet MapLibre isStyleLoaded() noch „false“ – deshalb eigenes Merkzeichen styleReady.
+  function setBasemap(b) {
+    S.basemap = b; $('#basemap').value = b; S.styleReady = false;
+    map.setStyle(STYLES[b](), { diff: false });
+    map.once('style.load', () => { S.styleReady = true; restoreAll(); });
+  }
+  map.once('style.load', () => { S.styleReady = true; restoreAll(); });
+  function restoreAll() { drawSelection(); syncLayers(); updateDraft(); highlight(); }
+
+  /* ---------- Gebiet ---------- */
+  function viewPolygon() {
+    const c = map.getContainer(), w = c.clientWidth, h = c.clientHeight;
+    const pts = [[0, 0], [w, 0], [w, h], [0, h]].map(p => { const l = map.unproject(p); return [l.lng, l.lat]; });
+    return { type: 'Polygon', coordinates: [pts.concat([pts[0]])] };
+  }
+  function setSelection(geom, label, noFit) {
+    if (geom.type === 'Polygon') geom = { type: 'Polygon', coordinates: [geom.coordinates[0]] };
+    S.selection = { type: 'Feature', properties: { name: label || 'Untersuchungsgebiet' }, geometry: geom };
+    S.cache = { key: null, data: {} };
+    drawSelection(); updateAreaInfo(); if (!noFit) fitSel();
+    if (S.pending) { const p = S.pending; S.pending = null; load(p); }
+  }
+  function updateAreaInfo() {
+    const el = $('#areaInfo');
+    $('#sumArea').textContent = S.areaMode === 'view' ? 'Kartenansicht · ' + fmt(UA.polyArea(viewPolygon()) / 1e6, 2) + ' km²' : S.selection ? S.selection.properties.name + ' · ' + fmt(UA.polyArea(S.selection.geometry) / 1e6, 2) + ' km²' : 'kein Gebiet';
+    if (S.areaMode === 'view') {
+      const a = UA.polyArea(viewPolygon());
+      el.className = 'area-info';
+      el.innerHTML = `Geladen wird <b>genau das, was gerade auf der Karte zu sehen ist</b>: ${fmt(a / 1e6, 2)} km²` + (a > 25e6 ? '<div class="note">Sehr großer Ausschnitt. Zoome näher heran (empfohlen unter ca. 10 km²).</div>' : '');
+      return;
+    }
+    if (!S.selection) { el.className = 'area-info muted'; el.innerHTML = 'Noch kein Gebiet gewählt. Suche oben einen Ort oder zeichne unten ein Rechteck oder Polygon.'; return; }
+    const a = UA.polyArea(S.selection.geometry);
+    el.className = 'area-info';
+    el.innerHTML = `<b>${esc(S.selection.properties.name)}</b> · ${fmt(a / 1e6, 2)} km² · ${fmt(a / 1e4, 1)} ha` + (a > 25e6 ? '<div class="note">Großes Gebiet: Laden kann mehrere Minuten dauern. Empfohlen sind bis ca. 10 km².</div>' : '');
+  }
+  map.on('moveend', () => { if (S.areaMode === 'view') updateAreaInfo(); });
+  $('#areaMode').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; S.areaMode = b.dataset.m;
+    document.querySelectorAll('#areaMode button').forEach(x => x.classList.toggle('on', x === b)); updateAreaInfo();
+  });
+  function fitSel() { if (!S.selection) return; const b = UA.bboxOf(S.selection.geometry); map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 70, duration: 700 }); }
+  function drawSelection() {
+    if (!S.styleReady) return;
+    ['ua-sel-mask', 'ua-sel-line'].forEach(id => map.getLayer(id) && map.removeLayer(id));
+    if (map.getSource('ua-sel')) map.removeSource('ua-sel');
+    if (!S.selection) return;
+    const g = S.selection.geometry, outers = g.type === 'Polygon' ? [g.coordinates[0]] : g.coordinates.map(p => p[0]);
+    const mask = { type: 'Feature', properties: { k: 'mask' }, geometry: { type: 'Polygon', coordinates: [[[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]], ...outers.map(r => r.slice().reverse())] } };
+    map.addSource('ua-sel', { type: 'geojson', data: { type: 'FeatureCollection', features: [mask, Object.assign({}, S.selection, { properties: { k: 'sel' } })] } });
+    map.addLayer({ id: 'ua-sel-mask', type: 'fill', source: 'ua-sel', filter: ['==', ['get', 'k'], 'mask'], paint: { 'fill-color': S.theme === 'dark' ? '#000' : '#fff', 'fill-opacity': 0.4 } });
+    map.addLayer({ id: 'ua-sel-line', type: 'line', source: 'ua-sel', filter: ['==', ['get', 'k'], 'sel'], paint: { 'line-color': '#8b5cf6', 'line-width': 2.2, 'line-dasharray': [3, 2] } });
+  }
+
+  /* ---------- Gespeicherte Ansichten ---------- */
+  function saveView(name) {
+    const c = map.getCenter();
+    S.views.push({ name: name || `Ansicht ${S.views.length + 1}`, center: [c.lng, c.lat], zoom: map.getZoom(), bearing: map.getBearing ? map.getBearing() : 0, pitch: map.getPitch ? map.getPitch() : 0 });
+    store.set('ua_views', S.views); renderViews(); $('#viewsBox').open = true;
+    log({ title: 'Ansicht gespeichert', status: 'ok', body: `„${esc(S.views[S.views.length - 1].name)}“. Du findest sie links unter „Gespeicherte Ansichten“.` });
+  }
+  function renderViews() {
+    $('#viewCount').textContent = S.views.length;
+    $('#viewList').innerHTML = S.views.length ? S.views.map((v, i) => `<div class="vitem" data-i="${i}"><span data-a="go" title="Hinfliegen">☆ ${esc(v.name)}</span>
+      <button data-a="go" title="Ansicht aufrufen">▶ Öffnen</button><button data-a="area" title="Ansicht aufrufen und als Gebiet festlegen">⬚ Als Gebiet</button><button data-a="del" title="Löschen">✕</button></div>`).join('')
+      : '<div class="tiny muted" style="padding:4px 0">Noch keine Ansichten. Stell die Karte ein und klicke „+ Speichern“.</div>';
+  }
+  function goView(v, cb) { map.flyTo({ center: v.center, zoom: v.zoom, bearing: v.bearing || 0, pitch: v.pitch || 0, duration: 900 }); if (cb) map.once('moveend', cb); }
+  $('#viewList').addEventListener('click', e => {
+    const el = e.target.closest('[data-a]'); if (!el) return; const i = +el.closest('.vitem').dataset.i, v = S.views[i];
+    if (el.dataset.a === 'go') goView(v);
+    if (el.dataset.a === 'area') goView(v, () => setSelection(viewPolygon(), v.name, true));
+    if (el.dataset.a === 'del') { S.views.splice(i, 1); store.set('ua_views', S.views); renderViews(); }
+  });
+  $('#btnSaveView').onclick = () => { saveView($('#viewName').value.trim()); $('#viewName').value = ''; };
+  $('#viewName').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnSaveView').click(); });
+
+  /* ---------- Zeichenwerkzeuge ---------- */
+  const draw = { mode: null, pts: [], cur: null };
+  function setTool(m) {
+    draw.mode = m; draw.pts = []; draw.cur = null;
+    document.querySelectorAll('#toolbar button').forEach(b => b.classList.toggle('on', b.dataset.tool === m));
+    map.getCanvas().style.cursor = m ? 'crosshair' : '';
+    if (m === 'poly') map.doubleClickZoom.disable(); else map.doubleClickZoom.enable();
+    ['ua-draft-fill', 'ua-draft-line', 'ua-draft-pt'].forEach(id => map.getLayer(id) && map.moveLayer(id)); // Zeichnung immer obenauf
+    hint(m === 'rect' ? 'Klicke die erste Ecke, dann die gegenüberliegende Ecke · Esc = abbrechen'
+      : m === 'poly' ? 'Klicke Eckpunkte · Doppelklick oder Klick auf den ersten Punkt beendet · Esc = abbrechen' : null);
+    if (m) { S.areaMode = 'sel'; document.querySelectorAll('#areaMode button').forEach(x => x.classList.toggle('on', x.dataset.m === 'sel')); updateAreaInfo(); }
+    updateDraft();
+  }
+  function hint(t) { const h = $('#hint'); h.hidden = !t; if (t) h.textContent = t; }
+  function updateDraft() {
+    if (!S.styleReady) return;
+    const fs = []; const P = draw.pts.map(p => [p.lng, p.lat]); const c = draw.cur ? [draw.cur.lng, draw.cur.lat] : null;
+    if (draw.mode === 'rect' && P.length === 1 && c) { const [a] = P; fs.push({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[a, [c[0], a[1]], c, [a[0], c[1]], a]] } }); }
+    if (draw.mode === 'poly' && P.length) {
+      const line = c ? P.concat([c]) : P;
+      fs.push({ type: 'Feature', properties: {}, geometry: line.length >= 3 ? { type: 'Polygon', coordinates: [line.concat([line[0]])] } : { type: 'LineString', coordinates: line } });
+      P.forEach(p => fs.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: p } }));
+    }
+    const data = { type: 'FeatureCollection', features: fs };
+    if (map.getSource('ua-draft')) { map.getSource('ua-draft').setData(data); return; }
+    map.addSource('ua-draft', { type: 'geojson', data });
+    map.addLayer({ id: 'ua-draft-fill', type: 'fill', source: 'ua-draft', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': '#a78bfa', 'fill-opacity': 0.15 } });
+    map.addLayer({ id: 'ua-draft-line', type: 'line', source: 'ua-draft', filter: ['!=', ['geometry-type'], 'Point'], paint: { 'line-color': '#8b5cf6', 'line-width': 2 } });
+    map.addLayer({ id: 'ua-draft-pt', type: 'circle', source: 'ua-draft', filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 4, 'circle-color': '#fff', 'circle-stroke-color': '#8b5cf6', 'circle-stroke-width': 2 } });
+  }
+  function finishPoly() {
+    const P = []; draw.pts.forEach(p => { const q = [p.lng, p.lat]; const l = P[P.length - 1]; if (!l || Math.abs(l[0] - q[0]) > 1e-7 || Math.abs(l[1] - q[1]) > 1e-7) P.push(q); });
+    if (P.length < 3) return;
+    setTool(null); setSelection({ type: 'Polygon', coordinates: [P.concat([P[0]])] }, 'Gezeichnetes Polygon');
+  }
+  map.on('mousemove', e => { if (draw.mode) { draw.cur = e.lngLat; updateDraft(); return; } hoverCheck(e); });
+  map.on('click', e => {
+    if (draw.mode === 'rect') {
+      if (!draw.pts.length) { draw.pts = [e.lngLat]; return; }
+      const a = draw.pts[0], b = e.lngLat;
+      const x1 = Math.min(a.lng, b.lng), x2 = Math.max(a.lng, b.lng), y1 = Math.min(a.lat, b.lat), y2 = Math.max(a.lat, b.lat);
+      if (x2 - x1 < 1e-5 || y2 - y1 < 1e-5) return;
+      setTool(null); setSelection({ type: 'Polygon', coordinates: [[[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]]] }, 'Gezeichnetes Rechteck');
+      return;
+    }
+    if (draw.mode === 'poly') {
+      if (draw.pts.length >= 3) { const p0 = map.project(draw.pts[0]); if (Math.hypot(p0.x - e.point.x, p0.y - e.point.y) < 12) { finishPoly(); return; } }
+      draw.pts.push(e.lngLat); updateDraft(); return;
+    }
+    featureClick(e);
+  });
+  map.on('dblclick', e => { if (draw.mode === 'poly') { e.preventDefault(); finishPoly(); } });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && $('#askBox').classList.contains('big')) { toggleAsk(false); return; }
+    if (e.key === 'Escape' && !$('#qPanel').hidden) { toggleQuery(false); return; }
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+    if (e.key === 'Escape' && draw.mode) setTool(null);
+    if (e.key === 'Enter' && draw.mode === 'poly') finishPoly();
+  });
+  $('#toolbar').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; const t = b.dataset.tool;
+    if (t === 'rect' || t === 'poly') setTool(draw.mode === t ? null : t);
+    else if (t === 'view') { setTool(null); setSelection(viewPolygon(), 'Kartenausschnitt', true); }
+    else if (t === 'saveview') saveView('');
+    else if (t === 'zoomsel') fitSel();
+    else if (t === 'clear') {
+      if ((S.selection || S.layers.length) && !confirm('Gebiet und alle Layer entfernen?')) return;
+      S.layers.slice().forEach(L => removeLayer(L.id, true)); S.selection = null; S.cache = { key: null, data: {} }; S.selectedRef = null;
+      drawSelection(); updateAreaInfo(); renderAll(); highlight(); setTool(null);
+    }
+  });
+
+  /* ---------- Ortssuche (Nominatim, Ersatz: Photon) ---------- */
+  let searchT = null, searchRes = [];
+  $('#search').addEventListener('input', e => { clearTimeout(searchT); const q = e.target.value.trim(); if (q.length < 3) { $('#results').hidden = true; return; } searchT = setTimeout(() => search(q), 450); });
+  $('#search').addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchT); search(e.target.value.trim()); } if (e.key === 'Escape') $('#results').hidden = true; });
+  const TYPE_DE = { city: 'Stadt', town: 'Stadt', village: 'Dorf', suburb: 'Ortsteil', borough: 'Bezirk', quarter: 'Viertel', neighbourhood: 'Kiez', administrative: 'Verwaltungsgebiet', residential: 'Straße', road: 'Straße', house: 'Adresse', park: 'Park', station: 'Bahnhof' };
+  async function search(q) {
+    if (!q) return; const box = $('#results'); box.hidden = false; box.innerHTML = '<div class="res muted">Suche …</div>';
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=de&limit=6&polygon_geojson=1&polygon_threshold=0.0003&accept-language=de&q=${encodeURIComponent(q)}`);
+      if (!r.ok) throw new Error('Nominatim ' + r.status);
+      const js = await r.json();
+      searchRes = js.map(x => ({ name: x.display_name.split(',')[0], sub: x.display_name.split(',').slice(1, 4).join(','), type: TYPE_DE[x.addresstype] || TYPE_DE[x.type] || x.addresstype || x.type, bbox: [+x.boundingbox[2], +x.boundingbox[0], +x.boundingbox[3], +x.boundingbox[1]], geom: x.geojson && /Polygon/.test(x.geojson.type) ? x.geojson : null }));
+    } catch (e) {
+      try {
+        const r = await fetch(`https://photon.komoot.io/api/?lang=de&limit=6&bbox=5.8,47.2,15.1,55.1&q=${encodeURIComponent(q)}`);
+        const js = await r.json();
+        searchRes = js.features.map(f => { const p = f.properties, x = p.extent, c = f.geometry.coordinates; return { name: p.name || p.street || q, sub: [p.city, p.state].filter(Boolean).join(', '), type: TYPE_DE[p.osm_value] || p.osm_value, bbox: x ? [x[0], x[3], x[2], x[1]] : [c[0] - .005, c[1] - .003, c[0] + .005, c[1] + .003], geom: null }; });
+      } catch (e2) { box.innerHTML = '<div class="res muted">Suche nicht erreichbar. Prüfe die Internetverbindung.</div>'; return; }
+    }
+    if (!searchRes.length) { box.innerHTML = '<div class="res muted">Nichts gefunden.</div>'; return; }
+    box.innerHTML = searchRes.map((r, i) => `<div class="res" data-i="${i}"><div class="rt">${esc(r.name)} <span class="badge">${esc(r.type || '')}</span></div><div class="rs">${esc(r.sub)}</div>
+      <div class="ra"><button class="btn sm" data-a="zoom" data-i="${i}">Hinzoomen</button>${r.geom ? `<button class="btn sm primary" data-a="sel" data-i="${i}">Als Gebiet</button>` : ''}</div></div>`).join('');
+  }
+  $('#results').addEventListener('click', e => {
+    const el = e.target.closest('[data-i]'); if (!el) return; const r = searchRes[+el.dataset.i];
+    if (e.target.dataset.a === 'sel' && r.geom) { S.areaMode = 'sel'; document.querySelectorAll('#areaMode button').forEach(x => x.classList.toggle('on', x.dataset.m === 'sel')); setSelection(r.geom, r.name); }
+    else map.fitBounds([[r.bbox[0], r.bbox[1]], [r.bbox[2], r.bbox[3]]], { padding: 40, duration: 800 });
+    $('#results').hidden = true;
+  });
+
+  /* ---------- Datenabruf Overpass ---------- */
+  const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+  const HOSTINFO = { 'overpass-api.de': 'Hauptserver', 'overpass.private.coffee': 'Ersatzserver 1', 'overpass.kumi.systems': 'Ersatzserver 2' };
+  async function overpass(query, prog) {
+    prog = prog || {}; let lastErr = null;
+    for (const ep of ENDPOINTS) {
+      const host = new URL(ep).host;
+      if (lastErr) { prog.note = `${prog.host} antwortet nicht (${lastErr.message}) → wechsle zu ${host}`; }
+      Object.assign(prog, { host, hostInfo: HOSTINFO[host] || '', phase: 'wait', bytes: 0, tPhase: performance.now() });
+      if (S.abort && S.abort.signal.aborted) break;
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 200000);
+      const stop = () => ctl.abort(); if (S.abort) S.abort.signal.addEventListener('abort', stop);
+      try {
+        const r = await fetch(ep, { method: 'POST', body: 'data=' + encodeURIComponent(query), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctl.signal });
+        clearTimeout(to);
+        if (r.status === 429 || r.status >= 500) { lastErr = new Error(`Server ausgelastet (${r.status})`); continue; }
+        if (!r.ok) throw new Error('Abfrage-Fehler ' + r.status + (r.status === 400 ? ' – bitte Schlüssel/Wert prüfen' : ''));
+        prog.phase = 'recv'; prog.tPhase = performance.now(); prog.note = '';
+        const reader = r.body.getReader(), chunks = [];
+        for (;;) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); prog.bytes += value.length; }
+        prog.phase = 'parse'; prog.tPhase = performance.now();
+        const js = JSON.parse(await new Blob(chunks).text()); prog.objects = (js.elements || []).length;
+        if (js.remark && /timeout|runtime error|out of memory/i.test(js.remark)) { lastErr = new Error('Zeitüberschreitung beim Server – Gebiet evtl. zu groß'); continue; }
+        return js;
+      } catch (e) {
+        clearTimeout(to);
+        if (S.abort && S.abort.signal.aborted) { const c = new Error('Abgebrochen'); c.cancelled = true; throw c; }
+        lastErr = e.name === 'AbortError' ? new Error('Zeitüberschreitung') : e; if (/Abfrage-Fehler 400/.test(lastErr.message)) break;
+      } finally { if (S.abort) S.abort.signal.removeEventListener('abort', stop); }
+    }
+    if (S.abort && S.abort.signal.aborted) { const c = new Error('Abgebrochen'); c.cancelled = true; throw c; }
+    throw lastErr || new Error('OSM-Server nicht erreichbar');
+  }
+
+  /* ---------- Laden: Bausteine & Abfragen ---------- */
+  $('#btnCancel').onclick = () => { if (S.abort) { S.abort.abort(); $('#busyTxt').textContent = 'Breche ab …'; $('#busyPhase').textContent = 'Stoppe die laufende Anfrage …'; } };
+  function setBusy(t) { $('#busy').hidden = !t; if (t) $('#busyTxt').textContent = t; }
+  const mb = b => b < 1048576 ? fmt(b / 1024, 0) + ' KB' : fmt(b / 1048576, 1) + ' MB';
+  const secs = ms => { const s = Math.round(ms / 1000); return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min ' + (s % 60) + ' s'; };
+  function phaseText(p) { // Was passiert gerade? (für Menschen erklärt)
+    const now = performance.now(), dt = now - (p.tPhase || now);
+    switch (p.phase) {
+      case 'cache': return 'Schon geladen – ich nutze die vorhandenen Daten.';
+      case 'wait': return dt > 20000 ? `Der Server durchsucht OpenStreetMap noch nach „${p.what}“ im Gebiet (${secs(dt)}). Große Gebiete dauern bis zu 1–2 Minuten …` : `Anfrage gesendet. Der Server sucht „${p.what}“ im Gebiet …`;
+      case 'recv': return `Empfange Daten vom Server: <b>${mb(p.bytes || 0)}</b> …`;
+      case 'parse': return p.objects ? `Wandle <b>${fmt(p.objects)}</b> OSM-Objekte in Kartenflächen und Linien um …` : 'Lese die empfangenen Daten …';
+      case 'draw': return 'Sortiere in Untergruppen und zeichne den Layer auf die Karte …';
+      case 'retry': return 'Alle Server sind gerade ausgelastet. Ich warte kurz und versuche es noch einmal …';
+    }
+    return 'Bereite die Anfrage vor …';
+  }
+  function frac(p) { // geschätzter Fortschritt innerhalb eines Schritts (0–1)
+    const dt = performance.now() - (p.tPhase || performance.now());
+    if (p.phase === 'cache') return 1;
+    if (p.phase === 'wait') return 0.05 + 0.5 * (1 - Math.exp(-dt / 15000));
+    if (p.phase === 'recv') return 0.55 + 0.3 * (1 - Math.exp(-(p.bytes || 0) / 4e6));
+    if (p.phase === 'parse') return 0.9;
+    if (p.phase === 'draw') return 0.96;
+    return 0.02;
+  }
+  function renderBusy(PR, items) {
+    if (!PR) return;
+    const now = performance.now();
+    $('#busyTxt').textContent = `Lade ${PR.label}`;
+    $('#busyTime').textContent = `Schritt ${PR.idx}/${PR.total} · ${secs(now - PR.t0)}`;
+    $('#busySrc').innerHTML = PR.phase === 'cache' ? 'Quelle: bereits geladene Daten' : `Quelle: OpenStreetMap · Overpass-API · <b>${esc(PR.host || '…')}</b>${PR.hostInfo ? ' (' + PR.hostInfo + ')' : ''}`;
+    $('#busyPhase').innerHTML = (PR.note ? `<div class="tiny" style="color:var(--warn)">${esc(PR.note)}</div>` : '') + phaseText(PR);
+    const total = ((PR.idx - 1) + frac(PR)) / PR.total;
+    $('#busyBar').style.width = (total * 100).toFixed(1) + '%';
+    $('#busyBar').parentElement.classList.toggle('wait', PR.phase === 'wait' || PR.phase === 'retry');
+    $('#busySteps').innerHTML = items.map((i, k) => `<span class="${i.st === 'ok' ? 'ok' : i.st === 'err' ? 'err' : k === PR.idx - 1 ? 'on' : ''}">${i.st === 'ok' ? '✓' : i.st === 'err' ? '✗' : k === PR.idx - 1 ? '▶' : '○'} ${esc(i.label)}</span>`).join('');
+  }
+  function resolveArea() { // Gebiet bestimmen: gezeichnet oder aktuelle Kartenansicht
+    if (S.areaMode === 'view') { setSelection(viewPolygon(), 'Kartenansicht ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }), true); }
+    return S.selection;
+  }
+  // tasks: [{base, split?, name?}] und/oder [{query:{name, rows}}]
+  async function load(tasks) {
+    if (S.busy) return;
+    if (!tasks.length) { log({ title: 'Nichts ausgewählt', status: 'warn', body: 'Wähle mindestens einen Baustein.' }); return; }
+    if (!resolveArea()) { S.pending = tasks; log({ title: 'Gebiet fehlt', status: 'warn', body: 'Wähle zuerst ein Gebiet (Suche, Rechteck, Polygon) oder stelle oben auf „Aktuelle Kartenansicht“. Danach lade ich automatisch.' }); return; }
+    const area = UA.polyArea(S.selection.geometry) / 1e6;
+    if (area > 25 && !confirm(`Das Gebiet ist ${fmt(area, 1)} km² groß. Das kann sehr lange dauern. Trotzdem laden?`)) return;
+    S.busy = true; S.abort = new AbortController(); $('#btnRun').disabled = true; $('#qRun').disabled = true;
+    const key = JSON.stringify(S.selection.geometry.coordinates).slice(0, 400) + area;
+    if (S.cache.key !== key) S.cache = { key, data: {} };
+    const ORDER = ['landuse', 'buildings', 'roads', 'rail', 'stops', 'green', 'water', 'trees', 'boundaries'];
+    // Jeder Baustein ist ein eigener Auftrag: fertige Layer erscheinen sofort, Fehler betreffen nur diesen einen Baustein
+    const P = UA.polyString(S.selection.geometry);
+    const baseTasks = tasks.filter(t => t.base), qTasks = tasks.filter(t => t.query);
+    const fetchOf = t => UA.BASES[t.base].fetch;
+    const fetches = [...new Set(baseTasks.map(fetchOf))].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
+    if (baseTasks.some(t => t.split === 'nutzung') && !fetches.includes('landuse')) fetches.unshift('landuse'); // nur Hilfsdaten
+    const jobs = fetches.map(f => ({ label: [...new Set(baseTasks.filter(t => fetchOf(t) === f).map(t => UA.BASES[t.base].label))].join(', ') || UA.FETCHES[f].label, fetch: f, tasks: baseTasks.filter(t => fetchOf(t) === f), helper: !baseTasks.some(t => fetchOf(t) === f) }))
+      .concat(qTasks.map(t => ({ label: t.query.name, query: t.query, tasks: [t] })));
+    const items = jobs.map(j => ({ label: j.label + (j.helper ? ' (Hilfsdaten für Nutzung)' : ''), st: 'wait', info: '' }));
+    const ICON = { wait: '<span class="muted">○</span>', run: '<span class="spin sm"></span>', ok: '<span style="color:var(--ok)">✓</span>', err: '<span style="color:var(--err)">✗</span>', skip: '<span class="muted">–</span>' };
+    const card = log({ title: 'Lade Daten …', status: 'run', body: '' });
+    const draw = (st, title, extra) => card.set(st, title, `<ul class="jobs">${items.map(i => `<li>${ICON[i.st]} <b>${esc(i.label)}</b>${i.info ? ' <span class="muted">– ' + i.info + '</span>' : ''}</li>`).join('')}</ul>${extra || ''}`);
+    const t0 = performance.now(); const failed = []; let cancelled = false, shownBuilding = S.layers.some(L => L.base === 'gebaeude' && L.visible);
+    const show = L => { // Layer sofort auf die Karte bringen
+      if (L.base === 'gebaeude' && !L.subset) { const old = S.layers.find(x => x.id === L.id); if (shownBuilding && !(old && old.visible)) L.visible = false; else shownBuilding = true; }
+      upsertLayer(L); syncLayers(); if (S.selection) S.stats[L.id] = UA.layerStats(L, S.selection, intersect); renderAll();
+      const st = S.stats[L.id]; return `${fmt(st && L.statMode !== 'none' ? st.total.count : L.features.length)} Elemente`;
+    };
+    for (let i = 0; i < jobs.length; i++) {
+      const j = jobs[i], it = items[i];
+      if (cancelled) { it.st = 'skip'; it.info = 'abgebrochen'; continue; }
+      it.st = 'run'; draw('run', 'Lade Daten …'); setBusy(`Lade ${j.label}`);
+      const what = j.fetch ? UA.FETCHES[j.fetch].label : j.label;
+      const PR = { label: j.label, what, idx: i + 1, total: jobs.length, t0: performance.now(), tPhase: performance.now(), phase: 'start' };
+      const live = () => { renderBusy(PR, items); it.info = `<span class="muted">${esc(PR.host || '')}${PR.phase === 'recv' ? ' · ' + mb(PR.bytes || 0) : ''} · ${secs(performance.now() - PR.t0)}</span>`; draw('run', 'Lade Daten …'); };
+      const ticker = setInterval(live, 300); live();
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          if (j.fetch) {
+            if (!S.cache.data[j.fetch]) { const js = await overpass(UA.HEAD + UA.FETCHES[j.fetch].q(P), PR); live(); await tick(); S.cache.data[j.fetch] = UA.osmToFeatures(js); }
+            else { PR.phase = 'cache'; live(); }
+            PR.phase = 'draw'; PR.tPhase = performance.now(); live(); await tick();
+            const infos = j.tasks.map(t => { const L = UA.makeBaseLayer(t.base, S.cache.data, { id: t.id || t.base, split: t.split, name: t.name, only: t.only }); return (j.tasks.length > 1 ? esc(L.name) + ': ' : '') + show(L); });
+            it.info = j.helper ? 'geladen' : infos.join(', ');
+          } else {
+            const q = j.query; const js = await overpass(UA.HEAD + UA.customQuery(q.rows, P), PR); live(); await tick(); const raw = UA.osmToFeatures(js);
+            PR.phase = 'draw'; PR.tPhase = performance.now(); live(); await tick();
+            const k0 = q.rows.find(r => r.key); const ex = S.layers.find(L => L.query && L.name === q.name);
+            const L = UA.makeBaseLayer('abfrage', S.cache.data, { id: ex ? ex.id : 'q' + (++S.qn), raw, name: q.name, query: q });
+            if (q.rows.filter(r => r.key).length > 1 || !k0.value) UA.applySplit(L, 'attr:' + k0.key);
+            else if (!ex) UA.setClassStyle(L, 'alle', { color: UA.PALETTE[(S.qn * 3 + 1) % UA.PALETTE.length] });
+            it.info = show(L) + (L.features.length ? '' : ' (nichts gefunden)'); addHistory(q);
+          }
+          clearInterval(ticker); it.st = 'ok'; break;
+        } catch (e) {
+          if (e.cancelled) { clearInterval(ticker); cancelled = true; it.st = 'skip'; it.info = 'abgebrochen'; break; }
+          console.error(e);
+          if (attempt === 1 && !/400/.test(e.message)) { PR.phase = 'retry'; PR.tPhase = performance.now(); PR.note = ''; await new Promise(r => setTimeout(r, 4000)); if (S.abort && S.abort.signal.aborted) { cancelled = true; it.st = 'skip'; it.info = 'abgebrochen'; break; } continue; }
+          clearInterval(ticker); it.st = 'err'; it.info = esc(e.message || String(e)); failed.push(...j.tasks);
+        }
+      }
+      clearInterval(ticker);
+      draw('run', 'Lade Daten …');
+    }
+    S.busy = false; S.abort = null; setBusy(null); $('#btnRun').disabled = false; $('#qRun').disabled = false;
+    const sec = fmt((performance.now() - t0) / 1000, 1) + ' s';
+    if (cancelled) draw('warn', 'Abgebrochen', '<span class="tiny muted">Bereits fertige Layer bleiben erhalten.</span>');
+    else if (failed.length) {
+      draw('warn', `Teilweise fertig (${sec})`, `<span class="tiny muted">Die fertigen Layer siehst du schon auf der Karte. Fehlgeschlagen ist nur, was mit ✗ markiert ist – meist sind die OSM-Server kurz überlastet.</span><br><button class="btn sm primary">↻ Fehlgeschlagene erneut laden</button>`);
+      card.el.querySelector('button').onclick = () => load(failed);
+    } else draw('ok', `Fertig (${sec})`, '<span class="tiny muted">Rechts unter „Layer“ → ▾ kannst du jeden Layer anders aufteilen, Untergruppen ausblenden, umbenennen, verschieben oder löschen.</span>');
+  }
+  const splitLabel = L => L.split.startsWith('attr:') ? 'nach ' + L.split.slice(5) : (UA.PRESETS[L.split] || {}).label || L.split;
+
+  /* ---------- Layer-Verwaltung ---------- */
+  function upsertLayer(L) {
+    const old = S.layers.find(x => x.id === L.id);
+    if (old) { L.opacity = old.opacity; removeLayer(old.id, true); }
+    const z = UA.ZRANK[L.base]; let idx = S.layers.findIndex(x => UA.ZRANK[x.base] > z); if (idx < 0) idx = S.layers.length;
+    S.layers.splice(idx, 0, L);
+  }
+  function removeLayer(id, silent) {
+    const i = S.layers.findIndex(x => x.id === id); if (i < 0) return;
+    styleIds(id).forEach(s => map.getLayer(s) && map.removeLayer(s));
+    if (map.getSource('ua-src-' + id)) map.removeSource('ua-src-' + id);
+    S.layers.splice(i, 1); delete S.stats[id];
+    if (S.selectedRef && S.selectedRef.layer === id) { S.selectedRef = null; highlight(); }
+    if (!silent) { syncLayers(); renderAll(); }
+  }
+  function duplicateLayer(L) {
+    let n = 2; while (S.layers.some(x => x.id === `${L.base}__${n}`)) n++;
+    const D = UA.makeBaseLayer(L.base, S.cache.data, { id: `${L.base}__${n}`, raw: L.raw.slice(), name: `${L.name} (Kopie)`, query: L.query });
+    const nextSplit = L.base === 'gebaeude' ? (['nutzung', 'hoehe', 'typ'].find(p => p !== L.split) || 'typ') : L.split;
+    UA.applySplit(D, nextSplit, { landuse: S.cache.data.landuse });
+    if (L.base === 'gebaeude') D.name = 'Gebäude – ' + UA.PRESETS[nextSplit].label;
+    L.visible = false; S.layers.splice(S.layers.indexOf(L) + 1, 0, D); S.open[D.id] = true;
+    syncLayers(); computeStats(); renderAll();
+  }
+  const styleIds = id => ['fill', 'ext', 'outline', 'line', 'circle'].map(s => `ua-${id}-${s}`);
+  const matchExpr = (L, prop, def) => { if (!L.classes.length) return def; const a = ['match', ['get', '_cls']]; L.classes.forEach(c => a.push(c.key, c[prop] != null ? c[prop] : def)); a.push(def); return a; };
+  const POLY = ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false];
+  const LINE = ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false];
+  const PT = ['==', ['geometry-type'], 'Point'];
+  function filt(L, g) { const hid = L.classes.filter(c => c.visible === false).map(c => c.key); return hid.length ? ['all', g, ['!', ['in', ['get', '_cls'], ['literal', hid]]]] : g; }
+  function applyFilters(L) { const [f, x, o, l, c] = styleIds(L.id); [[f, POLY], [x, POLY], [o, POLY], [l, LINE], [c, PT]].forEach(([id, g]) => map.getLayer(id) && map.setFilter(id, filt(L, g))); }
+  // Eigene Layer kommen ÜBER alle Flächen/Linien der Hintergrundkarte, nur deren Beschriftungen bleiben obenauf.
+  // (Früher: vor dem ERSTEN Beschriftungs-Layer – bei „Karte hell/farbig“ liegt der sehr weit unten, die Daten waren dann verdeckt.)
+  function firstSymbol() {
+    const ls = (map.getStyle().layers || []).filter(l => !l.id.startsWith('ua-'));
+    let last = -1; ls.forEach((l, i) => { if (l.type !== 'symbol') last = i; });
+    const s = ls.slice(last + 1).find(l => l.type === 'symbol');
+    return s ? s.id : (map.getLayer('ua-sel-mask') ? 'ua-sel-mask' : undefined);
+  }
+  const sortKey = L => { const n = L.classes.length, a = ['match', ['get', '_cls']]; L.classes.forEach((c, i) => a.push(c.key, n - i)); a.push(0); return n ? a : 0; };
+  function syncLayers() {
+    if (!S.styleReady) return;
+    (map.getStyle().layers || []).filter(l => /^ua-(?!sel|draft|hl)/.test(l.id)).forEach(l => map.removeLayer(l.id));
+    const before = firstSymbol();
+    for (const L of S.layers) {
+      const src = 'ua-src-' + L.id, data = { type: 'FeatureCollection', features: L.features };
+      if (map.getSource(src)) map.getSource(src).setData(data); else map.addSource(src, { type: 'geojson', data, maxzoom: 20 });
+      const vis = L.visible ? 'visible' : 'none', col = matchExpr(L, 'color', '#999'), [f, ext, o, l, c] = styleIds(L.id);
+      if (L.extrude) map.addLayer({ id: ext, type: 'fill-extrusion', source: src, filter: filt(L, POLY), layout: { visibility: vis }, paint: { 'fill-extrusion-color': col, 'fill-extrusion-height': ['coalesce', ['get', 'hoehe_m'], 1], 'fill-extrusion-opacity': 0.9 } }, before);
+      else if (!L.outlineOnly) map.addLayer({ id: f, type: 'fill', source: src, filter: filt(L, POLY), layout: { visibility: vis, 'fill-sort-key': sortKey(L) }, paint: { 'fill-color': col, 'fill-opacity': L.opacity } }, before);
+      if (!L.extrude) map.addLayer({ id: o, type: 'line', source: src, filter: filt(L, POLY), layout: { visibility: vis }, paint: L.outlineOnly ? { 'line-color': col, 'line-width': matchExpr(L, 'width', 1.5), 'line-dasharray': [3, 2] } : { 'line-color': col, 'line-width': 0.6, 'line-opacity': Math.min(1, L.opacity + 0.15) } }, before);
+      const W = matchExpr(L, 'width', 1.4);
+      map.addLayer({ id: l, type: 'line', source: src, filter: filt(L, LINE), layout: { visibility: vis, 'line-cap': 'round', 'line-join': 'round', 'line-sort-key': sortKey(L) }, paint: { 'line-color': col, 'line-width': ['interpolate', ['linear'], ['zoom'], 11, ['*', 0.45, W], 15, ['*', 1.3, W], 18, ['*', 3, W]], 'line-opacity': Math.max(L.opacity, 0.6) } }, before);
+      const RR = matchExpr(L, 'r', 4);
+      map.addLayer({ id: c, type: 'circle', source: src, filter: filt(L, PT), layout: { visibility: vis, 'circle-sort-key': sortKey(L) }, paint: { 'circle-color': col, 'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, ['*', 0.5, RR], 16, ['*', 1.4, RR]], 'circle-opacity': Math.max(L.opacity, 0.85), 'circle-stroke-width': 0.8, 'circle-stroke-color': 'rgba(0,0,0,.55)' } }, before);
+    }
+  }
+  function refreshLayer(L) { // nach Aufteilen/Bearbeiten: Daten + Farben + Filter neu
+    const src = map.getSource('ua-src-' + L.id); if (src) src.setData({ type: 'FeatureCollection', features: L.features });
+    syncLayers(); if (S.selection) S.stats[L.id] = UA.layerStats(L, S.selection, intersect); renderAll();
+  }
+  const visibleStyleIds = () => S.layers.filter(L => L.visible).flatMap(L => styleIds(L.id)).filter(id => map.getLayer(id));
+
+  /* ---------- Element anklicken ---------- */
+  let hoverT = 0;
+  function hoverCheck(e) {
+    const now = performance.now(); if (now - hoverT < 60) return; hoverT = now;
+    const ids = visibleStyleIds(); if (!ids.length) { map.getCanvas().style.cursor = ''; return; }
+    map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, { layers: ids }).length ? 'pointer' : '';
+  }
+  function featureClick(e) {
+    const ids = visibleStyleIds(); if (!ids.length) return;
+    const hits = map.queryRenderedFeatures([[e.point.x - 3, e.point.y - 3], [e.point.x + 3, e.point.y + 3]], { layers: ids });
+    if (!hits.length) { S.selectedRef = null; highlight(); renderProps(); return; }
+    const h = hits[0], lid = h.layer.id.replace(/^ua-/, '').replace(/-(fill|ext|outline|line|circle)$/, '');
+    S.selectedRef = { layer: lid, i: h.properties._i }; highlight(); renderProps(); showTab('props');
+  }
+  function selFeature() { if (!S.selectedRef) return null; const L = S.layers.find(x => x.id === S.selectedRef.layer); return L && L.features[S.selectedRef.i] ? { L, f: L.features[S.selectedRef.i] } : null; }
+  function highlight() {
+    if (!S.styleReady) return;
+    const s = selFeature(); const data = { type: 'FeatureCollection', features: s ? [{ type: 'Feature', properties: {}, geometry: s.f.geometry }] : [] };
+    if (map.getSource('ua-hl')) map.getSource('ua-hl').setData(data);
+    else {
+      map.addSource('ua-hl', { type: 'geojson', data });
+      map.addLayer({ id: 'ua-hl-line', type: 'line', source: 'ua-hl', paint: { 'line-color': '#ffffff', 'line-width': 2.5 } });
+      map.addLayer({ id: 'ua-hl-pt', type: 'circle', source: 'ua-hl', filter: PT, paint: { 'circle-radius': 9, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2.5 } });
+    }
+    ['ua-hl-line', 'ua-hl-pt'].forEach(id => map.getLayer(id) && map.moveLayer(id));
+  }
+
+  /* ---------- Rechte Leiste ---------- */
+  function showTab(t) {
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+    ['layers', 'legend', 'stats', 'props'].forEach(x => { $('#tab-' + x).hidden = x !== t; });
+    if (t === 'stats') renderStats();
+  }
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
+  function renderAll() { renderLayers(); renderLegend(); renderStats(); renderProps(); }
+
+  const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
+  function renderLayers() {
+    const box = $('#layerList');
+    if (!S.layers.length) { box.innerHTML = '<div class="empty">Noch keine Layer.<br>Wähle ein Gebiet und lade Bausteine.</div>'; return; }
+    let html = '<div class="grp">Mit ⋮⋮ ziehen zum Sortieren · oben liegt oben</div>';
+    for (const L of S.layers.slice().reverse()) {
+      const st = S.stats[L.id], n = st && L.statMode !== 'none' ? st.total.count : L.features.length;
+      const counts = {}; L.features.forEach(f => { counts[f.properties._cls] = (counts[f.properties._cls] || 0) + 1; });
+      const open = S.open[L.id], sw = L.classes[0] ? L.classes[0].color : '#888';
+      html += `<div class="layer" data-id="${L.id}">
+        <div class="lrow"><span class="handle" draggable="true" data-drag="layer" title="Ziehen zum Verschieben">⋮⋮</span>
+        <button class="eye ${L.visible ? '' : 'off'}" data-act="vis" title="Layer ein/aus">${L.visible ? '◉' : '○'}</button>
+        <span class="sw" style="background:${L.outlineOnly ? 'transparent' : sw};${L.outlineOnly ? 'border:1.5px dashed ' + sw : ''}"></span>
+        <div class="nm" data-act="open"><b>${esc(L.name)}</b><small>${esc(L.group)} · ${fmt(n)} Elemente · ${esc(splitLabel(L))}</small></div>
+        <button class="trash" data-act="del" title="Layer löschen">${TRASH}</button>
+        <button class="icon-btn" data-act="open" title="Aufteilen & Einstellungen">${open ? '▴' : '▾'}</button></div>`;
+      if (open) {
+        const opts = UA.splitOptions(L);
+        html += `<div class="ldet">
+          <div class="row"><label>Aufteilen nach</label><select class="inp sm" data-act="split">${opts.map(o => `<option value="${esc(o.value)}" ${o.value === L.split ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select></div>
+          <div class="row"><label>Deckkraft</label><input type="range" min="0" max="1" step="0.05" value="${L.opacity}" data-act="op"><span class="tiny muted">${Math.round(L.opacity * 100)} %</span></div>
+          ${L.base === 'gebaeude' ? `<div class="row"><label>3D-Ansicht</label><input type="checkbox" data-act="ext" ${L.extrude ? 'checked' : ''}><span class="tiny muted">Höhe aus OSM, sonst 1 m</span></div>` : ''}
+          <div class="clsbar"><span class="muted">${L.classes.length} Untergruppen</span><div class="spacer"></div><button class="link" data-act="allon">alle ein</button><button class="link" data-act="alloff">alle aus</button></div>
+          ${L.classes.map(c => `<div class="cls ${c.visible === false ? 'off' : ''}" data-k="${esc(c.key)}">
+              <span class="handle" draggable="true" data-drag="cls" title="Ziehen zum Verschieben">⋮⋮</span>
+              <button class="eye ${c.visible === false ? 'off' : ''}" data-act="cvis" title="Untergruppe ein/aus">${c.visible === false ? '○' : '◉'}</button>
+              <input type="color" value="${c.color}" data-act="col" title="Farbe">
+              <input class="lbl" value="${esc(c.label)}" data-act="lbl" title="Klicken zum Umbenennen">
+              <em>${fmt(counts[c.key] || 0)}</em><button class="trash" data-act="cdel" title="Untergruppe löschen">${TRASH}</button>
+            </div>`).join('')}
+          <div class="lbtns"><button class="btn" data-act="dup" title="Layer kopieren, z. B. um ihn anders aufzuteilen">Duplizieren</button>
+          ${L.base === 'oepnv' ? '<button class="btn" data-act="radius">Einzugsradien</button>' : ''}
+          <button class="btn" data-act="x-svg">SVG</button><button class="btn" data-act="x-dxf">DXF</button><button class="btn" data-act="x-geojson">GeoJSON</button></div></div>`;
+      }
+      html += '</div>';
+    }
+    box.innerHTML = html;
+  }
+  const layerOf = el => { const card = el.closest('.layer'); return card && S.layers.find(x => x.id === card.dataset.id); };
+  $('#layerList').addEventListener('click', e => {
+    const el = e.target.closest('[data-act]'); if (!el) return; const L = layerOf(el); if (!L) return;
+    const act = el.dataset.act, k = el.closest('.cls') && el.closest('.cls').dataset.k;
+    if (act === 'vis') { L.visible = !L.visible; styleIds(L.id).forEach(id => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', L.visible ? 'visible' : 'none')); renderLayers(); renderLegend(); }
+    else if (act === 'open') { S.open[L.id] = !S.open[L.id]; renderLayers(); }
+    else if (act === 'cvis') { const c = L.classes.find(x => x.key === k); UA.setClassStyle(L, k, { visible: c.visible === false }); applyFilters(L); renderLayers(); renderLegend(); }
+    else if (act === 'allon' || act === 'alloff') { L.classes.forEach(c => UA.setClassStyle(L, c.key, { visible: act === 'allon' })); applyFilters(L); renderLayers(); renderLegend(); }
+    else if (act === 'cdel') {
+      const c = L.classes.find(x => x.key === k), before = L.raw.slice(), n = L.features.filter(f => f.properties._cls === k).length;
+      UA.removeClassFeatures(L, k); UA.applySplit(L, L.split, { landuse: S.cache.data.landuse }); S.selectedRef = null; highlight(); refreshLayer(L);
+      undoMsg(`Untergruppe „${esc(c.label)}“ (${fmt(n)} Elemente) aus „${esc(L.name)}“ gelöscht.`, () => { L.raw = before; UA.applySplit(L, L.split, { landuse: S.cache.data.landuse }); refreshLayer(L); });
+    }
+    else if (act === 'dup') duplicateLayer(L);
+    else if (act === 'radius') addRadii(L);
+    else if (act === 'del') {
+      const idx = S.layers.indexOf(L); removeLayer(L.id);
+      undoMsg(`Layer „${esc(L.name)}“ gelöscht.`, () => { S.layers.splice(Math.min(idx, S.layers.length), 0, L); syncLayers(); computeStats(); renderAll(); });
+    }
+    else if (act.startsWith('x-')) exportLayers(act.slice(2), [L], { title: L.name });
+  });
+  function undoMsg(text, undo) {
+    const m = log({ title: 'Gelöscht', status: 'warn', body: `${text}<br><button class="btn sm">↶ Rückgängig</button>` });
+    m.el.querySelector('button').onclick = () => { undo(); m.set('ok', 'Wiederhergestellt', text.replace('gelöscht', 'wiederhergestellt')); };
+  }
+  /* Ziehen & Ablegen: Layer und Untergruppen mit der Maus sortieren */
+  let drag = null;
+  const lst = $('#layerList');
+  lst.addEventListener('dragstart', e => {
+    const h = e.target.closest('[data-drag]'); if (!h) return;
+    const row = h.dataset.drag === 'layer' ? h.closest('.layer') : h.closest('.cls');
+    drag = { kind: h.dataset.drag, row, layer: h.closest('.layer').dataset.id };
+    row.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', '');
+    try { e.dataTransfer.setDragImage(row, 20, 15); } catch (err) { /* egal */ }
+  });
+  const clearOver = () => lst.querySelectorAll('.over-top,.over-bot').forEach(x => x.classList.remove('over-top', 'over-bot'));
+  function dropTarget(e) {
+    if (!drag) return null;
+    const t = drag.kind === 'layer' ? e.target.closest('.layer') : e.target.closest('.cls');
+    if (!t || t === drag.row) return null;
+    if (drag.kind === 'cls' && t.closest('.layer').dataset.id !== drag.layer) return null; // nur innerhalb desselben Layers
+    const r = t.getBoundingClientRect(); return { t, top: e.clientY < r.top + r.height / 2 };
+  }
+  lst.addEventListener('dragover', e => { const d = dropTarget(e); clearOver(); if (!d) return; e.preventDefault(); d.t.classList.add(d.top ? 'over-top' : 'over-bot'); });
+  lst.addEventListener('drop', e => {
+    const d = dropTarget(e); clearOver(); if (!d) return; e.preventDefault();
+    if (drag.kind === 'layer') { // Liste zeigt oben = zuletzt gezeichnet
+      const ids = [...lst.querySelectorAll('.layer')].map(x => x.dataset.id).filter(id => id !== drag.row.dataset.id);
+      let i = ids.indexOf(d.t.dataset.id) + (d.top ? 0 : 1); ids.splice(i, 0, drag.row.dataset.id);
+      S.layers = ids.reverse().map(id => S.layers.find(L => L.id === id));
+      syncLayers(); renderLayers(); renderLegend();
+    } else {
+      const L = S.layers.find(x => x.id === drag.layer);
+      const keys = L.classes.map(c => c.key).filter(k => k !== drag.row.dataset.k);
+      keys.splice(keys.indexOf(d.t.dataset.k) + (d.top ? 0 : 1), 0, drag.row.dataset.k);
+      UA.setClassOrder(L, keys); syncLayers(); renderLayers(); renderLegend();
+    }
+  });
+  lst.addEventListener('dragend', () => { clearOver(); if (drag) drag.row.classList.remove('drag'); drag = null; });
+  $('#layerList').addEventListener('input', e => {
+    const el = e.target, L = layerOf(el); if (!L) return; const k = el.closest('.cls') && el.closest('.cls').dataset.k;
+    if (el.dataset.act === 'op') { L.opacity = +el.value; el.nextElementSibling.textContent = Math.round(L.opacity * 100) + ' %'; const [f, , o] = styleIds(L.id); if (map.getLayer(f)) map.setPaintProperty(f, 'fill-opacity', L.opacity); if (map.getLayer(o) && !L.outlineOnly) map.setPaintProperty(o, 'line-opacity', Math.min(1, L.opacity + 0.15)); }
+    if (el.dataset.act === 'col') {
+      UA.setClassStyle(L, k, { color: el.value }); const col = matchExpr(L, 'color', '#999'); const [f, x, o, l, c] = styleIds(L.id);
+      if (map.getLayer(f)) map.setPaintProperty(f, 'fill-color', col); if (map.getLayer(x)) map.setPaintProperty(x, 'fill-extrusion-color', col);
+      [o, l].forEach(id => map.getLayer(id) && map.setPaintProperty(id, 'line-color', col)); if (map.getLayer(c)) map.setPaintProperty(c, 'circle-color', col);
+      renderLegend();
+    }
+  });
+  $('#layerList').addEventListener('change', e => {
+    const el = e.target, L = layerOf(el); if (!L) return; const k = el.closest('.cls') && el.closest('.cls').dataset.k;
+    if (el.dataset.act === 'lbl') { UA.setClassStyle(L, k, { label: el.value.trim() || k }); renderLegend(); }
+    if (el.dataset.act === 'split') {
+      const needLU = el.value === 'nutzung' && !S.cache.data.landuse;
+      UA.applySplit(L, el.value, { landuse: S.cache.data.landuse }); S.selectedRef = null; highlight(); refreshLayer(L);
+      if (needLU) log({ title: 'Hinweis Nutzung', status: 'warn', body: 'Die Nutzung kommt nur aus den Gebäude-Angaben. Lade zusätzlich den Baustein <b>Flächennutzung</b> und teile neu auf: Dann leite ich unbekannte Nutzungen aus der umgebenden Fläche ab (als „abgeleitet“ markiert).' });
+    }
+    if (el.dataset.act === 'ext') { L.extrude = el.checked; syncLayers(); map.easeTo({ pitch: L.extrude ? 55 : 0, duration: 700 }); }
+  });
+  function addRadii(L) {
+    const raw = L.features.filter(f => f.geometry.type === 'Point').map(f => {
+      const t = f.properties; const big = /^(station|halt)$/.test(t.railway || '') || t.station === 'subway' || t.public_transport === 'station';
+      return { type: 'Feature', geometry: UA.circlePoly(f.geometry.coordinates, big ? 600 : 300), properties: { name: f.properties.name, radius: big ? '600 m (Bahn)' : '300 m (Bus/Tram)', osm_id: f.properties.osm_id } };
+    });
+    const R = UA.makeBaseLayer('abfrage', S.cache.data, { id: L.id + '_radien', raw, name: 'Einzugsradien ÖPNV' });
+    UA.applySplit(R, 'attr:radius'); R.opacity = 0.15; R.statMode = 'none'; R.base = 'flaechen'; R.group = 'Verkehr';
+    upsertLayer(R); syncLayers(); renderAll();
+  }
+
+  function renderLegend() {
+    const box = $('#legend'); const vis = S.layers.filter(L => L.visible).slice().reverse();
+    if (!vis.length) { box.innerHTML = '<div class="empty">Keine sichtbaren Layer.</div>'; return; }
+    box.innerHTML = vis.map(L => {
+      const used = L.classes.filter(c => c.visible !== false && L.features.some(f => f.properties._cls === c.key)); if (!used.length) return '';
+      return `<div class="leg-l">${esc(L.name)}</div>` + used.map(c => {
+        const g = L.features.find(f => f.properties._cls === c.key).geometry.type;
+        const k = L.outlineOnly ? 'ol' : /Line/.test(g) ? 'ln' : g === 'Point' ? 'pt' : '';
+        return `<div class="leg-i"><i class="${k}" style="background:${c.color};border-color:${c.color}"></i>${esc(c.label)}</div>`;
+      }).join('');
+    }).join('') + '<div class="pad tiny muted">Daten: © OpenStreetMap-Mitwirkende (ODbL)</div>';
+  }
+
+  /* ---------- Statistik ---------- */
+  const intersect = window.turf ? (f, sel) => turf.intersect(turf.featureCollection([f, sel])) : null;
+  function computeStats() { S.stats = {}; if (!S.selection) return; for (const L of S.layers) S.stats[L.id] = UA.layerStats(L, S.selection, intersect); }
+  function renderStats() {
+    const box = $('#stats');
+    if (!S.selection) { box.innerHTML = '<div class="empty">Wähle zuerst ein Gebiet und lade Daten.</div>'; return; }
+    const selA = UA.polyArea(S.selection.geometry), pct = a => fmt(100 * a / selA, 1) + ' %';
+    const byBase = b => { const L = S.layers.find(x => x.base === b); return L && S.stats[L.id]; };
+    const k = [[fmt(selA / 1e6, 2) + ' km²', 'Gebietsfläche (' + fmt(selA / 1e4, 1) + ' ha)']];
+    const bS = byBase('gebaeude'); if (bS) { k.push([fmt(bS.total.count), 'Gebäude im Gebiet']); k.push([pct(bS.total.area), 'Überbauungsgrad (≈ GRZ)']); }
+    if (byBase('gruen')) k.push([pct(byBase('gruen').total.area), 'Grün- & Freiflächen']);
+    if (byBase('wasser')) k.push([pct(byBase('wasser').total.area), 'Wasserflächen']);
+    const sL = S.layers.find(x => x.base === 'strassen' && x.split === 'hierarchie');
+    if (sL && S.stats[sL.id]) { const s = S.stats[sL.id].classes, g = kk => (s[kk] ? s[kk].len : 0); k.push([fmt(['bund', 'haupt', 'haupt2', 'sammel', 'neben', 'service'].reduce((a, kk) => a + g(kk), 0) / 1000, 1) + ' km', 'Straßennetz (Kfz)']); k.push([fmt((g('fuss') + g('rad') + g('fuzo')) / 1000, 1) + ' km', 'Fuß- & Radwege']); }
+    if (byBase('oepnv')) k.push([fmt(byBase('oepnv').total.count), 'ÖPNV-Haltestellen']);
+    let html = `<div class="kpis">${k.map(([v, l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
+    const hL = S.layers.find(x => x.split === 'hoehe');
+    if (hL) { const q = {}; hL.features.forEach(f => { q[f.properties._q] = (q[f.properties._q] || 0) + 1; }); const tot = hL.features.length || 1;
+      html += `<div class="note"><b>Datenlage Gebäudehöhen:</b> ${fmt(100 * (q['OSM-Angabe (height)'] || 0) / tot)} % mit Höhenangabe in OSM, ${fmt(100 * (q['geschätzt: Geschosse × 3 m'] || 0) / tot)} % geschätzt aus Geschosszahl (× 3 m), ${fmt(100 * (q['keine Angabe'] || 0) / tot)} % unbekannt.</div>`; }
+    for (const L of S.layers.slice().reverse()) {
+      const s = S.stats[L.id]; if (!s || L.statMode === 'none') continue;
+      const rows = L.classes.filter(c => s.classes[c.key] && s.classes[c.key].count > 0); if (!rows.length) continue;
+      const kind = rows.some(c => s.classes[c.key].area > 0) ? 'area' : rows.some(c => s.classes[c.key].len > 0) ? 'len' : 'count';
+      const v = c => kind === 'area' ? s.classes[c.key].area : kind === 'len' ? s.classes[c.key].len : s.classes[c.key].count;
+      const maxV = Math.max(...rows.map(v)) || 1;
+      html += `<div class="st-l">${esc(L.name)}<span class="spacer"></span><span class="muted tiny">${kind === 'len' ? 'Länge' : kind === 'count' ? 'Anzahl' : 'Fläche · Anteil'}</span></div>`;
+      for (const c of rows.slice(0, 25)) {
+        const x = s.classes[c.key];
+        const val = kind === 'len' ? fmt(x.len / 1000, 2) + ' km' : kind === 'count' ? fmt(x.count) : fmt(x.area / 1e4, 2) + ' ha';
+        const sub = kind === 'area' ? pct(x.area) : fmt(x.count) + '×';
+        html += `<div class="st-row"><i style="background:${c.color}"></i><span>${esc(c.label)}</span><em>${val}</em><em>${sub}</em></div><div class="bar"><div style="width:${(v(c) / maxV * 100).toFixed(1)}%;background:${c.color}"></div></div>`;
+      }
+      if (rows.length > 25) html += `<div class="tiny muted" style="padding:0 14px">… und ${rows.length - 25} weitere Klassen</div>`;
+    }
+    html += `<div class="pad tiny muted">Flächen sind auf das Gebiet zugeschnitten. Gebäude zählen, wenn ihr Mittelpunkt im Gebiet liegt. Freiraum-Flächen können sich in OSM überlagern (z. B. Spielplatz im Park).</div>`;
+    box.innerHTML = html;
+  }
+
+  /* ---------- Element-Eigenschaften (inkl. Bearbeiten) ---------- */
+  function renderProps() {
+    const box = $('#props'); const s = selFeature();
+    if (!s) { box.className = 'muted pad'; box.innerHTML = 'Klicke auf ein Gebäude, eine Fläche oder Straße in der Karte.'; return; }
+    box.className = '';
+    const { L, f } = s, p = f.properties, c = L.classes.find(x => x.key === p._cls) || { label: '?', color: '#999' };
+    const q = p._q; const badge = !q ? '' : q === 'keine Angabe' ? `<span class="badge na">${q}</span>` : /geschätzt|abgeleitet|manuell/.test(q) ? `<span class="badge est">${q}</span>` : `<span class="badge">${q}</span>`;
+    const [ty, oid] = String(p.osm_id || '').split('/');
+    const tags = Object.keys(p).filter(k => k[0] !== '_' && k !== 'osm_id').sort();
+    const name = p.name || [p['addr:street'], p['addr:housenumber']].filter(Boolean).join(' ') || c.label;
+    box.innerHTML = `<div class="ph"><b>${esc(name)}</b><div class="muted tiny">${esc(L.name)}${UA.isPoly(f.geometry) ? ' · ' + fmt(UA.polyArea(f.geometry)) + ' m² Grundfläche' : ''}</div>
+      <div class="tag"><span class="sw" style="background:${c.color}"></span>${esc(c.label)} ${badge}</div></div>
+      ${p.hoehe_m !== undefined ? `<div class="note">Höhe: <b>${p.hoehe_m != null ? fmt(p.hoehe_m, 1) + ' m' : 'unbekannt'}</b>${p.geschosse ? ' · ' + fmt(p.geschosse) + ' Geschosse' : ''} · Herkunft: ${esc(p.hoehe_quelle)}</div>` : ''}
+      <div class="pad" style="padding-top:4px"><div style="display:flex;gap:6px;align-items:center">
+        <span class="tiny muted" style="width:70px">Klasse</span><select id="reCls" class="inp sm" style="flex:1">${L.classes.map(x => `<option value="${esc(x.key)}" ${x.key === p._cls ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select></div>
+        <div class="lbtns"><button class="btn sm" id="delFeat">Element entfernen</button>${oid ? `<a class="btn sm" style="text-decoration:none" target="_blank" href="https://www.openstreetmap.org/${ty}/${oid}">In OSM ansehen ↗</a>` : ''}</div></div>
+      <table class="ptab">${tags.map(k => `<tr><td>${esc(k)}</td><td>${esc(p[k] == null ? '–' : p[k])}</td></tr>`).join('')}</table>`;
+    $('#reCls').onchange = ev => { p._cls = ev.target.value; p._q = 'manuell geändert'; refreshLayer(L); };
+    $('#delFeat').onclick = () => { L.raw = L.raw.filter(r => r.properties.osm_id !== p.osm_id); L.features.splice(p._i, 1); L.features.forEach((x, i) => { x.properties._i = i; }); S.selectedRef = null; highlight(); refreshLayer(L); };
+  }
+
+  /* ---------- Bausteine (Gruppen-Tabs) ---------- */
+  function itemColor(it) {
+    if (it.query) return '#F2D16B';
+    const B = UA.BASES[it.base]; if (!it.only) return B.color;
+    const P = UA.PRESETS[it.split]; const cl = P && P.cls ? UA.CL[P.cls].find(c => c.key === it.only[0]) : null;
+    return cl ? cl.color : B.color;
+  }
+  function renderModules() {
+    const cnt = g => g.items.filter(it => S.chosen.has(it.id)).length;
+    $('#gtabs').innerHTML = UA.GROUPS.map(g => `<button data-g="${g.id}" class="${g.id === S.gtab ? 'on' : ''}">${esc(g.label)}${cnt(g) ? `<span class="cnt">${cnt(g)}</span>` : ''}</button>`).join('');
+    const G = UA.GROUPS.find(g => g.id === S.gtab);
+    $('#modules').innerHTML = G.items.map(it => `<span class="chip ${S.chosen.has(it.id) ? 'on' : ''}" data-id="${it.id}" title="${it.query ? 'Eigene OSM-Abfrage: ' + esc(it.query.map(q => q[0] + '=' + q[1]).join(' oder ')) : it.only ? 'Teilmenge aus „' + esc(UA.BASES[it.base].label) + '“' : 'Alle ' + esc(UA.BASES[it.base].label)}"><i style="background:${itemColor(it)}"></i>${esc(it.label)}</span>`).join('');
+    $('#btnStd').hidden = S.gtab !== 'basis';
+    $('#modHint').textContent = S.gtab === 'basis' ? 'Die wichtigsten Grunddaten' : 'Jeder Baustein wird ein eigener Layer';
+    const n = S.chosen.size;
+    $('#btnRun').textContent = n ? `Ausgewählte laden (${n})` : 'Ausgewählte laden';
+    $('#sumMods').textContent = n ? `${n} gewählt` : '';
+  }
+  $('#gtabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.gtab = b.dataset.g; renderModules(); });
+  $('#modules').addEventListener('click', e => { const c = e.target.closest('.chip'); if (!c) return; const id = c.dataset.id; S.chosen.has(id) ? S.chosen.delete(id) : S.chosen.add(id); renderModules(); });
+  $('#btnStd').onclick = () => { UA.STANDARD.forEach(b => S.chosen.add(b)); renderModules(); };
+  $('#btnNone').onclick = () => { S.chosen = new Set(); renderModules(); };
+  $('#btnRun').onclick = () => {
+    const order = []; UA.GROUPS.forEach(g => g.items.forEach(it => { if (S.chosen.has(it.id) && !order.includes(it.id)) order.push(it.id); }));
+    load(order.map(UA.itemTask).filter(Boolean));
+  };
+  /* Bereiche ein-/ausklappen (wird gemerkt) */
+  function applyFold() { [['area', '#secArea'], ['mods', '#secMods']].forEach(([k, sel]) => $(sel).classList.toggle('closed', !!S.folded[k])); }
+  document.querySelectorAll('.sec-h.toggle').forEach(h => h.addEventListener('click', e => {
+    if (e.target.closest('button')) return; const k = h.dataset.sec; S.folded[k] = !S.folded[k]; store.set('ua_folded', S.folded); applyFold();
+  }));
+
+  /* ---------- Detail-Abfrage (QuickOSM) ---------- */
+  const KEYS = ['building', 'amenity', 'shop', 'tourism', 'leisure', 'landuse', 'natural', 'highway', 'railway', 'waterway', 'public_transport', 'office', 'craft', 'historic', 'man_made', 'healthcare', 'sport', 'emergency', 'power', 'barrier', 'religion', 'building:levels', 'height', 'name', 'heritage', 'denomination'];
+  $('#dlKeys').innerHTML = KEYS.map(k => `<option value="${k}">`).join('');
+  function renderQRows() {
+    $('#qRows').innerHTML = S.qrows.map((r, i) => `<div class="qrow" data-i="${i}">
+      ${i === 0 ? '<span class="tiny muted">wo</span>' : `<select class="inp" data-f="op"><option ${r.op === 'UND' ? 'selected' : ''}>UND</option><option ${r.op === 'ODER' ? 'selected' : ''}>ODER</option></select>`}
+      <input class="inp" data-f="key" list="dlKeys" value="${esc(r.key)}" placeholder="z. B. amenity">
+      <input class="inp" data-f="value" list="dlVals" value="${esc(r.value)}" placeholder="leer = alle Werte">
+      <button class="x" data-f="del" title="Zeile löschen">✕</button></div>`).join('');
+  }
+  $('#qRows').addEventListener('input', e => { const i = +e.target.closest('.qrow').dataset.i, f = e.target.dataset.f; if (f) S.qrows[i][f] = e.target.value; });
+  $('#qRows').addEventListener('focusin', e => { // Werte-Vorschläge passend zum Schlüssel
+    if (e.target.dataset.f !== 'value') return; const r = S.qrows[+e.target.closest('.qrow').dataset.i];
+    const d = UA.DE[r.key] || {}; $('#dlVals').innerHTML = Object.keys(d).map(v => `<option value="${v}">${esc(d[v])}</option>`).join('');
+  });
+  $('#qRows').addEventListener('click', e => { if (e.target.dataset.f === 'del') { S.qrows.splice(+e.target.closest('.qrow').dataset.i, 1); if (!S.qrows.length) S.qrows.push({ key: '', value: '', op: 'UND' }); renderQRows(); } });
+  function toggleQuery(on) { $('#qPanel').hidden = !on; $('#btnQuery').classList.toggle('on', on); if (on) { const i = $('#qRows input'); if (i) i.focus(); } }
+  $('#btnQuery').onclick = () => toggleQuery($('#qPanel').hidden);
+  $('#qClose').onclick = () => toggleQuery(false);
+  $('#qAdd').onclick = () => { S.qrows.push({ key: '', value: '', op: 'UND' }); renderQRows(); };
+  $('#qRun').onclick = () => {
+    const rows = S.qrows.filter(r => r.key.trim()).map(r => ({ key: r.key.trim(), value: r.value.trim(), op: r.op || 'UND' }));
+    if (!rows.length) { log({ title: 'Abfrage leer', status: 'warn', body: 'Trage mindestens einen Schlüssel ein, z. B. <b>amenity</b> = <b>school</b>.' }); return; }
+    load([{ query: { name: UA.queryName(rows), rows } }]);
+  };
+  function addHistory(q) {
+    S.history = [q].concat(S.history.filter(h => JSON.stringify(h.rows) !== JSON.stringify(q.rows))).slice(0, 15);
+    store.set('ua_history', S.history); renderHist();
+  }
+  function renderHist() {
+    $('#qHist').innerHTML = S.history.length ? S.history.map((h, i) => `<div class="vitem" data-i="${i}"><span data-a="edit" title="In die Felder übernehmen">${esc(h.name)}</span><button data-a="run" title="Erneut starten">▶</button><button data-a="del" title="Löschen">✕</button></div>`).join('') : '<div class="tiny muted">Noch keine.</div>';
+  }
+  $('#qHist').addEventListener('click', e => {
+    const el = e.target.closest('[data-a]'); if (!el) return; const i = +el.closest('.vitem').dataset.i, h = S.history[i];
+    if (el.dataset.a === 'run') load([{ query: h }]);
+    if (el.dataset.a === 'edit') { S.qrows = h.rows.map(r => Object.assign({}, r)); renderQRows(); }
+    if (el.dataset.a === 'run') toggleQuery(true);
+    if (el.dataset.a === 'del') { S.history.splice(i, 1); store.set('ua_history', S.history); renderHist(); }
+  });
+
+  /* ---------- Verlauf & Auftrag ---------- */
+  function log({ title, body = '', status = 'ok', user = false }) {
+    const el = document.createElement('div'); el.className = 'msg' + (user ? ' user' : '');
+    const set = (st, t, b) => { el.innerHTML = user ? esc(body) : `<div class="mh"><span class="st ${st}"></span>${t}</div><div>${b}</div>`; $('#log').scrollTop = 1e9; };
+    set(status, title, body); $('#log').appendChild(el); $('#log').scrollTop = 1e9;
+    return { el, set };
+  }
+  function toggleAsk(on) { $('#askBox').classList.toggle('big', on); $('#ask').rows = on ? 12 : 3; $('#btnExpand').textContent = on ? '⤡' : '⤢'; $('#ask').focus(); }
+  $('#btnExpand').onclick = () => toggleAsk(!$('#askBox').classList.contains('big'));
+  function ask() {
+    const text = $('#ask').value.trim(); if (!text) return; $('#ask').value = ''; toggleAsk(false);
+    log({ user: true, body: text });
+    const r = UA.parseCommand(text);
+    const uns = r.unsupported.length ? `<div class="note">Noch nicht verfügbar: <b>${r.unsupported.join(', ')}</b>. Dafür hat OpenStreetMap keine Daten; geplant für später mit weiteren Quellen. Ich erfinde keine Werte.</div>` : '';
+    if (!r.bases.length && !r.queries.length) {
+      const m = log({ title: 'Nicht verstanden', status: 'warn', body: `Ich habe nichts zum Laden erkannt. Beispiele siehst du, wenn du das Eingabefeld mit ⤢ vergrößerst.${uns}<div class="sugg">${['alles', 'Gebäude nach Nutzung und Höhe', 'Kirchen und Hotels', 'Grün und Wasser'].map(s => `<span class="chip" data-s="${s}">${s}</span>`).join('')}</div>` });
+      m.el.addEventListener('click', e => { const c = e.target.closest('[data-s]'); if (c) { $('#ask').value = c.dataset.s; ask(); } });
+      return;
+    }
+    const tasks = [];
+    for (const b of r.bases) {
+      const sp = r.splits[b] || [null];
+      sp.forEach((p, i) => tasks.push({ base: b, split: p || undefined, id: i ? `${b}__${i + 1}` : b, name: p && sp.length > 1 ? `${UA.BASES[b].label} – ${UA.PRESETS[p].label}` : undefined }));
+    }
+    r.queries.forEach(q => tasks.push({ query: q }));
+    S.chosen = new Set(r.bases); renderModules();
+    log({ title: 'Auftrag verstanden', status: 'ok', body: `Ich lade:<ul>${tasks.map(t => `<li>${t.query ? esc(t.query.name) + ' <span class="muted">(' + t.query.rows.map(x => x.key + '=' + x.value).join(' oder ') + ')</span>' : esc(t.name || UA.BASES[t.base].label) + (t.split ? ' <span class="muted">– aufgeteilt nach ' + UA.PRESETS[t.split].label + '</span>' : '')}</li>`).join('')}</ul>${uns}` });
+    load(tasks);
+  }
+  $('#btnAsk').onclick = ask;
+  $('#ask').addEventListener('keydown', e => {
+    const big = $('#askBox').classList.contains('big');
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || (!big && !e.shiftKey))) { e.preventDefault(); ask(); }
+  });
+
+  /* ---------- Export ---------- */
+  function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  const base = () => UA.safeName($('#projName').value || 'Projekt');
+  const today = () => new Date().toLocaleDateString('de-DE');
+  async function exportLayers(fmtName, layers, o) {
+    o = Object.assign({ title: 'Analyseplan', scale: 10000, clip: true, legend: true, realCoords: false }, o || {});
+    if (!S.selection) { alert('Bitte zuerst ein Gebiet wählen und Daten laden.'); return; }
+    layers = UA.visLayers(layers);
+    if (!layers.length && fmtName !== 'png') { alert('Keine sichtbaren Elemente zum Exportieren.'); return; }
+    const fname = `${base()}_${UA.safeName(o.title)}`;
+    try {
+      if (fmtName === 'svg' || fmtName === 'pdf') {
+        const r = UA.buildSVG(layers, S.selection, { scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, subtitle: S.selection.properties.name + ' · ' + $('#projName').value, date: today() });
+        if (fmtName === 'svg') { download(fname + '.svg', new Blob([r.svg], { type: 'image/svg+xml' })); return; }
+        const w = window.open('', '_blank'); if (!w) { alert('Bitte Pop-ups für diese Datei erlauben, damit der Druckdialog öffnen kann.'); return; }
+        w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(fname)}</title><style>@page{size:${r.widthMM.toFixed(1)}mm ${r.heightMM.toFixed(1)}mm;margin:0}html,body{margin:0}svg{display:block;width:${r.widthMM.toFixed(1)}mm;height:${r.heightMM.toFixed(1)}mm}</style></head><body>${r.svg.replace(/^<\?xml[^>]*>/, '')}<script>setTimeout(function(){print()},500)<\/script></body></html>`);
+        w.document.close(); return;
+      }
+      if (fmtName === 'dxf') { download(fname + '.dxf', new Blob([UA.buildDXF(layers, S.selection, { realCoords: o.realCoords }).dxf], { type: 'application/dxf' })); return; }
+      if (fmtName === 'geojson') {
+        const sel = { type: 'FeatureCollection', name: 'Untersuchungsgebiet', features: [S.selection] };
+        if (window.JSZip) {
+          const z = new JSZip();
+          layers.forEach(L => z.file(UA.safeName(L.name) + '.geojson', JSON.stringify(UA.exportGeoJSON(L))));
+          z.file('Untersuchungsgebiet.geojson', JSON.stringify(sel));
+          z.file('LIESMICH.txt', `URBAN ANALYST Export – ${today()}\r\nKoordinaten: WGS84 (EPSG:4326). In QGIS: Dateien per Drag & Drop öffnen.\r\nAttribut "klasse_name" = Klasse, "farbe" = Farbe aus der App, "datenherkunft" = OSM-Angabe / geschätzt / unbekannt.\r\nDaten: (c) OpenStreetMap-Mitwirkende, ODbL.\r\n`);
+          download(fname + '_GeoJSON.zip', await z.generateAsync({ type: 'blob' }));
+        } else layers.forEach(L => download(`${base()}_${UA.safeName(L.name)}.geojson`, new Blob([JSON.stringify(UA.exportGeoJSON(L))], { type: 'application/geo+json' })));
+        return;
+      }
+      if (fmtName === 'png') map.getCanvas().toBlob(b => download(fname + '.png', b), 'image/png');
+    } catch (e) { console.error(e); alert('Export fehlgeschlagen: ' + e.message); }
+  }
+  const dlg = $('#dlg');
+  $('#btnExport').onclick = () => {
+    if (!S.layers.length) { log({ title: 'Export', status: 'warn', body: 'Lade zuerst Daten in einem Gebiet.' }); return; }
+    const n = UA.visLayers(S.layers.filter(L => L.visible)).reduce((a, L) => a + L.features.length, 0);
+    $('#exInfo').innerHTML = `${S.layers.filter(L => L.visible).length} sichtbare Layer · ${fmt(n)} sichtbare Elemente. Ausgeblendete Klassen werden nicht exportiert.${n > 60000 ? ' Große Datei: Illustrator braucht beim Öffnen evtl. etwas Zeit.' : ''}`;
+    dlg.hidden = false;
+  };
+  dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-close]')) dlg.hidden = true; });
+  $('#btnDoExport').onclick = () => {
+    const f = document.querySelector('input[name=fmt]:checked').value;
+    const layers = $('#exVisible').checked ? S.layers.filter(L => L.visible) : S.layers.slice();
+    exportLayers(f, layers, { title: $('#exTitle').value || 'Analyseplan', scale: +$('#exScale').value, clip: $('#exClip').checked, legend: $('#exLegend').checked, realCoords: $('#exReal').checked });
+    dlg.hidden = true;
+  };
+
+  /* ---------- Projekt speichern / öffnen ---------- */
+  $('#btnSaveProj').onclick = () => {
+    const layers = S.layers.map(L => Object.assign({}, L, { features: undefined }));
+    const proj = { app: 'URBAN ANALYST', version: 2, name: $('#projName').value, selection: S.selection, chosen: [...S.chosen], views: S.views, view: { center: map.getCenter().toArray(), zoom: map.getZoom() }, layers };
+    download(base() + '.urbananalyst.json', new Blob([JSON.stringify(proj)], { type: 'application/json' }));
+  };
+  $('#btnOpenProj').onclick = () => $('#fileProj').click();
+  $('#fileProj').onchange = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    try {
+      const p = JSON.parse(await file.text()); if (p.app !== 'URBAN ANALYST' || p.version !== 2) throw new Error('Keine passende URBAN-ANALYST-Projektdatei');
+      S.layers.slice().forEach(L => removeLayer(L.id, true));
+      $('#projName').value = p.name || 'Projekt'; S.selection = p.selection; S.chosen = new Set(p.chosen || []); S.cache = { key: null, data: {} };
+      if (p.views) { S.views = p.views; store.set('ua_views', S.views); renderViews(); }
+      S.layers = (p.layers || []).map(L => UA.applySplit(L, L.split, {}));
+      drawSelection(); syncLayers(); computeStats(); updateAreaInfo(); renderModules(); renderAll(); fitSel();
+      log({ title: 'Projekt geöffnet', status: 'ok', body: `${esc(file.name)} · ${S.layers.length} Layer` });
+    } catch (err) { log({ title: 'Öffnen fehlgeschlagen', status: 'err', body: esc(err.message) }); }
+    e.target.value = '';
+  };
+
+  /* ---------- Darstellung ---------- */
+  $('#btnTheme').onclick = () => {
+    S.theme = S.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = S.theme;
+    if (S.basemap === 'dark' || S.basemap === 'light') setBasemap(S.theme); else setBasemap(S.basemap);
+  };
+  $('#basemap').onchange = e => setBasemap(e.target.value);
+
+  /* ---------- Start ---------- */
+  $('#basemap').value = S.basemap;
+  applyFold(); renderModules(); renderViews(); renderQRows(); renderHist(); updateAreaInfo(); renderAll();
+  log({ title: 'Willkommen', status: 'ok', body: 'So geht’s:<ul><li><b>Gebiet</b>: Ort suchen und „Als Gebiet“ wählen, unten ein Rechteck zeichnen oder auf „Aktuelle Kartenansicht“ stellen.</li><li><b>Bausteine</b> anklicken (Gebäude, Straßen …) und „Ausgewählte laden“, für einzelne Dinge wie Kirchen unten auf <b>+</b> klicken (Detail-Abfrage) oder einen Auftrag schreiben.</li><li>Rechts bei jedem Layer unter ▾ <b>„Aufteilen nach“</b> wählen, wie in QGIS. Layer und Untergruppen mit <b>⋮⋮</b> verschieben, mit dem Papierkorb löschen.</li><li><b>Laden abbrechen</b>: Knopf oben in der Ladeanzeige.</li></ul>' });
+  window.UA_STATE = S; // zum Nachsehen in der Konsole (F12)
+})();
+
+</script>
+</body>
+</html>
