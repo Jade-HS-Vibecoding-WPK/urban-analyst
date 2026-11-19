@@ -420,7 +420,7 @@ details>summary{list-style:none}details>summary::-webkit-details-marker{display:
     <div class="grid2">
       <label>Format</label>
       <div class="formats" id="fmt">
-        <label><input type="radio" name="fmt" value="svg" checked><b>SVG</b><small>für Illustrator · Ebenen bleiben erhalten</small></label>
+        <label><input type="radio" name="fmt" value="svg" checked><b>SVG</b><small>für Illustrator · Ebenen mit dem Skript unten</small></label>
         <label><input type="radio" name="fmt" value="pdf"><b>PDF</b><small>über den Druckdialog („Als PDF speichern“)</small></label>
         <label><input type="radio" name="fmt" value="dxf"><b>DXF</b><small>für CAD / Rhino / Illustrator · in Metern</small></label>
         <label><input type="radio" name="fmt" value="geojson"><b>GeoJSON (ZIP)</b><small>für QGIS · ein File pro Layer</small></label>
@@ -436,6 +436,8 @@ details>summary{list-style:none}details>summary::-webkit-details-marker{display:
         <label><input type="checkbox" id="exLegend" checked> Legende, Titel, Maßstab & Nordpfeil (SVG/PDF)</label>
         <label><input type="checkbox" id="exReal"> echte UTM-Koordinaten (DXF)</label>
       </div>
+      <label>Illustrator</label>
+      <div class="tiny"><a href="#" id="exJsx">QUAVA_Ebenen.jsx herunterladen</a><br><span class="muted">Macht aus der geöffneten SVG echte Ebenen (Baustein = Ebene, Untergruppe = Unterebene). In Illustrator: Datei → Skripten → Anderes Skript … → diese Datei wählen. Einmal speichern reicht.</span></div>
     </div>
     <div id="exInfo" class="muted tiny pad-t"></div>
     <div class="card-f"><button class="btn" data-close>Abbrechen</button><button class="btn primary" id="btnDoExport">Exportieren</button></div>
@@ -1878,16 +1880,16 @@ const UA = (function () {
     oepnv: { label: 'ÖPNV-Haltestellen', group: 'Verkehr', fetch: 'stops', keep: f => isPoint(f.geometry) && stopClass(f.properties), presets: ['oepnv', 'einheitlich'], def: 'oepnv', color: '#B07FE0' },
     gruen: { label: 'Grün- & Freiflächen', group: 'Freiraum', fetch: 'green', keep: f => isPoly(f.geometry) && greenClass(f.properties), presets: ['gruen', 'einheitlich'], def: 'gruen', color: '#6E9F5D' },
     wasser: { label: 'Wasser & Gewässer', group: 'Wasser', fetch: 'water', keep: f => waterClass(f.properties, f.geometry), presets: ['wasser', 'wasser_achsen', 'einheitlich'], def: 'wasser', color: '#6BB7E8' },
-    flaechen: { label: 'Flächennutzung', group: 'Nutzung', fetch: 'landuse', keep: f => isPoly(f.geometry) && landuseClass(f.properties), presets: ['flaechen', 'einheitlich'], def: 'flaechen', color: '#C9A27E', opacity: 0.7 },
+    flaechen: { label: 'Flächennutzung', group: 'Nutzung', fetch: 'landuse', keep: f => isPoly(f.geometry) && landuseClass(f.properties), presets: ['flaechen', 'einheitlich'], def: 'flaechen', color: '#C9A27E' },
     baeume: { label: 'Bäume', group: 'Freiraum', fetch: 'trees', keep: f => isPoint(f.geometry) || isLine(f.geometry) || (isPoly(f.geometry) && f.properties._krone_m), presets: ['baeume', 'einheitlich'], def: 'baeume', color: '#4E8F4A' },
     grenzen: { label: 'Bezirke & Ortsteile', group: 'Grenzen', fetch: 'boundaries', keep: f => isPoly(f.geometry) && ['8', '9', '10'].includes(f.properties.admin_level), presets: ['grenzen'], def: 'grenzen', color: '#BCA8DE', outlineOnly: true, statMode: 'none' },
     schatten: { label: 'Schattenwurf', group: 'Analyse & Umwelt', fetch: 'buildings', keep: f => isPoly(f.geometry), presets: ['schatten', 'schatten_linien', 'einheitlich'], def: 'schatten', color: '#5B5F86', opacity: 0.5, statMode: 'none', nonzero: true, sun: true }, // Schatten starten mit 50 % Deckkraft
-    hoehenlinien: { label: 'Höhenlinien', group: 'Analyse & Umwelt', fetch: 'dgm', keep: f => isLine(f.geometry) || isPoint(f.geometry), presets: ['einheitlich', 'hl_art'], def: 'hl_art', color: '#9A6B3F', statMode: 'none', opacity: 0.9 },
-    hangneigung: { label: 'Hangneigung', group: 'Analyse & Umwelt', fetch: 'dgm', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'neigung'], def: 'neigung', color: '#E07B39', statMode: 'centroid', opacity: 0.65, noOutline: true },
-    laerm: { label: 'Verkehrslärm (Straße)', group: 'Analyse & Umwelt', fetch: 'laerm', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'laerm_pegel'], def: 'laerm_pegel', color: '#CC463F', statMode: 'clip', opacity: 0.6, lz: true },
-    hochwasser: { label: 'Hochwasser', group: 'Analyse & Umwelt', fetch: 'hochwasser', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'hw_tiefe', 'hw_szenario', 'hw_lage'], def: 'hw_tiefe', color: '#3D7DD8', statMode: 'clip', opacity: 0.6, hw: true },
-    bevoelk: { label: 'Bevölkerung', group: 'Analyse & Umwelt', fetch: 'bevoelk', keep: f => isPoly(f.geometry), presets: ['ew_dichte', 'ew_alter', 'einheitlich'], def: 'ew_dichte', color: '#E09A4E', statMode: 'centroid', opacity: 0.75 },
-    flurst: { label: 'Flurstücke', group: 'Analyse & Umwelt', fetch: 'flurst', keep: f => isPoly(f.geometry), presets: ['flurst_grenzen', 'flurst_groesse', 'flurst_nutzung', 'einheitlich'], def: 'flurst_grenzen', color: '#A9A2B8', statMode: 'centroid', opacity: 0.8 },
+    hoehenlinien: { label: 'Höhenlinien', group: 'Analyse & Umwelt', fetch: 'dgm', keep: f => isLine(f.geometry) || isPoint(f.geometry), presets: ['einheitlich', 'hl_art'], def: 'hl_art', color: '#9A6B3F', statMode: 'none' },
+    hangneigung: { label: 'Hangneigung', group: 'Analyse & Umwelt', fetch: 'dgm', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'neigung'], def: 'neigung', color: '#E07B39', statMode: 'centroid', noOutline: true },
+    laerm: { label: 'Verkehrslärm (Straße)', group: 'Analyse & Umwelt', fetch: 'laerm', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'laerm_pegel'], def: 'laerm_pegel', color: '#CC463F', statMode: 'clip', lz: true },
+    hochwasser: { label: 'Hochwasser', group: 'Analyse & Umwelt', fetch: 'hochwasser', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'hw_tiefe', 'hw_szenario', 'hw_lage'], def: 'hw_tiefe', color: '#3D7DD8', statMode: 'clip', hw: true },
+    bevoelk: { label: 'Bevölkerung', group: 'Analyse & Umwelt', fetch: 'bevoelk', keep: f => isPoly(f.geometry), presets: ['ew_dichte', 'ew_alter', 'einheitlich'], def: 'ew_dichte', color: '#E09A4E', statMode: 'centroid' },
+    flurst: { label: 'Flurstücke', group: 'Analyse & Umwelt', fetch: 'flurst', keep: f => isPoly(f.geometry), presets: ['flurst_grenzen', 'flurst_groesse', 'flurst_nutzung', 'einheitlich'], def: 'flurst_grenzen', color: '#A9A2B8', statMode: 'centroid' },
     sonnenbahn: { label: 'Sonnenbahn', group: 'Analyse & Umwelt', fetch: 'sun', keep: () => true, presets: ['sonne'], def: 'sonne', color: '#F2B134', statMode: 'none', sun: true },
     abfrage: { label: 'Eigene Abfrage', group: 'Eigene Abfragen', fetch: null, keep: () => true, presets: ['einheitlich'], def: 'einheitlich', color: '#F2D16B' }
   };
@@ -2165,7 +2167,7 @@ const UA = (function () {
       const mode = opt.onlyBy || opt.split || B.def, ctx = { landuse: data.landuse, pois: data.pois };
       raw = raw.filter(f => { const r = classifyPreset(mode, f, ctx); return r && opt.only.includes(r.cls); });
     }
-    const L = { id: opt.id || baseId, base: baseId, name: opt.name || B.label, group: B.group, raw, visible: true, opacity: B.opacity || 0.85,
+    const L = { id: opt.id || baseId, base: baseId, name: opt.name || B.label, group: B.group, raw, visible: true, opacity: B.opacity || 1,
       statMode: B.statMode || 'clip', outlineOnly: !!B.outlineOnly, styles: {}, merges: {}, query: opt.query || null, subset: !!opt.only,
       nonzero: !!B.nonzero, sun, sunInfo, hw, hwAll, lz, lzAll, iv: ivUsed, noOutline: !!B.noOutline };
     return applySplit(L, opt.split || B.def, { landuse: data.landuse, pois: data.pois });
@@ -2350,11 +2352,63 @@ const UA = (function () {
   }
 
   /* ---------- Plan-Export: Projektion ---------- */
-  function planFrame(selection) {
+  function planFrame(selection, northUp) {
     const c = centroid(selection.geometry); const zone = utmZone(c[0]);
+    let proj = p => toUTM(p[0], p[1], zone), rot = 0;
+    if (northUp) { // SVG/PDF: Plan um die Meridiankonvergenz drehen, damit „oben“ = geografisch Nord (wie die Karte im Browser); Meter bleiben exakt
+      const o = toUTM(c[0], c[1], zone), n = toUTM(c[0], c[1] + 0.01, zone);
+      rot = Math.atan2(n[0] - o[0], n[1] - o[1]); const cs = Math.cos(rot), sn = Math.sin(rot);
+      proj = p => { const [x, y] = toUTM(p[0], p[1], zone), dx = x - o[0], dy = y - o[1]; return [o[0] + dx * cs - dy * sn, o[1] + dx * sn + dy * cs]; };
+    }
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    eachCoord(selection.geometry, p => { const [x, y] = toUTM(p[0], p[1], zone); minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
-    return { zone, minX, minY, maxX, maxY, proj: p => toUTM(p[0], p[1], zone) };
+    eachCoord(selection.geometry, p => { const [x, y] = proj(p); minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
+    return { zone, minX, minY, maxX, maxY, proj, rot };
+  }
+  /* ---------- Zuschnitt für SVG/PDF: Objekte wirklich am Gebiet abschneiden (statt Maske) ---------- */
+  function makeCutter(selection, ops) {
+    const SG = selection.geometry, SB = bboxOf(SG), convex = SG.type === 'Polygon' && isConvex(SG.coordinates[0]);
+    const edges = []; (SG.type === 'Polygon' ? [SG.coordinates] : SG.coordinates).forEach(p => p.forEach(r => { for (let i = 1; i < r.length; i++) edges.push([r[i - 1], r[i]]); }));
+    const segT = (a, b, p, q) => { // Schnittpunkt Strecke a→b mit Gebietskante p→q als Anteil t (0…1) oder null
+      const rx = b[0] - a[0], ry = b[1] - a[1], sx = q[0] - p[0], sy = q[1] - p[1], d = rx * sy - ry * sx; if (d === 0) return null;
+      const t = ((p[0] - a[0]) * sy - (p[1] - a[1]) * sx) / d, u = ((p[0] - a[0]) * ry - (p[1] - a[1]) * rx) / d;
+      return t > 0 && t < 1 && u >= 0 && u <= 1 ? t : null;
+    };
+    const at = (a, b, t) => t === 0 ? a : t === 1 ? b : [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    const segCuts = (a, b) => { const ts = []; const x0 = Math.min(a[0], b[0]), x1 = Math.max(a[0], b[0]), y0 = Math.min(a[1], b[1]), y1 = Math.max(a[1], b[1]);
+      for (const [p, q] of edges) { if (Math.max(p[0], q[0]) < x0 || Math.min(p[0], q[0]) > x1 || Math.max(p[1], q[1]) < y0 || Math.min(p[1], q[1]) > y1) continue; const t = segT(a, b, p, q); if (t !== null) ts.push(t); }
+      return ts; };
+    function line(l) { // Linienzug → Teile innerhalb des Gebiets
+      const out = []; let cur = null;
+      for (let i = 1; i < l.length; i++) {
+        const a = l[i - 1], b = l[i], ts = [0, 1].concat(segCuts(a, b)).sort((x, y) => x - y);
+        for (let j = 1; j < ts.length; j++) {
+          const t0 = ts[j - 1], t1 = ts[j]; if (t1 - t0 < 1e-12) continue;
+          if (pointInPoly(at(a, b, (t0 + t1) / 2), SG)) { const P = at(a, b, t0), Q = at(a, b, t1); if (cur && cur[cur.length - 1] === P) cur.push(Q); else { cur = [P, Q]; out.push(cur); } }
+          else cur = null;
+        }
+      }
+      return out;
+    }
+    function inside(g) { // ganz im Gebiet: alle Punkte drin und keine Kante schneidet den Rand
+      let ok = true; eachCoord(g, p => { if (ok && !pointInPoly(p, SG)) ok = false; }); if (!ok || convex) return ok;
+      for (const p of g.type === 'Polygon' ? [g.coordinates] : g.coordinates) for (const r of p) for (let i = 1; i < r.length; i++) if (segCuts(r[i - 1], r[i]).length) return false;
+      return true;
+    }
+    function poly(g) {
+      if (!bboxHit(bboxOf(g), SB)) return null;
+      if (inside(g)) return g;
+      if (ops && ops.intersect) { try { const r = ops.intersect({ type: 'Feature', properties: {}, geometry: g }, selection); return r && r.geometry && isPoly(r.geometry) ? r.geometry : null; } catch (e) { /* weiter unten */ } }
+      if (convex) { const parts = []; for (const p of g.type === 'Polygon' ? [g.coordinates] : g.coordinates) { const o = clipRing(p[0], SG.coordinates[0]); if (o) parts.push([o].concat(p.slice(1).map(h => clipRing(h, SG.coordinates[0])).filter(Boolean))); }
+        return !parts.length ? null : parts.length === 1 ? { type: 'Polygon', coordinates: parts[0] } : { type: 'MultiPolygon', coordinates: parts }; }
+      return pointInPoly(centroid(g), SG) ? g : null; // Notlösung ohne Zuschnitt-Bibliothek
+    }
+    return function cut(g) {
+      if (!g) return null;
+      if (g.type === 'Point') return pointInPoly(g.coordinates, SG) ? g : null;
+      if (g.type === 'LineString' || g.type === 'MultiLineString') { if (!bboxHit(bboxOf(g), SB)) return null; const ls = (g.type === 'LineString' ? [g.coordinates] : g.coordinates).flatMap(line); return ls.length ? { type: 'MultiLineString', coordinates: ls } : null; }
+      if (isPoly(g)) return poly(g);
+      return g;
+    };
   }
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const safeName = s => String(s).replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
@@ -2377,58 +2431,61 @@ const UA = (function () {
   }
   function buildSVG(layers, selection, opt) {
     layers = visLayers(layers);
-    opt = Object.assign({ scale: 10000, clip: true, legend: true, title: 'Analyseplan', subtitle: '', date: '' }, opt || {});
-    const F = planFrame(selection); const k = 1000 / opt.scale; // mm pro Meter
+    opt = Object.assign({ scale: 10000, clip: true, legend: true, title: 'Analyseplan', subtitle: '', date: '', ops: null }, opt || {});
+    const F = planFrame(selection, true); const k = 1000 / opt.scale; // mm pro Meter
     const M = 12, mapW = (F.maxX - F.minX) * k, mapH = (F.maxY - F.minY) * k;
     const legW = opt.legend ? 75 : 0, titleH = opt.legend ? 26 : 0;
     const W = mapW + 2 * M + legW, H = mapH + 2 * M + titleH;
     const T = p => { const [x, y] = F.proj(p); return ((x - F.minX) * k + M).toFixed(2) + ' ' + ((F.maxY - y) * k + M).toFixed(2); };
     const ringD = r => 'M' + r.map(T).join('L') + 'Z';
     const lineD = l => 'M' + l.map(T).join('L');
-    const pathD = g => g.type === 'Polygon' ? g.coordinates.map(ringD).join('') : g.type === 'MultiPolygon' ? g.coordinates.map(p => p.map(ringD).join('')).join('')
-      : g.type === 'LineString' ? lineD(g.coordinates) : g.type === 'MultiLineString' ? g.coordinates.map(lineD).join('') : '';
+    const cut = opt.clip ? makeCutter(selection, opt.ops) : (g => g);
+    // je Objekt ein eigener Pfad (nicht gruppiert); nur Flächen mit Loch (Innenhof) brauchen einen zusammengesetzten Pfad
+    const polyEl = (g, st) => { g = cut(g); if (!g || !isPoly(g)) return ''; return (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map(p => `<path ${st} d="${p.map(ringD).join('')}"/>`).join(''); };
+    const lineEl = (g, st) => { g = cut(g); if (!g || !isLine(g)) return ''; return (g.type === 'LineString' ? [g.coordinates] : g.coordinates).filter(l => l.length > 1).map(l => `<path ${st} d="${lineD(l)}"/>`).join(''); };
     const out = [];
     out.push(`<?xml version="1.0" encoding="UTF-8"?>`);
     out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W.toFixed(1)}mm" height="${H.toFixed(1)}mm" viewBox="0 0 ${W.toFixed(2)} ${H.toFixed(2)}">`);
-    out.push(`<defs><clipPath id="Gebiet_Clip"><path d="${pathD(selection.geometry)}"/></clipPath></defs>`);
     out.push(`<g id="Hintergrund"><rect x="0" y="0" width="${W.toFixed(2)}" height="${H.toFixed(2)}" fill="#ffffff"/></g>`);
-    out.push(`<g id="Karte"${opt.clip ? ' clip-path="url(#Gebiet_Clip)"' : ''}>`);
     for (const L of layers) {
       out.push(`<g id="${safeName(L.name)}">`);
+      const op = L.opacity < 1 ? ` opacity="${L.opacity}"` : ''; // Deckkraft als Objekt-Deckkraft (Illustrator: Transparenz-Fenster)
       for (const c of L.classes.slice().reverse()) {
         const fs = L.features.filter(f => f.properties._cls === c.key); if (!fs.length) continue;
-        const polys = fs.filter(f => isPoly(f.geometry)), pts = fs.filter(f => isPoint(f.geometry));
-        out.push(`<g id="${safeName(L.name + '_' + c.label)}">`);
+        const polys = fs.filter(f => isPoly(f.geometry)), pts = fs.filter(f => isPoint(f.geometry)), body = [];
         if (polys.length) {
-          const st = L.solidOutline ? `fill="none" stroke="${c.color}" stroke-width="0.1"` : L.split === 'schatten_linien' ? `fill="${c.color}" fill-opacity="${L.opacity}" fill-rule="nonzero" stroke="${c.color}" stroke-width="0.1"` : L.outlineOnly ? `fill="none" stroke="${c.color}" stroke-width="${((c.width || 1.5) * 0.25).toFixed(2)}" stroke-dasharray="1.5 1"` : `fill="${c.color}" fill-opacity="${L.opacity}" fill-rule="${L.nonzero ? 'nonzero' : 'evenodd'}"`;
-          out.push(`<path ${st} d="${polys.map(f => pathD(f.geometry)).join('')}"/>`);
+          const st = L.solidOutline ? `fill="none" stroke="${c.color}" stroke-width="0.1"` : L.split === 'schatten_linien' ? `fill="${c.color}"${op} stroke="${c.color}" stroke-width="0.1"` : L.outlineOnly ? `fill="none" stroke="${c.color}" stroke-width="${((c.width || 1.5) * 0.25).toFixed(2)}" stroke-dasharray="1.5 1"` : `fill="${c.color}"${op} fill-rule="evenodd"`;
+          if (L.nonzero) { // Schatten: Teilflächen eines Gebäudes überlappen sich → zu einer Fläche vereinigen
+            const pieces = []; polys.forEach(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).forEach(p => p.forEach(r => { const g = cut({ type: 'Polygon', coordinates: [r] }); if (g) pieces.push({ type: 'Feature', properties: {}, geometry: g }); })));
+            let merged = null;
+            if (pieces.length > 1 && opt.ops && opt.ops.union) { try { const u = opt.ops.union({ type: 'FeatureCollection', features: pieces }); merged = u && u.geometry; } catch (e) { merged = null; } }
+            const draw = g => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map(p => `<path ${st} d="${p.map(ringD).join('')}"/>`).join('');
+            body.push(merged ? draw(merged) : pieces.map(f => draw(f.geometry)).join(''));
+          } else body.push(polys.map(f => polyEl(f.geometry, st)).join(''));
         }
         let lines = fs.filter(f => isLine(f.geometry));
         if (L.bandEdge) { // nur Außenlinien: Haarlinie 0,15 mm
-          const e = fs.filter(f => L.bandEdge[f.properties._i]);
-          if (e.length) out.push(`<path fill="none" stroke="${c.color}" stroke-width="0.15" stroke-linecap="round" stroke-linejoin="round" d="${e.map(f => pathD(L.bandEdge[f.properties._i])).join('')}"/>`);
+          const st = `fill="none" stroke="${c.color}" stroke-width="0.15" stroke-linecap="round" stroke-linejoin="round"`;
+          body.push(fs.filter(f => L.bandEdge[f.properties._i]).map(f => { const g = L.bandEdge[f.properties._i]; return isPoly(g) ? polyEl(g, st) : lineEl(g, st); }).join(''));
           lines = lines.filter(f => !L.bandEdge[f.properties._i] && !f.properties._bw);
         } else if (L.bandGeom) { // Flächen
-          const bands = fs.filter(f => L.bandGeom[f.properties._i]);
-          if (bands.length) out.push(`<path fill="${c.color}" fill-opacity="${L.opacity}" d="${bands.map(f => pathD(L.bandGeom[f.properties._i])).join('')}"/>`);
+          const st = `fill="${c.color}"${op} fill-rule="evenodd"`;
+          body.push(fs.filter(f => L.bandGeom[f.properties._i]).map(f => polyEl(L.bandGeom[f.properties._i], st)).join(''));
           lines = lines.filter(f => !L.bandGeom[f.properties._i]);
         } else if (L.bands) { // dicke Linien: Linienstärke = echte Breite im Maßstab (m × mm/m)
-          const byW = {}; lines.filter(f => f.properties._bw).forEach(f => { const w = (f.properties._bw * k).toFixed(2); (byW[w] = byW[w] || []).push(f); });
-          Object.keys(byW).forEach(w => out.push(`<path fill="none" stroke="${c.color}" stroke-width="${w}" stroke-opacity="${L.opacity}" stroke-linecap="round" stroke-linejoin="round" d="${byW[w].map(f => pathD(f.geometry)).join('')}"/>`));
+          body.push(lines.filter(f => f.properties._bw).map(f => lineEl(f.geometry, `fill="none" stroke="${c.color}" stroke-width="${(f.properties._bw * k).toFixed(2)}"${op} stroke-linecap="round" stroke-linejoin="round"`)).join(''));
           lines = lines.filter(f => !f.properties._bw);
         }
-        if (lines.length) out.push(`<path fill="none" stroke="${c.color}" stroke-width="${L.axis || L.bands ? '0.15' : ((c.width || 1.2) * 0.22).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" d="${lines.map(f => pathD(f.geometry)).join('')}"/>`);
+        if (lines.length) { const st = `fill="none" stroke="${c.color}" stroke-width="${L.axis || L.bands ? '0.15' : ((c.width || 1.2) * 0.22).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"`; body.push(lines.map(f => lineEl(f.geometry, st)).join('')); }
         if (pts.length) {
           const r = ((c.r || 3) * 0.22).toFixed(2);
-          out.push(pts.map(f => { const [x, y] = T(f.geometry.coordinates).split(' '); return (f.properties._lblonly ? '' : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.color}"/>`)
+          body.push(pts.filter(f => cut(f.geometry)).map(f => { const [x, y] = T(f.geometry.coordinates).split(' '); return (f.properties._lblonly ? '' : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.color}"/>`)
             + (f.properties._label ? `<text x="${x}" y="${(f.properties._lblonly ? +y + 0.7 : +y - 1.4).toFixed(2)}" font-size="${f.properties._lblonly ? '2' : '2.6'}" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="${c.color}">${esc(f.properties._label)}</text>` : ''); }).join(''));
         }
-        out.push(`</g>`);
+        const b = body.join(''); if (b) out.push(`<g id="${safeName(L.name + '_' + c.label)}">${b}</g>`);
       }
       out.push(`</g>`);
     }
-    out.push(`</g>`);
-    out.push(`<g id="Untersuchungsgebiet"><path d="${pathD(selection.geometry)}" fill="none" stroke="#1d1b22" stroke-width="0.5" stroke-dasharray="2 1.2"/></g>`);
     if (opt.legend) {
       const x0 = M + mapW + 10; let y = M + 4; const L2 = [];
       L2.push(`<g id="Legende" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`);
@@ -2446,7 +2503,7 @@ const UA = (function () {
           else if (geomPt) L2.push(`<circle cx="${x0 + 3}" cy="${y - 1.2}" r="1.4" fill="${c.color}"/>`);
           else if (geomLine) L2.push(`<line x1="${x0}" y1="${y - 1.2}" x2="${x0 + 7}" y2="${y - 1.2}" stroke="${c.color}" stroke-width="${L.bands ? '0.15' : L.axis ? '0.15' : Math.max(0.4, (c.width || 1.2) * 0.3).toFixed(2)}" stroke-linecap="round"/>`);
           else if (L.outlineOnly) L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="none" stroke="${c.color === '#F2EDF7' || c.color === '#E7DDF5' ? '#777' : c.color}" stroke-width="0.4" stroke-dasharray="1 0.6"/>`);
-          else L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="${c.color}" fill-opacity="${Math.max(L.opacity, 0.35)}"/>`);
+          else L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="${c.color}"${L.opacity < 1 ? ` opacity="${Math.max(L.opacity, 0.35)}"` : ''}/>`);
           L2.push(`<text x="${x0 + 10}" y="${y}" font-size="2.6">${esc(c.label)}</text>`); y += 4.6;
         }
         y += 3;
@@ -2463,7 +2520,7 @@ const UA = (function () {
       out.push(`<g id="Planlayout" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`
         + `<text x="${M}" y="${ty + 3}" font-size="8" font-weight="700">${esc(opt.title.toUpperCase())}</text>`
         + (opt.subtitle ? `<text x="${M}" y="${ty + 9}" font-size="3">${esc(opt.subtitle)}</text>` : '')
-        + `<text x="${M}" y="${ty + 14}" font-size="2.3" fill="#555">Kartengrundlage: © OpenStreetMap-Mitwirkende (ODbL) ${amtl ? ' · Gebäudehöhen: Geoportal Berlin (Umweltatlas Gebäudehöhen, LoD2)' : ''}${amtlNI ? ' · Gebäudehöhen: © LGLN, 3D-Gebäudemodell LoD2 (CC BY 4.0)' : ''}${kat ? ' · Bäume: Geoportal Berlin (Baumbestand)' : ''}${flq.has(Q_FL_BE) ? ' · Flurstücke: Geoportal Berlin (ALKIS Berlin)' : ''}${flq.has(Q_FL_NI) ? ' · Flurstücke: © LGLN (CC BY 4.0)' : ''}${flq.has(Q_EW_BE) ? ' · Einwohner: Amt für Statistik Berlin-Brandenburg, Umweltatlas Berlin' : ''}${flq.has(Q_EW_Z) ? ' · Einwohner: Zensus 2022, © Statistische Ämter des Bundes und der Länder (dl-de/by-2-0)' : ''}${flq.has(Q_HW) ? ' · Hochwasser: Hochwassergefahrenkarten der Länder, bereitgestellt von der Bundesanstalt für Gewässerkunde (BfG)' : ''}${flq.has(Q_LAERM) ? ' · Verkehrslärm: Lärmkartierung 2022, © Umweltbundesamt' : ''}${flq.has(Q_DGM_NI) ? ' · Gelände: DGM1 © LGLN (CC BY 4.0)' : ''} · erstellt mit QUAVA${opt.date ? ' · ' + esc(opt.date) : ''} · UTM Zone ${F.zone}N</text>`
+        + `<text x="${M}" y="${ty + 14}" font-size="2.3" fill="#555">Kartengrundlage: © OpenStreetMap-Mitwirkende (ODbL) ${amtl ? ' · Gebäudehöhen: Geoportal Berlin (Umweltatlas Gebäudehöhen, LoD2)' : ''}${amtlNI ? ' · Gebäudehöhen: © LGLN, 3D-Gebäudemodell LoD2 (CC BY 4.0)' : ''}${kat ? ' · Bäume: Geoportal Berlin (Baumbestand)' : ''}${flq.has(Q_FL_BE) ? ' · Flurstücke: Geoportal Berlin (ALKIS Berlin)' : ''}${flq.has(Q_FL_NI) ? ' · Flurstücke: © LGLN (CC BY 4.0)' : ''}${flq.has(Q_EW_BE) ? ' · Einwohner: Amt für Statistik Berlin-Brandenburg, Umweltatlas Berlin' : ''}${flq.has(Q_EW_Z) ? ' · Einwohner: Zensus 2022, © Statistische Ämter des Bundes und der Länder (dl-de/by-2-0)' : ''}${flq.has(Q_HW) ? ' · Hochwasser: Hochwassergefahrenkarten der Länder, bereitgestellt von der Bundesanstalt für Gewässerkunde (BfG)' : ''}${flq.has(Q_LAERM) ? ' · Verkehrslärm: Lärmkartierung 2022, © Umweltbundesamt' : ''}${flq.has(Q_DGM_NI) ? ' · Gelände: DGM1 © LGLN (CC BY 4.0)' : ''} · erstellt mit QUAVA${opt.date ? ' · ' + esc(opt.date) : ''} · UTM Zone ${F.zone}N, nach geografisch Nord ausgerichtet (gedreht um ${Math.abs(F.rot * 180 / Math.PI).toFixed(2).replace('.', ',')}°)</text>`
         + `<text x="${M}" y="${ty + 17.5}" font-size="2.3" fill="#555">Hinweis: Fehlende OSM-Angaben sind als „unbekannt“ markiert; geschätzte Werte sind in den Attributen gekennzeichnet.</text>`
         + (bandNote ? `<text x="${M}" y="${ty + 21}" font-size="2.3" fill="#555">${esc(bandNote)}</text>` : '')
         + (gsNote ? `<text x="${M}" y="${ty + (bandNote ? 24.5 : 21)}" font-size="2.3" fill="#555">${esc(gsNote)}</text>` : '')
@@ -3879,7 +3936,7 @@ if (typeof module !== 'undefined') module.exports = UA;
     const fname = `${base()}_${UA.safeName(o.title)}`;
     try {
       if (fmtName === 'svg' || fmtName === 'pdf') {
-        const r = UA.buildSVG(layers, S.selection, { scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, subtitle: S.selection.properties.name + ' · ' + $('#projName').value, date: today() });
+        const r = UA.buildSVG(layers, S.selection, { scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, subtitle: S.selection.properties.name + ' · ' + $('#projName').value, date: today(), ops: { intersect, union: window.turf ? fc => turf.union(fc) : null } });
         if (fmtName === 'svg') { download(fname + '.svg', new Blob([r.svg], { type: 'image/svg+xml' })); return; }
         const w = window.open('', '_blank'); if (!w) { alert('Bitte Pop-ups für diese Datei erlauben, damit der Druckdialog öffnen kann.'); return; }
         w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(fname)}</title><style>@page{size:${r.widthMM.toFixed(1)}mm ${r.heightMM.toFixed(1)}mm;margin:0}html,body{margin:0}svg{display:block;width:${r.widthMM.toFixed(1)}mm;height:${r.heightMM.toFixed(1)}mm}</style></head><body>${r.svg.replace(/^<\?xml[^>]*>/, '')}<script>setTimeout(function(){print()},500)<\/script></body></html>`);
@@ -3900,6 +3957,8 @@ if (typeof module !== 'undefined') module.exports = UA;
       if (fmtName === 'png') map.getCanvas().toBlob(b => download(fname + '.png', b), 'image/png');
     } catch (e) { console.error(e); alert('Export fehlgeschlagen: ' + e.message); }
   }
+  const QUAVA_JSX = "// QUAVA_Ebenen.jsx – Illustrator-Skript\n// Macht aus den Gruppen einer geöffneten QUAVA-SVG echte Ebenen:\n// Baustein (z. B. Gebaeude) = Ebene, Untergruppe (z. B. Gebaeude Wohnen) = Unterebene, Objekte einzeln darin.\n// Start: Datei > Skripten > Anderes Skript ... > diese Datei wählen.\n(function () {\n  if (!app.documents.length) { alert('Bitte zuerst die QUAVA-SVG in Illustrator öffnen.'); return; }\n  var doc = app.activeDocument, n = 0;\n  function isGrp(it) { return it.typename === 'GroupItem' && !it.clipped && it.name !== ''; }\n  function convert(grp, parentLayers) {\n    var lay = parentLayers.add(); lay.name = grp.name; n++;\n    var kids = [], i; for (i = 0; i < grp.pageItems.length; i++) kids.push(grp.pageItems[i]);\n    for (i = kids.length - 1; i >= 0; i--) if (isGrp(kids[i])) convert(kids[i], lay.layers); // unterste zuerst, damit die Reihenfolge bleibt\n    for (i = 0; i < kids.length; i++) if (!isGrp(kids[i])) kids[i].move(lay, ElementPlacement.PLACEATEND);\n    try { grp.remove(); } catch (e) { /* leere Gruppe schon entfernt */ }\n  }\n  var start = [], i, j; for (i = 0; i < doc.layers.length; i++) start.push(doc.layers[i]);\n  for (i = 0; i < start.length; i++) {\n    var L = start[i], tops = []; for (j = 0; j < L.pageItems.length; j++) tops.push(L.pageItems[j]);\n    for (j = tops.length - 1; j >= 0; j--) if (isGrp(tops[j])) convert(tops[j], doc.layers);\n    if (L.pageItems.length === 0 && L.layers.length === 0) L.remove();\n  }\n  alert('QUAVA: ' + n + ' Ebenen und Unterebenen angelegt.');\n})();\n";
+  $('#exJsx').onclick = e => { e.preventDefault(); download('QUAVA_Ebenen.jsx', new Blob(['\ufeff' + QUAVA_JSX], { type: 'text/plain;charset=utf-8' })); };
   const dlg = $('#dlg');
   $('#btnExport').onclick = () => {
     if (!S.layers.length) { log({ title: 'Export', status: 'warn', body: 'Lade zuerst Daten in einem Gebiet.' }); return; }
