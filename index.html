@@ -2713,9 +2713,17 @@ const UA = (function () {
     };
     const sg = selection.geometry; (sg.type === 'Polygon' ? [sg.coordinates] : sg.coordinates).forEach(p => p.forEach(r => poly(r, 'Untersuchungsgebiet', true)));
     let n = 0;
-    for (const ly of layers) for (const f of ly.features) {
+    for (const ly of layers) {
+      // Fahrbahnen wie in SVG/PDF: „Flächen“ und „dicke Linien“ → Umrisse der Fahrbahnflächen, „nur Außenlinien“ → Außenlinien; sonst Achsen
+      const bandG = ly.bands ? (ly.bandGeom || (() => { try { return bandShapes(ly.features); } catch (e) { return null; } })()) : null;
+      const bandE = ly.bandEdge || null;
+      const ring = (g, lname) => { if (!g) return; if (g.type === 'Polygon') g.coordinates.forEach(r => poly(r, lname, true)); else if (g.type === 'MultiPolygon') g.coordinates.forEach(p => p.forEach(r => poly(r, lname, true)));
+        else if (g.type === 'LineString') poly(g.coordinates, lname, false); else if (g.type === 'MultiLineString') g.coordinates.forEach(l => poly(l, lname, false)); };
+      for (const f of ly.features) {
       const c = ly.classes.find(cc => cc.key === f.properties._cls); if (!c) continue;
-      const lname = DN.m.get(ly.id + '|' + c.key), g = f.geometry;
+      const lname = DN.m.get(ly.id + '|' + c.key), g = f.geometry, i = f.properties._i;
+      if (bandE && isLine(g) && (bandE[i] || f.properties._bw)) { if (bandE[i]) { ring(bandE[i], lname); n++; } continue; } // nur Außenlinien
+      if (bandG && isLine(g) && bandG[i]) { ring(bandG[i], lname); n++; continue; } // Fahrbahnfläche in echter Breite
       if (g.type === 'Polygon') g.coordinates.forEach(r => poly(r, lname, true));
       else if (g.type === 'MultiPolygon') g.coordinates.forEach(p => p.forEach(r => poly(r, lname, true)));
       else if (g.type === 'LineString') poly(g.coordinates, lname, false, ly.bands && f.properties._bw);
@@ -2723,6 +2731,7 @@ const UA = (function () {
       else if (g.type === 'Point') { const [x, y] = P(g.coordinates); if (!f.properties._lblonly) push(0, 'CIRCLE', 8, lname, 10, x, 20, y, 30, '0.0', 40, (c.r || 3) >= 5 ? '5.0' : '2.0');
         if (f.properties._label) push(0, 'TEXT', 8, lname, 10, x, 20, f.properties._lblonly ? y : (+y + 3).toFixed(3), 30, '0.0', 40, f.properties._lblonly ? '2.0' : '6.0', 1, String(f.properties._label)); }
       n++;
+      }
     }
     push(0, 'ENDSEC', 0, 'EOF');
     return { dxf: L.join('\r\n') + '\r\n', count: n, layers: layerDefs.length };
