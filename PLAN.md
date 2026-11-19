@@ -353,12 +353,14 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
 
 - [x] **38. README + Screenshots** (Do 19.11., 16:30): README neu nach Kursvorlage (Tag 4): Logo, „QUAVA – Site Analyst“, ein Satz + Live-Demo-Link, Screenshots, So geht's, Export-Tabelle, Installation/Start, Ehrlich mit Daten, Quellen und Lizenzen, KI-Nutzung, Ordner. Bilder in `docs/screenshots/` (quava-karte.png, quava-plan.png, quava-logo.png). Sicherung: `versionen/README_vor-readme-abgabe_2026-11-19.md`. M10 Veröffentlichen damit erledigt.
 
+- [x] **39. Release QUAVA 1.0.1 = Abgabeversion** (Do 19.11., 16:35): Tag `v1.0.1` auf Commit `ec60fae` (App 3.66 + fertige README mit Screenshots), als „Latest“. v1.0.0 bleibt bestehen. Erstellt über die GitHub-Webseite.
+
 - [ ] **36. Branch `schneller-laden` (Dozent, Niedersachsen-Cache)** – getestet, **noch nicht übernommen** (Entscheidung: erst Export-Test fertig). Messung Do 19.11., 09:30, 1 km² Wilhelmshaven-Innenstadt, gleiche Abfragen wie die App: Cache alle 8 OSM-Bausteine zusammen 0,5 s; live Overpass je Baustein 28–49 s (Gebäude 33,7 s, Straßen 49,4 s, Bahn 38,0 s, Haltestellen 27,9 s), Grünflächen Fehler 502; Objektzahlen gleich (944/383/28/27). Cache-Stand 17.11. Nicht getestet: ganzer Ablauf in der Oberfläche, Zwischenspeicher, amtliche Daten, Traufhöhen-Korrektur.
   Achtung: Branch baut auf 3.51 auf → nicht einfach mergen (Tabs, Farbfenster, Paletten, DXF-Namen, 3.57/3.58 fehlen), sondern Änderungen gezielt in die aktuelle Version einbauen (ca. 45–60 min + Test).
 
 ### Stand Do 19.11., 12:25 – hier weitermachen
 - **Release 1.0.0** veröffentlicht (Tag `v1.0.0` = App 3.66). Freeze erreicht: am Code nur noch Fehlerbehebungen.
-- README fertig (38), Poster A1 fertig. Offen: Release v1.0.1 mit README, Poster auf Moodle, Moodle-Frage Veröffentlichung, Test auf fremdem Rechner.
+- README fertig (38), Poster A1 fertig. Release v1.0.1 = Abgabe. Offen (Nutzer): Poster auf Moodle, Moodle-Frage Veröffentlichung, Test auf fremdem Rechner.
 
 ### Stand Do 19.11., 11:20 – (erledigt, siehe 12:25)
 - Aktuelle Version: **3.66** (`index.html`). Getestet und ok: 35a (SVG), 35b (Deckkraft), 35c (PDF + Papierformat), 35e (Maßstab frei, Export-Fenster).
