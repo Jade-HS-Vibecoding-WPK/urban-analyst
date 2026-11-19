@@ -210,6 +210,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 .formats label{display:flex;gap:8px;align-items:baseline;padding:5px 8px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
 .formats small{color:var(--muted)}
 .opts{display:flex;flex-direction:column;gap:5px;padding-top:6px}
+#dlg .card{max-height:94vh;overflow:auto}
+#dlg .seg{margin-bottom:6px}
+.seg.off{opacity:.4;pointer-events:none}
+#exPrev{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;justify-content:center;align-items:center;min-height:120px}
+#exPrev svg{width:auto;height:auto;max-width:100%;max-height:230px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.35);touch-action:none}
+#exPrev.pan svg{cursor:grab}#exPrev.pan.drag svg{cursor:grabbing}
+#exFit{margin-top:6px}
+#exFit.bad{color:#f87171}#exFit.ok{color:#4ade80}
 .maplibregl-ctrl-group{background:var(--panel)!important;border:1px solid var(--line);box-shadow:var(--shadow)!important}
 .maplibregl-ctrl-group button{filter:var(--ctrl-filter,none)}
 [data-theme=dark] .maplibregl-ctrl-group button .maplibregl-ctrl-icon{filter:invert(1)}
@@ -429,6 +437,12 @@ details>summary{list-style:none}details>summary::-webkit-details-marker{display:
       <label>Planname</label><input id="exTitle" class="inp" value="Analyseplan">
       <label>Maßstab</label>
       <select id="exScale" class="inp"><option>1000</option><option>2500</option><option>5000</option><option selected>10000</option><option>15000</option><option>20000</option><option>25000</option></select>
+      <label class="ex-plan">Papier</label>
+      <div class="ex-plan"><div class="seg" id="exPaper"><button data-v="A4">A4</button><button data-v="A3">A3</button><button data-v="">keine</button></div>
+        <div class="seg" id="exOrient"><button data-v="hoch">Hochformat</button><button data-v="quer">Querformat</button></div>
+        <div class="tiny muted">A4/A3: 10 mm Druckrand, Legende fest rechts, Titel fest unten, Karte im Ausschnitt (in der Vorschau verschiebbar) · keine: Blatt so groß wie der Plan, ohne Rand (SVG und PDF)</div></div>
+      <label class="ex-plan">Vorschau</label>
+      <div class="ex-plan"><div id="exPrev"></div><div id="exFit" class="tiny"></div><div id="exPrevBtns" style="display:flex;gap:6px;margin-top:6px"><button class="btn" id="exCenter">Zentrieren</button><button class="btn" id="exFitScale">Maßstab fürs ganze Gebiet</button></div></div>
       <label>Optionen</label>
       <div class="opts">
         <label><input type="checkbox" id="exVisible" checked> nur sichtbare Layer</label>
@@ -2429,24 +2443,81 @@ const UA = (function () {
     const p = k => Math.round(100 * (q[k] || 0) / n);
     return `Fahrbahnbreiten (${n} Kfz-Abschnitte): ${p('OSM-Angabe (Breite)')} % OSM-Angabe, ${p('geschätzt: aus Fahrspuren')} % geschätzt aus Fahrspuren, ${p('geschätzt: Standardbreite')} % geschätzte Standardbreite.`;
   }
+  /* ---------- Blatt: Papierformat (A4/A3, hoch/quer, 10 mm Druckrand), fester Blattaufbau ----------
+     A4/A3: Legende fest rechts, Titelzeile (Titel, Maßstab, Nordpfeil, Quelle) fest unten, Karten-Ausschnitt = Rest;
+     die Karte wird am Ausschnitt abgeschnitten und lässt sich verschieben (opt.pan in Metern). „keine“: Blatt so groß wie der Plan. */
+  const PAPER = { A4: [210, 297], A3: [297, 420] }, PAPER_RAND = 10;
+  function sourceLine(layers) { // kurze Quellenangabe (Lizenzpflicht)
+    const q = ['© OpenStreetMap-Mitwirkende (ODbL)'], add = t => { if (!q.includes(t)) q.push(t); };
+    layers.forEach(L => L.features.forEach(f => { const p = f.properties;
+      if (p._amtl_hoehe != null && (/^amtlich/.test(p._q || '') || /amtlicher Traufhöhe/.test(p._q || '') || L.split === 'hoehe' || L.split === 'geschosse' || L.extrude)) add((p._amtl_q || Q_AMTL) === Q_AMTL_NI ? '© LGLN (CC BY 4.0)' : 'Geoportal Berlin');
+      if (L.base === 'baeume' && p.baum_quelle) add('Geoportal Berlin');
+      if (['flurst', 'bevoelk', 'hochwasser', 'laerm', 'hoehenlinien', 'hangneigung'].includes(L.base)) {
+        const s = p.quelle; if (s === Q_FL_BE) add('Geoportal Berlin'); if (s === Q_FL_NI || s === Q_DGM_NI) add('© LGLN (CC BY 4.0)');
+        if (s === Q_EW_BE) add('Amt für Statistik Berlin-Brandenburg'); if (s === Q_EW_Z) add('Zensus 2022 © Statistische Ämter des Bundes und der Länder (dl-de/by-2-0)');
+        if (s === Q_HW) add('BfG'); if (s === Q_LAERM) add('© Umweltbundesamt');
+      } }));
+    return q.join(' · ');
+  }
+  const legendGroups = layers => layers.slice().reverse().map(L => ({ L, used: L.classes.filter(c => L.features.some(f => f.properties._cls === c.key)) })).filter(x => x.used.length);
+  const legendHeight = layers => legendGroups(layers).reduce((h, g) => h + 5 + 4.6 * g.used.length + 3, 12);
+  const textW = (t, size, bold) => (t || '').length * size * (bold ? 0.62 : 0.52); // geschätzte Breite in mm (Helvetica)
+  function planLayout(layers, selection, opt) {
+    opt = Object.assign({ scale: 10000, legend: true, title: 'Analyseplan', subtitle: '', paper: null, orient: 'quer', pan: null }, opt || {});
+    const F = planFrame(selection, true), k = 1000 / opt.scale; // mm pro Meter
+    const mapW = (F.maxX - F.minX) * k, mapH = (F.maxY - F.minY) * k;
+    const leg = !!opt.legend, legW = leg ? 62 : 0, gap = leg ? 6 : 0, titleH = leg ? 18 : 0, tgap = leg ? 4 : 0;
+    const title = opt.title.toUpperCase(), sub = opt.subtitle || '', src = leg ? sourceLine(layers) : '', legH = leg ? legendHeight(layers) : 0;
+    const P = PAPER[opt.paper], R = P ? PAPER_RAND : 0, pan = opt.pan || { x: 0, y: 0 };
+    let W, H, fx = R, fy = R, fw, fh, rowW;
+    if (P) {
+      [W, H] = opt.orient === 'hoch' ? P : [P[1], P[0]];
+      fw = W - 2 * R - legW - gap; fh = H - 2 * R - titleH - tgap; rowW = fw;
+    } else {
+      fw = mapW; fh = mapH;
+      rowW = Math.max(mapW, leg ? Math.max(textW(title, 8, true), textW(sub, 3), textW(src, 2)) + 50 : 0); // Platz für Titel + Maßstab/Nordpfeil
+      W = rowW + gap + legW; H = Math.max(mapH + tgap + titleH, legH);
+    }
+    const ox = fx + (fw - mapW) / 2 + (P ? pan.x * k : 0), oy = fy + (fh - mapH) / 2 + (P ? pan.y * k : 0); // linke obere Ecke der Karte
+    const e = 0.05, whole = !P || (ox >= fx - e && oy >= fy - e && ox + mapW <= fx + fw + e && oy + mapH <= fy + fh + e);
+    return { F, k, mapW, mapH, W, H, R, frame: P ? [fx, fy, fx + fw, fy + fh] : null, fx, fy, fw, fh, ox, oy, rowX: fx, rowW, rowY: P ? H - R - titleH : mapH + tgap,
+      legX: W - R - legW, legBottom: H - R, legCut: leg && legH > H - 2 * R + 0.5, title, sub, src, whole, fits: true, paper: P ? opt.paper : null, orient: opt.orient };
+  }
+  function lineInRect(q, B) { // Linienzug (mm) am Rechteck B=[x0,y0,x1,y1] schneiden (Liang-Barsky)
+    const out = []; let cur = null;
+    for (let i = 1; i < q.length; i++) {
+      const a = q[i - 1], b = q[i], dx = b[0] - a[0], dy = b[1] - a[1]; let t0 = 0, t1 = 1;
+      const ok = [[-dx, a[0] - B[0]], [dx, B[2] - a[0]], [-dy, a[1] - B[1]], [dy, B[3] - a[1]]].every(([p, r]) => {
+        if (p === 0) return r >= 0; const t = r / p;
+        if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } return true; });
+      if (!ok || t1 - t0 < 1e-9) { cur = null; continue; }
+      const P = t0 === 0 ? a : [a[0] + dx * t0, a[1] + dy * t0], Q = t1 === 1 ? b : [a[0] + dx * t1, a[1] + dy * t1];
+      if (cur && t0 === 0) cur.push(Q); else { cur = [P, Q]; out.push(cur); }
+      if (t1 !== 1) cur = null;
+    }
+    return out;
+  }
   function buildSVG(layers, selection, opt) {
     layers = visLayers(layers);
     opt = Object.assign({ scale: 10000, clip: true, legend: true, title: 'Analyseplan', subtitle: '', date: '', ops: null }, opt || {});
-    const F = planFrame(selection, true); const k = 1000 / opt.scale; // mm pro Meter
-    const M = 12, mapW = (F.maxX - F.minX) * k, mapH = (F.maxY - F.minY) * k;
-    const legW = opt.legend ? 75 : 0, titleH = opt.legend ? 26 : 0;
-    const W = mapW + 2 * M + legW, H = mapH + 2 * M + titleH;
-    const T = p => { const [x, y] = F.proj(p); return ((x - F.minX) * k + M).toFixed(2) + ' ' + ((F.maxY - y) * k + M).toFixed(2); };
-    const ringD = r => 'M' + r.map(T).join('L') + 'Z';
-    const lineD = l => 'M' + l.map(T).join('L');
+    const PL = planLayout(layers, selection, opt), F = PL.F, k = PL.k, W = PL.W, H = PL.H;
+    const TP = p => { const [x, y] = F.proj(p); return [(x - F.minX) * k + PL.ox, (F.maxY - y) * k + PL.oy]; };
+    const fm = q => q[0].toFixed(2) + ' ' + q[1].toFixed(2), T = p => fm(TP(p));
+    const FR = PL.frame && !opt.preview ? PL.frame : null, FRR = FR && [[FR[0], FR[1]], [FR[2], FR[1]], [FR[2], FR[3]], [FR[0], FR[3]], [FR[0], FR[1]]];
+    const inFR = q => !FR || (q[0] >= FR[0] && q[0] <= FR[2] && q[1] >= FR[1] && q[1] <= FR[3]);
+    const ringD = r => { let q = r.map(TP); if (FR) { q = clipRing(q, FRR); if (!q) return ''; } return 'M' + q.map(fm).join('L') + 'Z'; }; // Fläche am Ausschnitt abschneiden
+    const polyD = p => { const o = ringD(p[0]); return o ? o + p.slice(1).map(ringD).join('') : ''; };
+    const lineDs = l => { const q = l.map(TP); return (FR ? lineInRect(q, FR) : [q]).filter(x => x.length > 1).map(x => 'M' + x.map(fm).join('L')); };
     const cut = opt.clip ? makeCutter(selection, opt.ops) : (g => g);
     // je Objekt ein eigener Pfad (nicht gruppiert); nur Flächen mit Loch (Innenhof) brauchen einen zusammengesetzten Pfad
-    const polyEl = (g, st) => { g = cut(g); if (!g || !isPoly(g)) return ''; return (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map(p => `<path ${st} d="${p.map(ringD).join('')}"/>`).join(''); };
-    const lineEl = (g, st) => { g = cut(g); if (!g || !isLine(g)) return ''; return (g.type === 'LineString' ? [g.coordinates] : g.coordinates).filter(l => l.length > 1).map(l => `<path ${st} d="${lineD(l)}"/>`).join(''); };
+    const polyEl = (g, st) => { g = cut(g); if (!g || !isPoly(g)) return ''; return (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map(polyD).filter(Boolean).map(d => `<path ${st} d="${d}"/>`).join(''); };
+    const lineEl = (g, st) => { g = cut(g); if (!g || !isLine(g)) return ''; return (g.type === 'LineString' ? [g.coordinates] : g.coordinates).filter(l => l.length > 1).flatMap(lineDs).map(d => `<path ${st} d="${d}"/>`).join(''); };
     const out = [];
     out.push(`<?xml version="1.0" encoding="UTF-8"?>`);
     out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W.toFixed(1)}mm" height="${H.toFixed(1)}mm" viewBox="0 0 ${W.toFixed(2)} ${H.toFixed(2)}">`);
     out.push(`<g id="Hintergrund"><rect x="0" y="0" width="${W.toFixed(2)}" height="${H.toFixed(2)}" fill="#ffffff"/></g>`);
+    const pv = PL.frame && opt.preview; // nur Vorschau: Ausschnitt als Maske, Karte verschiebbar
+    if (pv) out.push(`<defs><clipPath id="qFrame"><rect x="${PL.fx}" y="${PL.fy}" width="${PL.fw.toFixed(2)}" height="${PL.fh.toFixed(2)}"/></clipPath></defs><g clip-path="url(#qFrame)"><g id="qPan">`);
     for (const L of layers) {
       out.push(`<g id="${safeName(L.name)}">`);
       const op = L.opacity < 1 ? ` opacity="${L.opacity}"` : ''; // Deckkraft als Objekt-Deckkraft (Illustrator: Transparenz-Fenster)
@@ -2459,7 +2530,7 @@ const UA = (function () {
             const pieces = []; polys.forEach(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).forEach(p => p.forEach(r => { const g = cut({ type: 'Polygon', coordinates: [r] }); if (g) pieces.push({ type: 'Feature', properties: {}, geometry: g }); })));
             let merged = null;
             if (pieces.length > 1 && opt.ops && opt.ops.union) { try { const u = opt.ops.union({ type: 'FeatureCollection', features: pieces }); merged = u && u.geometry; } catch (e) { merged = null; } }
-            const draw = g => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map(p => `<path ${st} d="${p.map(ringD).join('')}"/>`).join('');
+            const draw = g => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map(polyD).filter(Boolean).map(d => `<path ${st} d="${d}"/>`).join('');
             body.push(merged ? draw(merged) : pieces.map(f => draw(f.geometry)).join(''));
           } else body.push(polys.map(f => polyEl(f.geometry, st)).join(''));
         }
@@ -2479,22 +2550,23 @@ const UA = (function () {
         if (lines.length) { const st = `fill="none" stroke="${c.color}" stroke-width="${L.axis || L.bands ? '0.15' : ((c.width || 1.2) * 0.22).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"`; body.push(lines.map(f => lineEl(f.geometry, st)).join('')); }
         if (pts.length) {
           const r = ((c.r || 3) * 0.22).toFixed(2);
-          body.push(pts.filter(f => cut(f.geometry)).map(f => { const [x, y] = T(f.geometry.coordinates).split(' '); return (f.properties._lblonly ? '' : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.color}"/>`)
+          body.push(pts.filter(f => cut(f.geometry) && inFR(TP(f.geometry.coordinates))).map(f => { const [x, y] = T(f.geometry.coordinates).split(' '); return (f.properties._lblonly ? '' : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.color}"/>`)
             + (f.properties._label ? `<text x="${x}" y="${(f.properties._lblonly ? +y + 0.7 : +y - 1.4).toFixed(2)}" font-size="${f.properties._lblonly ? '2' : '2.6'}" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="${c.color}">${esc(f.properties._label)}</text>` : ''); }).join(''));
         }
         const b = body.join(''); if (b) out.push(`<g id="${safeName(L.name + '_' + c.label)}">${b}</g>`);
       }
       out.push(`</g>`);
     }
+    if (pv) out.push(`</g></g>`);
     if (opt.legend) {
-      const x0 = M + mapW + 10; let y = M + 4; const L2 = [];
+      const x0 = PL.legX; let y = PL.R + 4; const L2 = [];
       L2.push(`<g id="Legende" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`);
       L2.push(`<text x="${x0}" y="${y}" font-size="5" font-weight="700">LEGENDE</text>`); y += 8;
-      for (const L of layers.slice().reverse()) {
-        const used = L.classes.filter(c => L.features.some(f => f.properties._cls === c.key)); if (!used.length) continue;
-        if (y > M + mapH + titleH - 10) break;
+      for (const { L, used } of legendGroups(layers)) {
+        if (y + 5 + 4.6 > PL.legBottom) break;
         L2.push(`<text x="${x0}" y="${y}" font-size="3" font-weight="700">${esc(L.name.toUpperCase())}</text>`); y += 5;
         for (const c of used) {
+          if (y > PL.legBottom) break;
           const geomLine = L.features.some(f => f.properties._cls === c.key && isLine(f.geometry)) && !L.features.some(f => f.properties._cls === c.key && isPoly(f.geometry));
           const geomPt = L.features.some(f => f.properties._cls === c.key && isPoint(f.geometry) && !f.properties._lblonly);
           if (L.bandMode === 'flaeche' && KFZ.includes(c.key)) L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="${c.color}"/>`);
@@ -2509,29 +2581,21 @@ const UA = (function () {
         y += 3;
       }
       L2.push(`</g>`); out.push(L2.join(''));
-      // Planlayout: Titel, Maßstab, Nordpfeil, Quellen
-      const bandNote = bandQuality(layers);
-      const kat = layers.some(L => L.base === 'baeume' && L.features.some(f => f.properties.baum_quelle));
-      const hq = new Set(); layers.forEach(L => L.features.forEach(f => { if (f.properties._amtl_hoehe != null && (/^amtlich/.test(f.properties._q || '') || /amtlicher Traufhöhe/.test(f.properties._q || '') || L.split === 'hoehe' || L.split === 'geschosse' || L.extrude)) hq.add(f.properties._amtl_q || Q_AMTL); }));
-      const amtl = hq.has(Q_AMTL), amtlNI = hq.has(Q_AMTL_NI), gsNote = levelsQuality(layers);
-      const flq = new Set(); layers.forEach(L => { if (['flurst', 'bevoelk', 'hochwasser', 'laerm', 'hoehenlinien', 'hangneigung'].includes(L.base)) L.features.forEach(f => flq.add(f.properties.quelle)); });
-      const ty = M + mapH + 10;
+      // Planlayout: Titel, Untertitel, Quelle unten links · Maßstab und Nordpfeil unten rechts
+      const ty = PL.rowY, X = PL.rowX, RX = PL.rowX + PL.rowW, SR = RX - 17;
       const sbM = [50, 100, 200, 250, 500, 1000, 2000].find(v => v * k >= 25) || 2000; const sbW = sbM * k;
       out.push(`<g id="Planlayout" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`
-        + `<text x="${M}" y="${ty + 3}" font-size="8" font-weight="700">${esc(opt.title.toUpperCase())}</text>`
-        + (opt.subtitle ? `<text x="${M}" y="${ty + 9}" font-size="3">${esc(opt.subtitle)}</text>` : '')
-        + `<text x="${M}" y="${ty + 14}" font-size="2.3" fill="#555">Kartengrundlage: © OpenStreetMap-Mitwirkende (ODbL) ${amtl ? ' · Gebäudehöhen: Geoportal Berlin (Umweltatlas Gebäudehöhen, LoD2)' : ''}${amtlNI ? ' · Gebäudehöhen: © LGLN, 3D-Gebäudemodell LoD2 (CC BY 4.0)' : ''}${kat ? ' · Bäume: Geoportal Berlin (Baumbestand)' : ''}${flq.has(Q_FL_BE) ? ' · Flurstücke: Geoportal Berlin (ALKIS Berlin)' : ''}${flq.has(Q_FL_NI) ? ' · Flurstücke: © LGLN (CC BY 4.0)' : ''}${flq.has(Q_EW_BE) ? ' · Einwohner: Amt für Statistik Berlin-Brandenburg, Umweltatlas Berlin' : ''}${flq.has(Q_EW_Z) ? ' · Einwohner: Zensus 2022, © Statistische Ämter des Bundes und der Länder (dl-de/by-2-0)' : ''}${flq.has(Q_HW) ? ' · Hochwasser: Hochwassergefahrenkarten der Länder, bereitgestellt von der Bundesanstalt für Gewässerkunde (BfG)' : ''}${flq.has(Q_LAERM) ? ' · Verkehrslärm: Lärmkartierung 2022, © Umweltbundesamt' : ''}${flq.has(Q_DGM_NI) ? ' · Gelände: DGM1 © LGLN (CC BY 4.0)' : ''} · erstellt mit QUAVA${opt.date ? ' · ' + esc(opt.date) : ''} · UTM Zone ${F.zone}N, nach geografisch Nord ausgerichtet (gedreht um ${Math.abs(F.rot * 180 / Math.PI).toFixed(2).replace('.', ',')}°)</text>`
-        + `<text x="${M}" y="${ty + 17.5}" font-size="2.3" fill="#555">Hinweis: Fehlende OSM-Angaben sind als „unbekannt“ markiert; geschätzte Werte sind in den Attributen gekennzeichnet.</text>`
-        + (bandNote ? `<text x="${M}" y="${ty + 21}" font-size="2.3" fill="#555">${esc(bandNote)}</text>` : '')
-        + (gsNote ? `<text x="${M}" y="${ty + (bandNote ? 24.5 : 21)}" font-size="2.3" fill="#555">${esc(gsNote)}</text>` : '')
-        + `<g id="Massstab"><rect x="${(M + mapW - sbW).toFixed(2)}" y="${ty}" width="${(sbW / 2).toFixed(2)}" height="1.5" fill="#1d1b22"/><rect x="${(M + mapW - sbW / 2).toFixed(2)}" y="${ty}" width="${(sbW / 2).toFixed(2)}" height="1.5" fill="none" stroke="#1d1b22" stroke-width="0.3"/>`
-        + `<text x="${(M + mapW - sbW).toFixed(2)}" y="${ty + 5.5}" font-size="2.4">0</text><text x="${(M + mapW).toFixed(2)}" y="${ty + 5.5}" font-size="2.4" text-anchor="end">${sbM} m</text>`
-        + `<text x="${(M + mapW).toFixed(2)}" y="${ty + 12}" font-size="4" font-weight="700" text-anchor="end">M 1:${opt.scale}</text></g>`
-        + `<g id="Nordpfeil" transform="translate(${(M + mapW + 18).toFixed(2)} ${ty + 2})"><circle cx="0" cy="5" r="6" fill="none" stroke="#1d1b22" stroke-width="0.4"/><path d="M0 0 L2.4 8 L0 6.4 L-2.4 8 Z" fill="#1d1b22"/><text x="0" y="-2" font-size="3" text-anchor="middle" font-weight="700">N</text></g>`
+        + `<text x="${X.toFixed(2)}" y="${(ty + 7).toFixed(2)}" font-size="8" font-weight="700">${esc(PL.title)}</text>`
+        + (PL.sub ? `<text x="${X.toFixed(2)}" y="${(ty + 12).toFixed(2)}" font-size="3">${esc(PL.sub)}</text>` : '')
+        + `<text x="${X.toFixed(2)}" y="${(ty + 16.5).toFixed(2)}" font-size="2" fill="#555">${esc(PL.src)}</text>`
+        + `<g id="Massstab"><rect x="${(SR - sbW).toFixed(2)}" y="${(ty + 3).toFixed(2)}" width="${(sbW / 2).toFixed(2)}" height="1.5" fill="#1d1b22"/><rect x="${(SR - sbW / 2).toFixed(2)}" y="${(ty + 3).toFixed(2)}" width="${(sbW / 2).toFixed(2)}" height="1.5" fill="none" stroke="#1d1b22" stroke-width="0.3"/>`
+        + `<text x="${(SR - sbW).toFixed(2)}" y="${(ty + 7.5).toFixed(2)}" font-size="2.4">0</text><text x="${SR.toFixed(2)}" y="${(ty + 7.5).toFixed(2)}" font-size="2.4" text-anchor="end">${sbM} m</text>`
+        + `<text x="${SR.toFixed(2)}" y="${(ty + 14).toFixed(2)}" font-size="4" font-weight="700" text-anchor="end">M 1:${opt.scale}</text></g>`
+        + `<g id="Nordpfeil" transform="translate(${(RX - 7).toFixed(2)} ${(ty + 4).toFixed(2)})"><circle cx="0" cy="5" r="6" fill="none" stroke="#1d1b22" stroke-width="0.4"/><path d="M0 0 L2.4 8 L0 6.4 L-2.4 8 Z" fill="#1d1b22"/><text x="0" y="-2" font-size="3" text-anchor="middle" font-weight="700">N</text></g>`
         + `</g>`);
     }
     out.push(`</svg>`);
-    return { svg: out.join('\n'), widthMM: W, heightMM: H };
+    return { svg: out.join('\n'), widthMM: W, heightMM: H, fits: PL.fits, layout: PL };
   }
 
   /* ---------- DXF R12 (für CAD, Rhino, Illustrator) ---------- */
@@ -2644,7 +2708,7 @@ const UA = (function () {
     isArea, joinWays, osmToFeatures, FETCHES, HEAD, polyString, CL, BASES, BASE_ORDER, STANDARD, ZRANK, PRESETS, makeBaseLayer, applySplit, splitOptions, attrLabel, valDE,
     PALETTE, GROUPS, ITEMS, itemTask, setClassStyle, setClassOrder, mergeClass, removeClassFeatures, customQuery, queryName, valLabel, DE, detailType, visLayers,
     buildingUse, buildingHeight, roadClass, greenClass, waterClass, landuseClass, layerStats,
-    buildSVG, buildDXF, exportGeoJSON, levelsQuality, flurstBerlin, flurstNdsGml, niFlurstUrl, ewBerlin, zensusCells, zensusUrl, zensusFeature, ewSum, LAEA, Q_EW_Z, Q_HW, HW_SZ, Q_LAERM, LZ, laermUrl, laermFeatures, laermNote, Q_DGM_NI, dgmIndexUrl, dgmTiles, tiffIfd, tiffMeta, lzwDecode, tiffBlock, dgmBox, dgmRes, dgmBlocks, blockGaps, dgmGrid, gridCoarse, gridRange, dgmAutoIv, dgmContours, dgmSlopes, slopeGrid, dgmStats, HW_ORDER, hwBox, hwJobs, hwUrl, hwFeatures, hwRaw, hwDefault, hwNote, clipToBox, hwDecode, HB_BOXES, bboxHit, sunPos, sunDefault, shadowFeatures, sunPathFeatures, sunPathSamples, timeLabel, parseTimes, dmy, fnUse, fnLabel, FN_NAMES, Q_FN, inNiedersachsen, niStacUrl, niTileFeatures, fromUTM, parseShp, parseDbf, Q_AMTL_NI, berlinWfsUrl, treeFeatures, inBerlin, berlinHeightsUrl, Q_AMTL, roadWidth, bandQuality, nearestACI, safeName, isPoly, isLine, isPoint
+    buildSVG, planLayout, buildDXF, exportGeoJSON, levelsQuality, flurstBerlin, flurstNdsGml, niFlurstUrl, ewBerlin, zensusCells, zensusUrl, zensusFeature, ewSum, LAEA, Q_EW_Z, Q_HW, HW_SZ, Q_LAERM, LZ, laermUrl, laermFeatures, laermNote, Q_DGM_NI, dgmIndexUrl, dgmTiles, tiffIfd, tiffMeta, lzwDecode, tiffBlock, dgmBox, dgmRes, dgmBlocks, blockGaps, dgmGrid, gridCoarse, gridRange, dgmAutoIv, dgmContours, dgmSlopes, slopeGrid, dgmStats, HW_ORDER, hwBox, hwJobs, hwUrl, hwFeatures, hwRaw, hwDefault, hwNote, clipToBox, hwDecode, HB_BOXES, bboxHit, sunPos, sunDefault, shadowFeatures, sunPathFeatures, sunPathSamples, timeLabel, parseTimes, dmy, fnUse, fnLabel, FN_NAMES, Q_FN, inNiedersachsen, niStacUrl, niTileFeatures, fromUTM, parseShp, parseDbf, Q_AMTL_NI, berlinWfsUrl, treeFeatures, inBerlin, berlinHeightsUrl, Q_AMTL, roadWidth, bandQuality, nearestACI, safeName, isPoly, isLine, isPoint
   };
 })();
 if (typeof module !== 'undefined') module.exports = UA;
@@ -3928,15 +3992,16 @@ if (typeof module !== 'undefined') module.exports = UA;
   function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
   const base = () => UA.safeName($('#projName').value || 'Projekt');
   const today = () => new Date().toLocaleDateString('de-DE');
+  const svgOpts = o => ({ scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, subtitle: S.selection.properties.name + ' · ' + $('#projName').value, date: today(), paper: o.paper, orient: o.orient, pan: o.pan, ops: { intersect, union: window.turf ? fc => turf.union(fc) : null } });
   async function exportLayers(fmtName, layers, o) {
-    o = Object.assign({ title: 'Analyseplan', scale: 10000, clip: true, legend: true, realCoords: false }, o || {});
+    o = Object.assign({ title: 'Analyseplan', scale: 10000, clip: true, legend: true, realCoords: false, paper: null, orient: 'quer', pan: null }, o || {});
     if (!S.selection) { alert('Bitte zuerst ein Gebiet wählen und Daten laden.'); return; }
     layers = UA.visLayers(layers);
     if (!layers.length && fmtName !== 'png') { alert('Keine sichtbaren Elemente zum Exportieren.'); return; }
     const fname = `${base()}_${UA.safeName(o.title)}`;
     try {
       if (fmtName === 'svg' || fmtName === 'pdf') {
-        const r = UA.buildSVG(layers, S.selection, { scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, subtitle: S.selection.properties.name + ' · ' + $('#projName').value, date: today(), ops: { intersect, union: window.turf ? fc => turf.union(fc) : null } });
+        const r = UA.buildSVG(layers, S.selection, svgOpts(o));
         if (fmtName === 'svg') { download(fname + '.svg', new Blob([r.svg], { type: 'image/svg+xml' })); return; }
         const w = window.open('', '_blank'); if (!w) { alert('Bitte Pop-ups für diese Datei erlauben, damit der Druckdialog öffnen kann.'); return; }
         w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(fname)}</title><style>@page{size:${r.widthMM.toFixed(1)}mm ${r.heightMM.toFixed(1)}mm;margin:0}html,body{margin:0}svg{display:block;width:${r.widthMM.toFixed(1)}mm;height:${r.heightMM.toFixed(1)}mm}</style></head><body>${r.svg.replace(/^<\?xml[^>]*>/, '')}<script>setTimeout(function(){print()},500)<\/script></body></html>`);
@@ -3964,13 +4029,73 @@ if (typeof module !== 'undefined') module.exports = UA;
     if (!S.layers.length) { log({ title: 'Export', status: 'warn', body: 'Lade zuerst Daten in einem Gebiet.' }); return; }
     const n = UA.visLayers(S.layers.filter(L => L.visible)).reduce((a, L) => a + L.features.length, 0);
     $('#exInfo').innerHTML = `${S.layers.filter(L => L.visible).length} sichtbare Layer · ${fmt(n)} sichtbare Elemente. Ausgeblendete Klassen werden nicht exportiert.${n > 60000 ? ' Große Datei: Illustrator braucht beim Öffnen evtl. etwas Zeit.' : ''}`;
-    dlg.hidden = false;
+    dlg.hidden = false; exUpdate();
   };
   dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-close]')) dlg.hidden = true; });
+  /* Papierformat + Vorschau (SVG/PDF) */
+  const exP = (() => { try { return JSON.parse(localStorage.getItem('quava_papier')) || {}; } catch (e) { return {}; } })();
+  let exPaper = exP.paper || '', exOrient = exP.orient || 'quer', exTimer = null, exPan = { x: 0, y: 0 }, exPanSel = null, exPL = null; // exPan: Verschiebung der Karte im Ausschnitt (Meter)
+  const exFmt = () => document.querySelector('input[name=fmt]:checked').value;
+  const exLayersSel = () => $('#exVisible').checked ? S.layers.filter(L => L.visible) : S.layers.slice();
+  const exOpts = () => ({ title: $('#exTitle').value || 'Analyseplan', scale: +$('#exScale').value, clip: $('#exClip').checked, legend: $('#exLegend').checked, realCoords: $('#exReal').checked, paper: exPaper || null, orient: exOrient, pan: exPan });
+  const mm = v => Math.round(v) + '';
+  function exUpdate() {
+    document.querySelectorAll('#exPaper button').forEach(b => b.classList.toggle('on', b.dataset.v === exPaper));
+    document.querySelectorAll('#exOrient button').forEach(b => b.classList.toggle('on', b.dataset.v === exOrient));
+    $('#exOrient').classList.toggle('off', !exPaper);
+    const plan = ['svg', 'pdf'].includes(exFmt());
+    document.querySelectorAll('#dlg .ex-plan').forEach(el => { el.hidden = !plan; });
+    $('#btnDoExport').disabled = false;
+    if (!plan || !S.selection) return;
+    if (exPanSel !== S.selection) { exPan = { x: 0, y: 0 }; exPanSel = S.selection; } // neues Gebiet: Karte wieder mittig
+    $('#exFit').className = 'tiny muted'; $('#exFit').textContent = 'Vorschau wird berechnet …';
+    clearTimeout(exTimer); exTimer = setTimeout(exPreview, 250);
+  }
+  function exPreview() {
+    const o = exOpts(); let r;
+    try { r = UA.buildSVG(UA.visLayers(exLayersSel()), S.selection, Object.assign(svgOpts(o), { preview: true })); } catch (e) { console.error(e); $('#exFit').textContent = 'Vorschau nicht möglich: ' + e.message; return; }
+    const P = exPL = r.layout, box = $('#exPrev');
+    box.innerHTML = r.svg.replace(/^<\?xml[^>]*>/, '');
+    const sv = box.querySelector('svg'); sv.removeAttribute('width'); sv.removeAttribute('height');
+    box.classList.toggle('pan', !!P.frame);
+    if (P.frame) { // Druckrand und Karten-Ausschnitt einzeichnen – nur in der Vorschau
+      const ns = 'http://www.w3.org/2000/svg', add = a => { const rc = document.createElementNS(ns, 'rect'); Object.entries(a).forEach(([k, v]) => rc.setAttribute(k, v)); sv.appendChild(rc); };
+      add({ x: P.R, y: P.R, width: P.W - 2 * P.R, height: P.H - 2 * P.R, fill: 'none', stroke: '#c4b5fd', 'stroke-width': 0.5, 'stroke-dasharray': '3 2' });
+      add({ x: P.fx, y: P.fy, width: P.fw, height: P.fh, fill: 'none', stroke: '#8b5cf6', 'stroke-width': 0.6 });
+    }
+    const ft = $('#exFit'), blatt = P.paper ? `${P.paper} ${P.orient === 'hoch' ? 'hoch' : 'quer'}` : '';
+    $('#exPrevBtns').hidden = !P.paper;
+    if (!P.paper) { ft.className = 'tiny muted'; ft.textContent = `Blatt = Plangröße: ${mm(P.W)} × ${mm(P.H)} mm (ohne Rand)`; }
+    else if (P.whole) { ft.className = 'tiny ok'; ft.textContent = `✓ ganzes Gebiet im Ausschnitt – Karte ${mm(P.mapW)} × ${mm(P.mapH)} mm, Ausschnitt ${mm(P.fw)} × ${mm(P.fh)} mm auf ${blatt}. Karte mit der Maus verschieben.`; }
+    else { ft.className = 'tiny muted'; ft.textContent = `Karte wird am Ausschnitt abgeschnitten – Karte ${mm(P.mapW)} × ${mm(P.mapH)} mm, Ausschnitt ${mm(P.fw)} × ${mm(P.fh)} mm auf ${blatt}. Karte mit der Maus verschieben.`; }
+    if (P.legCut) ft.textContent += ' ⚠ Legende zu lang für das Blatt – unten gekürzt.';
+  }
+  // Karte in der Vorschau mit der Maus verschieben
+  $('#exPrev').addEventListener('pointerdown', e => {
+    const sv = $('#exPrev svg'), g = sv && sv.querySelector('#qPan'); if (!g || !exPL || !exPL.frame) return;
+    e.preventDefault(); const f = exPL.W / sv.getBoundingClientRect().width, x0 = e.clientX, y0 = e.clientY; let dx = 0, dy = 0;
+    $('#exPrev').classList.add('drag'); sv.setPointerCapture(e.pointerId);
+    const mv = ev => { dx = (ev.clientX - x0) * f; dy = (ev.clientY - y0) * f; g.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)})`); };
+    const up = () => { sv.removeEventListener('pointermove', mv); sv.removeEventListener('pointerup', up); sv.removeEventListener('pointercancel', up); $('#exPrev').classList.remove('drag');
+      if (Math.abs(dx) + Math.abs(dy) > 0.2) { exPan = { x: exPan.x + dx / exPL.k, y: exPan.y + dy / exPL.k }; exUpdate(); } };
+    sv.addEventListener('pointermove', mv); sv.addEventListener('pointerup', up); sv.addEventListener('pointercancel', up);
+  });
+  $('#exCenter').onclick = () => { exPan = { x: 0, y: 0 }; exUpdate(); };
+  $('#exFitScale').onclick = () => {
+    const o = exOpts(), layers = UA.visLayers(exLayersSel());
+    const scales = [...$('#exScale').options].map(x => +x.value).sort((a, b) => a - b);
+    const s = scales.find(sc => UA.planLayout(layers, S.selection, Object.assign({}, svgOpts(o), { scale: sc, pan: null })).whole);
+    if (s) { $('#exScale').value = String(s); exPan = { x: 0, y: 0 }; exUpdate(); }
+    else { $('#exFit').textContent = `Das ganze Gebiet passt auch bei 1:${scales[scales.length - 1]} nicht auf ${o.paper} – größeres Papier, Hoch-/Querformat wechseln oder kleineres Gebiet wählen.`; }
+  };
+  const exSave = () => { try { localStorage.setItem('quava_papier', JSON.stringify({ paper: exPaper, orient: exOrient })); } catch (e) { /* egal */ } };
+  $('#exPaper').onclick = e => { const b = e.target.closest('button'); if (!b) return; exPaper = b.dataset.v; exSave(); exUpdate(); };
+  $('#exOrient').onclick = e => { const b = e.target.closest('button'); if (!b) return; exOrient = b.dataset.v; exSave(); exUpdate(); };
+  ['#exScale', '#exVisible', '#exClip', '#exLegend'].forEach(id => $(id).addEventListener('change', exUpdate));
+  $('#exTitle').addEventListener('input', exUpdate);
+  document.querySelectorAll('input[name=fmt]').forEach(x => x.addEventListener('change', exUpdate));
   $('#btnDoExport').onclick = () => {
-    const f = document.querySelector('input[name=fmt]:checked').value;
-    const layers = $('#exVisible').checked ? S.layers.filter(L => L.visible) : S.layers.slice();
-    exportLayers(f, layers, { title: $('#exTitle').value || 'Analyseplan', scale: +$('#exScale').value, clip: $('#exClip').checked, legend: $('#exLegend').checked, realCoords: $('#exReal').checked });
+    exportLayers(exFmt(), exLayersSel(), exOpts());
     dlg.hidden = true;
   };
 
