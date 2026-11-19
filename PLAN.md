@@ -349,10 +349,16 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
   - [x] **35d. DXF (Allplan)** (Version 3.66, ok – hochladen freigegeben): Ebenen-Struktur in Allplan richtig. Fehler behoben: DXF schrieb bei Straßen immer nur Achsen. Jetzt wie SVG/PDF: „Fahrbahnen – Flächen“ und „– dicke Linien“ → geschlossene Fahrbahn-Umrisse in echter Breite, „– nur Außenlinien“ → Außenkanten, Fuß-/Radwege bleiben Linien. Format bleibt DXF R12: Flächen nur als Umrisse ohne Füllung.
     Versuch 3.67 „DXF 2004 mit Füllflächen (HATCH)“ auf Wunsch wieder **zurückgenommen** (Sicherung `index_v3.67_dxf2004-zurueckgenommen_2026-11-19.html`, nie auf GitHub). Archicad/Revit nicht getestet. Sicherung vorher: `index_v3.65_vor-dxf-fahrbahnen_2026-11-19.html`
 
+- [x] **37. Release QUAVA 1.0.0** (Do 19.11., 12:20): GitHub-Release „QUAVA 1.0.0“, Tag `v1.0.0` auf Commit `a54ec7a` (App-Stand 3.66, main), als „Latest“; Beschreibung mit Funktionsliste, Link zur Online-Version und OSM-Quellenangabe. Erstellt über die GitHub-Webseite (Tag-Upload aus der Sitzung war gesperrt). https://github.com/Jade-HS-Vibecoding-WPK/urban-analyst/releases
+
 - [ ] **36. Branch `schneller-laden` (Dozent, Niedersachsen-Cache)** – getestet, **noch nicht übernommen** (Entscheidung: erst Export-Test fertig). Messung Do 19.11., 09:30, 1 km² Wilhelmshaven-Innenstadt, gleiche Abfragen wie die App: Cache alle 8 OSM-Bausteine zusammen 0,5 s; live Overpass je Baustein 28–49 s (Gebäude 33,7 s, Straßen 49,4 s, Bahn 38,0 s, Haltestellen 27,9 s), Grünflächen Fehler 502; Objektzahlen gleich (944/383/28/27). Cache-Stand 17.11. Nicht getestet: ganzer Ablauf in der Oberfläche, Zwischenspeicher, amtliche Daten, Traufhöhen-Korrektur.
   Achtung: Branch baut auf 3.51 auf → nicht einfach mergen (Tabs, Farbfenster, Paletten, DXF-Namen, 3.57/3.58 fehlen), sondern Änderungen gezielt in die aktuelle Version einbauen (ca. 45–60 min + Test).
 
-### Stand Do 19.11., 11:20 – hier weitermachen
+### Stand Do 19.11., 12:25 – hier weitermachen
+- **Release 1.0.0** veröffentlicht (Tag `v1.0.0` = App 3.66). Freeze erreicht: am Code nur noch Fehlerbehebungen.
+- Bis Abgabe **Fr 20.11., 16 Uhr**: README ausbauen (Funktionen, Screenshots, Quellen), Poster.
+
+### Stand Do 19.11., 11:20 – (erledigt, siehe 12:25)
 - Aktuelle Version: **3.66** (`index.html`). Getestet und ok: 35a (SVG), 35b (Deckkraft), 35c (PDF + Papierformat), 35e (Maßstab frei, Export-Fenster).
 - Version **3.66**: Schriftfeld fertig (35f, 35g), DXF-Fahrbahnen (35d, Allplan ok). Offen: DXF in Archicad/Revit (optional), Punkt 36 (Niedersachsen-Cache) nur nach Absprache.
 - Freeze **Do 19.11., 12 Uhr**. Bis Abgabe Fr 16 Uhr: README ausbauen, Poster.
