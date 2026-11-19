@@ -211,10 +211,21 @@ button,input,select,textarea{font:inherit;color:inherit}
 .formats small{color:var(--muted)}
 .opts{display:flex;flex-direction:column;gap:5px;padding-top:6px}
 #dlg .card{max-height:94vh;overflow:auto}
-#dlg .seg{margin-bottom:6px}
+#dlg .seg{margin-bottom:4px}
+.ex-card{width:min(1100px,96vw);padding:14px 18px}
+.ex-cols{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px;align-items:start}
+.ex-row{margin-bottom:10px}.ex-lab{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.ex-two{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
+.ex-scale{display:flex;align-items:center;gap:6px}.ex-scale .inp{flex:1;min-width:0}
+.ex-fmt label{flex:1;text-align:center;padding:6px 2px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:12px;position:relative}
+.ex-fmt input{position:absolute;opacity:0;pointer-events:none}
+.ex-fmt label:has(input:checked){background:var(--accbg);color:var(--text)}
+.ex-right .ex-prevwrap{display:flex;flex-direction:column}
+#exScale.bad{border-color:#ef4444}
+@media (max-width:820px){.ex-cols{grid-template-columns:1fr}}
 .seg.off{opacity:.4;pointer-events:none}
-#exPrev{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;justify-content:center;align-items:center;min-height:120px}
-#exPrev svg{width:auto;height:auto;max-width:100%;max-height:230px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.35);touch-action:none}
+#exPrev{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;justify-content:center;align-items:center;min-height:260px}
+#exPrev svg{width:auto;height:auto;max-width:100%;max-height:calc(94vh - 215px);background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.35);touch-action:none}
 #exPrev.pan svg{cursor:grab}#exPrev.pan.drag svg{cursor:grabbing}
 #exFit{margin-top:6px}
 #exFit.bad{color:#f87171}#exFit.ok{color:#4ade80}
@@ -423,41 +434,43 @@ details>summary{list-style:none}details>summary::-webkit-details-marker{display:
 
 <!-- ========== EXPORT-DIALOG ========== -->
 <div id="dlg" class="modal" hidden>
-  <div class="card">
+  <div class="card ex-card">
     <div class="card-h">Export<div class="spacer"></div><button class="icon-btn" data-close>✕</button></div>
-    <div class="grid2">
-      <label>Format</label>
-      <div class="formats" id="fmt">
-        <label><input type="radio" name="fmt" value="svg" checked><b>SVG</b><small>für Illustrator · Ebenen mit dem Skript unten</small></label>
-        <label><input type="radio" name="fmt" value="pdf"><b>PDF</b><small>über den Druckdialog („Als PDF speichern“)</small></label>
-        <label><input type="radio" name="fmt" value="dxf"><b>DXF</b><small>für CAD / Rhino / Illustrator · in Metern</small></label>
-        <label><input type="radio" name="fmt" value="geojson"><b>GeoJSON (ZIP)</b><small>für QGIS · ein File pro Layer</small></label>
-        <label><input type="radio" name="fmt" value="png"><b>PNG</b><small>Bildschirmfoto der Karte</small></label>
+    <div class="ex-cols">
+      <div class="ex-left">
+        <div class="ex-row"><span class="ex-lab">Format</span>
+          <div class="seg ex-fmt" id="fmt">
+            <label><input type="radio" name="fmt" value="svg" checked><span>SVG</span></label><label><input type="radio" name="fmt" value="pdf"><span>PDF</span></label><label><input type="radio" name="fmt" value="dxf"><span>DXF</span></label><label><input type="radio" name="fmt" value="geojson"><span>GeoJSON</span></label><label><input type="radio" name="fmt" value="png"><span>PNG</span></label>
+          </div>
+          <div class="tiny muted" id="exFmtHint"></div></div>
+        <div class="ex-row ex-two">
+          <div><span class="ex-lab">Planname</span><input id="exTitle" class="inp" value="Analyseplan"></div>
+          <div><span class="ex-lab">Maßstab</span><div class="ex-scale"><span>1 :</span><input id="exScale" class="inp" list="exScales" inputmode="numeric" autocomplete="off" value="10000" title="Eigene Zahl eintippen oder Vorschlag wählen"></div>
+            <datalist id="exScales"><option value="500"><option value="1000"><option value="2000"><option value="2500"><option value="5000"><option value="10000"><option value="15000"><option value="20000"><option value="25000"></datalist></div>
+        </div>
+        <div class="ex-row ex-plan"><span class="ex-lab">Papier</span>
+          <div class="ex-two"><div class="seg" id="exPaper"><button data-v="A4">A4</button><button data-v="A3">A3</button><button data-v="">keine</button></div>
+            <div class="seg" id="exOrient"><button data-v="hoch">Hoch</button><button data-v="quer">Quer</button></div></div>
+          <div class="tiny muted">A4/A3: 10 mm Druckrand, Legende rechts, Titel unten, Karte im Ausschnitt · keine: Blatt = Plangröße, ohne Rand</div></div>
+        <div class="ex-row"><span class="ex-lab">Optionen</span>
+          <div class="opts">
+            <label><input type="checkbox" id="exVisible" checked> nur sichtbare Layer</label>
+            <label><input type="checkbox" id="exClip" checked> auf Untersuchungsgebiet zuschneiden (SVG/PDF)</label>
+            <label><input type="checkbox" id="exLegend" checked> Legende, Titel, Maßstab & Nordpfeil (SVG/PDF)</label>
+            <label><input type="checkbox" id="exReal"> echte UTM-Koordinaten (DXF)</label>
+          </div></div>
+        <div class="ex-row tiny" id="exJsxRow"><span class="ex-lab">Illustrator</span><a href="#" id="exJsx">QUAVA_Ebenen.jsx herunterladen</a> <span class="muted">– macht aus der SVG echte Ebenen (Datei → Skripten → Anderes Skript …)</span></div>
+        <div id="exInfo" class="muted tiny"></div>
+        <div class="card-f"><button class="btn" data-close>Abbrechen</button><button class="btn primary" id="btnDoExport">Exportieren</button></div>
       </div>
-      <label>Planname</label><input id="exTitle" class="inp" value="Analyseplan">
-      <label>Maßstab</label>
-      <select id="exScale" class="inp"><option>1000</option><option>2500</option><option>5000</option><option selected>10000</option><option>15000</option><option>20000</option><option>25000</option></select>
-      <label class="ex-plan">Papier</label>
-      <div class="ex-plan"><div class="seg" id="exPaper"><button data-v="A4">A4</button><button data-v="A3">A3</button><button data-v="">keine</button></div>
-        <div class="seg" id="exOrient"><button data-v="hoch">Hochformat</button><button data-v="quer">Querformat</button></div>
-        <div class="tiny muted">A4/A3: 10 mm Druckrand, Legende fest rechts, Titel fest unten, Karte im Ausschnitt (in der Vorschau verschiebbar) · keine: Blatt so groß wie der Plan, ohne Rand (SVG und PDF)</div></div>
-      <label class="ex-plan">Vorschau</label>
-      <div class="ex-plan"><div id="exPrev"></div><div id="exFit" class="tiny"></div><div id="exPrevBtns" style="display:flex;gap:6px;margin-top:6px"><button class="btn" id="exCenter">Zentrieren</button><button class="btn" id="exFitScale">Maßstab fürs ganze Gebiet</button></div></div>
-      <label>Optionen</label>
-      <div class="opts">
-        <label><input type="checkbox" id="exVisible" checked> nur sichtbare Layer</label>
-        <label><input type="checkbox" id="exClip" checked> auf Untersuchungsgebiet zuschneiden (SVG/PDF)</label>
-        <label><input type="checkbox" id="exLegend" checked> Legende, Titel, Maßstab & Nordpfeil (SVG/PDF)</label>
-        <label><input type="checkbox" id="exReal"> echte UTM-Koordinaten (DXF)</label>
+      <div class="ex-right">
+        <div class="ex-plan ex-prevwrap"><span class="ex-lab">Vorschau</span><div id="exPrev"></div><div id="exFit" class="tiny"></div>
+          <div id="exPrevBtns" style="display:flex;gap:6px;margin-top:6px"><button class="btn" id="exCenter">Zentrieren</button><button class="btn" id="exFitScale">Maßstab fürs ganze Gebiet</button></div></div>
+        <div id="exNoPrev" class="muted tiny" hidden>Vorschau gibt es nur für SVG und PDF.</div>
       </div>
-      <label>Illustrator</label>
-      <div class="tiny"><a href="#" id="exJsx">QUAVA_Ebenen.jsx herunterladen</a><br><span class="muted">Macht aus der geöffneten SVG echte Ebenen (Baustein = Ebene, Untergruppe = Unterebene). In Illustrator: Datei → Skripten → Anderes Skript … → diese Datei wählen. Einmal speichern reicht.</span></div>
     </div>
-    <div id="exInfo" class="muted tiny pad-t"></div>
-    <div class="card-f"><button class="btn" data-close>Abbrechen</button><button class="btn primary" id="btnDoExport">Exportieren</button></div>
   </div>
 </div>
-
 <script>
 /* =====================================================================
    QUAVA – Kernlogik (ohne Karte, ohne Bildschirm)
@@ -4037,7 +4050,11 @@ if (typeof module !== 'undefined') module.exports = UA;
   let exPaper = exP.paper || '', exOrient = exP.orient || 'quer', exTimer = null, exPan = { x: 0, y: 0 }, exPanSel = null, exPL = null; // exPan: Verschiebung der Karte im Ausschnitt (Meter)
   const exFmt = () => document.querySelector('input[name=fmt]:checked').value;
   const exLayersSel = () => $('#exVisible').checked ? S.layers.filter(L => L.visible) : S.layers.slice();
-  const exOpts = () => ({ title: $('#exTitle').value || 'Analyseplan', scale: +$('#exScale').value, clip: $('#exClip').checked, legend: $('#exLegend').checked, realCoords: $('#exReal').checked, paper: exPaper || null, orient: exOrient, pan: exPan });
+  const FMT_HINT = { svg: 'für Illustrator · Ebenen mit dem Skript unten', pdf: 'über den Druckdialog („Als PDF speichern“)', dxf: 'für CAD / Rhino / Illustrator · in Metern', geojson: 'für QGIS · ZIP mit einer Datei pro Layer', png: 'Bildschirmfoto der Karte' };
+  const exScaleVal = () => { // Maßstab frei eingeben: „3000“, „1:3000“, „3.000“ → 3000 (100 … 200 000), sonst null
+    let t = String($('#exScale').value || '').trim(); if (t.includes(':')) t = t.split(':').pop();
+    const n = parseInt(t.replace(/[\s.']/g, ''), 10); return n >= 100 && n <= 200000 && /^\d+$/.test(t.replace(/[\s.']/g, '')) ? n : null; };
+  const exOpts = () => ({ title: $('#exTitle').value || 'Analyseplan', scale: exScaleVal() || 10000, clip: $('#exClip').checked, legend: $('#exLegend').checked, realCoords: $('#exReal').checked, paper: exPaper || null, orient: exOrient, pan: exPan });
   const mm = v => Math.round(v) + '';
   function exUpdate() {
     document.querySelectorAll('#exPaper button').forEach(b => b.classList.toggle('on', b.dataset.v === exPaper));
@@ -4045,8 +4062,11 @@ if (typeof module !== 'undefined') module.exports = UA;
     $('#exOrient').classList.toggle('off', !exPaper);
     const plan = ['svg', 'pdf'].includes(exFmt());
     document.querySelectorAll('#dlg .ex-plan').forEach(el => { el.hidden = !plan; });
-    $('#btnDoExport').disabled = false;
+    $('#exNoPrev').hidden = plan; $('#exJsxRow').hidden = exFmt() !== 'svg'; $('#exFmtHint').textContent = FMT_HINT[exFmt()] || '';
+    const sv = exScaleVal(); $('#exScale').classList.toggle('bad', !sv);
+    $('#btnDoExport').disabled = plan && !sv;
     if (!plan || !S.selection) return;
+    if (!sv) { clearTimeout(exTimer); $('#exFit').className = 'tiny bad'; $('#exFit').textContent = 'Maßstab bitte als Zahl eingeben, z. B. 3000 (zwischen 100 und 200 000).'; return; }
     if (exPanSel !== S.selection) { exPan = { x: 0, y: 0 }; exPanSel = S.selection; } // neues Gebiet: Karte wieder mittig
     $('#exFit').className = 'tiny muted'; $('#exFit').textContent = 'Vorschau wird berechnet …';
     clearTimeout(exTimer); exTimer = setTimeout(exPreview, 250);
@@ -4083,15 +4103,19 @@ if (typeof module !== 'undefined') module.exports = UA;
   $('#exCenter').onclick = () => { exPan = { x: 0, y: 0 }; exUpdate(); };
   $('#exFitScale').onclick = () => {
     const o = exOpts(), layers = UA.visLayers(exLayersSel());
-    const scales = [...$('#exScale').options].map(x => +x.value).sort((a, b) => a - b);
-    const s = scales.find(sc => UA.planLayout(layers, S.selection, Object.assign({}, svgOpts(o), { scale: sc, pan: null })).whole);
-    if (s) { $('#exScale').value = String(s); exPan = { x: 0, y: 0 }; exUpdate(); }
-    else { $('#exFit').textContent = `Das ganze Gebiet passt auch bei 1:${scales[scales.length - 1]} nicht auf ${o.paper} – größeres Papier, Hoch-/Querformat wechseln oder kleineres Gebiet wählen.`; }
+    // kleinster „runder“ Maßstab, bei dem das ganze Gebiet in den Ausschnitt passt (Ausschnitt hängt nicht vom Maßstab ab)
+    const L1 = UA.planLayout(layers, S.selection, Object.assign({}, svgOpts(o), { scale: 1000, pan: null }));
+    if (!L1.frame || L1.fw <= 0 || L1.fh <= 0) return;
+    const need = 1000 * Math.max(L1.mapW / L1.fw, L1.mapH / L1.fh), step = need < 5000 ? 100 : need < 20000 ? 500 : 1000;
+    let sc = Math.max(100, Math.ceil(need / step) * step);
+    while (sc < 200000 && !UA.planLayout(layers, S.selection, Object.assign({}, svgOpts(o), { scale: sc, pan: null })).whole) sc += step;
+    $('#exScale').value = String(sc); exPan = { x: 0, y: 0 }; exUpdate();
   };
   const exSave = () => { try { localStorage.setItem('quava_papier', JSON.stringify({ paper: exPaper, orient: exOrient })); } catch (e) { /* egal */ } };
   $('#exPaper').onclick = e => { const b = e.target.closest('button'); if (!b) return; exPaper = b.dataset.v; exSave(); exUpdate(); };
   $('#exOrient').onclick = e => { const b = e.target.closest('button'); if (!b) return; exOrient = b.dataset.v; exSave(); exUpdate(); };
   ['#exScale', '#exVisible', '#exClip', '#exLegend'].forEach(id => $(id).addEventListener('change', exUpdate));
+  $('#exScale').addEventListener('input', exUpdate);
   $('#exTitle').addEventListener('input', exUpdate);
   document.querySelectorAll('input[name=fmt]').forEach(x => x.addEventListener('change', exUpdate));
   $('#btnDoExport').onclick = () => {

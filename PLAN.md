@@ -343,14 +343,15 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
   - [x] **35c. PDF + Papierformat** (Version 3.59/3.60, ok – „alles super“): PDF in Illustrator ok, Maßstab stimmt. Export-Fenster: Papier **A4 · A3 · keine**, **Hoch-/Querformat** (gemerkt), gilt für SVG und PDF.
     A4/A3: 10 mm Druckrand, Legende fest rechts, Titelzeile fest unten (Titel, Untertitel, Maßstabsleiste, „M 1:…“, Nordpfeil – Nordpfeil liegt nicht mehr über der Legende), Karten-Ausschnitt = Rest; Karte wird am Ausschnitt abgeschnitten (Flächen/Linien/Punkte), in der **Vorschau** (echte verkleinerte Zeichnung) mit der Maus verschiebbar, „Zentrieren“, „Maßstab fürs ganze Gebiet“. keine: Blatt = Plangröße ohne Rand.
     Lange Quellen-/Hinweistexte entfernt; bleibt eine kleine Zeile „© OpenStreetMap-Mitwirkende (ODbL)“ + kurz amtliche Quellen, wenn benutzt (Lizenzpflicht). Legende zu lang → unten gekürzt mit ⚠-Hinweis. Sicherungen vorher: `index_v3.58_vor-papierformat_2026-11-19.html`, `index_v3.59_vor-blattlayout_2026-11-19.html`
+  - [x] **35e. Maßstab frei + Export-Fenster ohne Scrollen** (Version 3.61, ok): Maßstab als Eingabefeld „1 : …“ (100–200 000; „3000“, „1:3000“, „3.000“), Vorschläge als Liste, ungültig → rot + Export gesperrt. „Maßstab fürs ganze Gebiet“ rechnet den genauen Maßstab (gerundet, z. B. 1:5500). Export-Fenster zweispaltig: links Einstellungen (Format als Knopfreihe + Kurzhinweis, Papier + Hoch/Quer in einer Zeile, Knöpfe), rechts große Vorschau; geprüft ohne Scrollen bei 1366×657, 1280×720, 1920×950. Sicherung vorher: `index_v3.60_vor-exportfenster_2026-11-19.html`
   - [ ] **35d. DXF in Archicad, Revit, Allplan** – offen.
 
 - [ ] **36. Branch `schneller-laden` (Dozent, Niedersachsen-Cache)** – getestet, **noch nicht übernommen** (Entscheidung: erst Export-Test fertig). Messung Do 19.11., 09:30, 1 km² Wilhelmshaven-Innenstadt, gleiche Abfragen wie die App: Cache alle 8 OSM-Bausteine zusammen 0,5 s; live Overpass je Baustein 28–49 s (Gebäude 33,7 s, Straßen 49,4 s, Bahn 38,0 s, Haltestellen 27,9 s), Grünflächen Fehler 502; Objektzahlen gleich (944/383/28/27). Cache-Stand 17.11. Nicht getestet: ganzer Ablauf in der Oberfläche, Zwischenspeicher, amtliche Daten, Traufhöhen-Korrektur.
   Achtung: Branch baut auf 3.51 auf → nicht einfach mergen (Tabs, Farbfenster, Paletten, DXF-Namen, 3.57/3.58 fehlen), sondern Änderungen gezielt in die aktuelle Version einbauen (ca. 45–60 min + Test).
 
-### Stand Do 19.11., 10:35 – hier weitermachen
-- Aktuelle Version: **3.60** (`index.html`). Getestet und ok: 35a (SVG für Illustrator), 35b (Deckkraft 100 %), 35c (PDF + Papierformat, Blattaufbau, Vorschau).
-- Als Nächstes: Maßstab frei eingeben + Export-Fenster ohne Scrollen, dann **DXF** in Archicad, Revit, Allplan (Checkliste im Chat vom 19.11.). Danach ggf. Punkt 36 (Niedersachsen-Cache) einbauen.
+### Stand Do 19.11., 10:45 – hier weitermachen
+- Aktuelle Version: **3.61** (`index.html`). Getestet und ok: 35a (SVG), 35b (Deckkraft), 35c (PDF + Papierformat), 35e (Maßstab frei, Export-Fenster).
+- Als Nächstes: Schriftfeld nach Nutzer-Vorlage (Bahnschrift, Beschreibung), dann **DXF** in Archicad, Revit, Allplan (Checkliste im Chat vom 19.11.). Danach ggf. Punkt 36 (Niedersachsen-Cache) einbauen.
 - Freeze **Do 19.11., 12 Uhr**. Bis Abgabe Fr 16 Uhr: README ausbauen, Poster.
 
 ### Stand Do 19.11., 01:20 (Pause) – (erledigt, siehe 09:55)
