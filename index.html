@@ -68,8 +68,58 @@ button,input,select,textarea{font:inherit;color:inherit}
 #mapwrap{position:relative;min-width:0}
 #map{position:absolute;inset:0}
 .float{position:absolute;z-index:5;display:flex;gap:8px}
-.tl{top:12px;left:12px;flex-direction:column;width:min(380px,calc(100% - 24px))}
+.tl{z-index:6;top:12px;left:12px;flex-direction:column;width:min(380px,calc(100% - 24px))}
 .tr{top:12px;right:12px}
+.tabbar{position:absolute;z-index:5;top:12px;left:410px;right:290px;display:flex;gap:6px;align-items:center;min-width:0}
+.tab{display:flex;align-items:center;gap:4px;flex:0 1 170px;min-width:52px;height:38px;padding:0 6px 0 12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);cursor:pointer;color:var(--muted);font-size:12.5px;user-select:none}
+.tab .tn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab .tx{border:0;background:transparent;color:var(--muted);cursor:pointer;width:20px;height:20px;border-radius:6px;padding:0;line-height:1;font-size:14px}
+.tab .tx:hover{background:var(--panel2);color:var(--text)}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--text);border-color:var(--acc);background:var(--panel2)}
+.tabbar{overflow:hidden}
+.tab-add{flex:none;width:38px;height:38px;border-radius:var(--r);border:1px solid var(--line);background:var(--panel);box-shadow:var(--shadow);color:var(--acc2);font-size:20px;cursor:pointer;line-height:1}
+.tab-add:hover:not(:disabled){border-color:var(--acc)}
+.tab-add:disabled{opacity:.4;cursor:default}
+.tabs2 .pane-tog{top:108px}
+.cp{position:fixed;z-index:60;width:292px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px;font-size:12px;user-select:none}
+.cp-h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cp-big{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,.2);flex:none}
+.cp-t{flex:1;min-width:0}.cp-t b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cp-t span{color:var(--muted);font-size:11px}
+.cp-ib{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer;font-size:14px;padding:0;flex:none}
+.cp-ib:hover{border-color:var(--acc)}
+.cp-sl{display:flex;align-items:center;gap:8px;margin:7px 0}
+.cp-sl label{width:14px;color:var(--muted);font-weight:600}
+.cp-tr{position:relative;flex:1;height:10px;border-radius:5px;cursor:pointer;border:1px solid rgba(255,255,255,.12)}
+.cp-th{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.5);pointer-events:none}
+.cp-n{width:52px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 5px;text-align:right;outline:none}
+.cp-n:focus,.cp-hex input:focus{border-color:var(--acc)}
+.cp-u{width:14px;color:var(--muted)}
+.cp-n::-webkit-inner-spin-button,.cp-n::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.cp-n{-moz-appearance:textfield}
+.cp-r2{display:flex;align-items:center;gap:6px;margin:10px 0 8px}
+.cp-q{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.25);cursor:pointer;padding:0}
+.cp-hex{margin-left:auto;display:flex;align-items:center;gap:4px;color:var(--muted);font-size:14px}
+.cp-hex input{width:84px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 6px;font:12.5px ui-monospace,Consolas,monospace;letter-spacing:.5px;text-transform:uppercase;outline:none;color:var(--text)}
+.cp-sp{position:relative;height:110px;border-radius:8px;cursor:crosshair;border:1px solid rgba(255,255,255,.12)}
+.cp-rec{display:flex;gap:4px;min-width:0;overflow:hidden}
+.cp-rec .cp-q{width:16px;height:16px;flex:none}
+.cp-pals{margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+.cp-plist{max-height:196px;overflow-y:auto;margin-right:-6px;padding-right:4px}
+.cp-ph{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;white-space:nowrap}.cp-ph b{font-size:12px}.cp-ph span{color:var(--muted);font-size:11px}
+.cp-pal{display:flex;align-items:center;gap:8px;padding:3px 4px;border-radius:7px}
+.cp-pal:hover{background:var(--accbg)}
+.cp-pn{width:96px;flex:none;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:var(--text);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-ps{flex:1;display:flex;height:16px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.12);min-width:0}
+.cp-ps button{flex:1;border:0;padding:0;cursor:pointer;min-width:0}
+.cp-ps button:hover{transform:scaleY(1.25)}
+.cp-pa{flex:none;background:none;border:1px solid var(--line);border-radius:6px;color:var(--acc2);cursor:pointer;font-size:11px;padding:1px 6px}
+.cp-pa:hover{border-color:var(--acc)}
+.cp-menu{position:absolute;right:12px;top:46px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:4px;z-index:2}
+.cp-menu button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:5px 10px 5px 24px;cursor:pointer;position:relative;white-space:nowrap}
+.cp-menu button:hover{background:var(--accbg)}
+.cp-menu button.on::before{content:'✓';position:absolute;left:8px;color:var(--acc2)}
+.tab-ask{position:absolute;z-index:8;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:10px 12px;font-size:12.5px;width:240px}
+.tab-ask .row{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
 .bc{bottom:18px;left:50%;transform:translateX(-50%)}
 .search{display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:0 10px}
 .search input{flex:1;background:transparent;border:0;outline:none;padding:9px 6px}
@@ -109,7 +159,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ldet .row label{width:92px;flex-shrink:0;white-space:nowrap;color:var(--muted);font-size:12px}
 .ldet input[type=range]{flex:1;accent-color:var(--acc)}
 .cls{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px}
-.cls input[type=color]{width:22px;height:18px;border:0;padding:0;background:none;cursor:pointer}
+.cls .swatch{width:22px;height:16px;flex:none;border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:0;cursor:pointer}
+.cls .swatch.on{outline:2px solid var(--acc);outline-offset:1px}
 .cls span{flex:1}.cls em{color:var(--muted);font-style:normal;font-size:11px}
 .lbtns{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .lbtns button{font-size:11.5px;padding:4px 8px}
@@ -317,6 +368,7 @@ details>summary{list-style:none}details>summary::-webkit-details-marker{display:
       </div>
       <div id="results" class="results" hidden></div>
     </div>
+    <div class="tabbar" id="tabbar"></div>
     <div class="float tr">
       <select id="basemap" class="inp sm" title="Hintergrundkarte">
         <option value="dark">Karte dunkel</option>
@@ -370,7 +422,7 @@ details>summary{list-style:none}details>summary::-webkit-details-marker{display:
     <div class="grid2">
       <label>Format</label>
       <div class="formats" id="fmt">
-        <label><input type="radio" name="fmt" value="svg" checked><b>SVG</b><small>für Illustrator · Ebenen bleiben erhalten</small></label>
+        <label><input type="radio" name="fmt" value="svg" checked><b>SVG</b><small>für Illustrator · Ebenen mit dem Skript unten</small></label>
         <label><input type="radio" name="fmt" value="pdf"><b>PDF</b><small>über den Druckdialog („Als PDF speichern“)</small></label>
         <label><input type="radio" name="fmt" value="dxf"><b>DXF</b><small>für CAD / Rhino / Illustrator · in Metern</small></label>
         <label><input type="radio" name="fmt" value="geojson"><b>GeoJSON (ZIP)</b><small>für QGIS · ein File pro Layer</small></label>
@@ -386,6 +438,8 @@ details>summary{list-style:none}details>summary::-webkit-details-marker{display:
         <label><input type="checkbox" id="exLegend" checked> Legende, Titel, Maßstab & Nordpfeil (SVG/PDF)</label>
         <label><input type="checkbox" id="exReal"> echte UTM-Koordinaten (DXF)</label>
       </div>
+      <label>Illustrator</label>
+      <div class="tiny"><a href="#" id="exJsx">QUAVA_Ebenen.jsx herunterladen</a><br><span class="muted">Macht aus der geöffneten SVG echte Ebenen (Baustein = Ebene, Untergruppe = Unterebene). In Illustrator: Datei → Skripten → Anderes Skript … → diese Datei wählen. Einmal speichern reicht.</span></div>
     </div>
     <div id="exInfo" class="muted tiny pad-t"></div>
     <div class="card-f"><button class="btn" data-close>Abbrechen</button><button class="btn primary" id="btnDoExport">Exportieren</button></div>
@@ -1923,16 +1977,16 @@ const UA = (function () {
     oepnv: { label: 'ÖPNV-Haltestellen', group: 'Verkehr', fetch: 'stops', keep: f => isPoint(f.geometry) && stopClass(f.properties), presets: ['oepnv', 'einheitlich'], def: 'oepnv', color: '#B07FE0' },
     gruen: { label: 'Grün- & Freiflächen', group: 'Freiraum', fetch: 'green', keep: f => isPoly(f.geometry) && greenClass(f.properties), presets: ['gruen', 'einheitlich'], def: 'gruen', color: '#6E9F5D' },
     wasser: { label: 'Wasser & Gewässer', group: 'Wasser', fetch: 'water', keep: f => waterClass(f.properties, f.geometry), presets: ['wasser', 'wasser_achsen', 'einheitlich'], def: 'wasser', color: '#6BB7E8' },
-    flaechen: { label: 'Flächennutzung', group: 'Nutzung', fetch: 'landuse', keep: f => isPoly(f.geometry) && landuseClass(f.properties), presets: ['flaechen', 'einheitlich'], def: 'flaechen', color: '#C9A27E', opacity: 0.7 },
+    flaechen: { label: 'Flächennutzung', group: 'Nutzung', fetch: 'landuse', keep: f => isPoly(f.geometry) && landuseClass(f.properties), presets: ['flaechen', 'einheitlich'], def: 'flaechen', color: '#C9A27E' },
     baeume: { label: 'Bäume', group: 'Freiraum', fetch: 'trees', keep: f => isPoint(f.geometry) || isLine(f.geometry) || (isPoly(f.geometry) && f.properties._krone_m), presets: ['baeume', 'einheitlich'], def: 'baeume', color: '#4E8F4A' },
     grenzen: { label: 'Bezirke & Ortsteile', group: 'Grenzen', fetch: 'boundaries', keep: f => isPoly(f.geometry) && ['8', '9', '10'].includes(f.properties.admin_level), presets: ['grenzen'], def: 'grenzen', color: '#BCA8DE', outlineOnly: true, statMode: 'none' },
     schatten: { label: 'Schattenwurf', group: 'Analyse & Umwelt', fetch: 'buildings', keep: f => isPoly(f.geometry), presets: ['schatten', 'schatten_linien', 'einheitlich'], def: 'schatten', color: '#5B5F86', opacity: 0.5, statMode: 'none', nonzero: true, sun: true }, // Schatten starten mit 50 % Deckkraft
-    hoehenlinien: { label: 'Höhenlinien', group: 'Analyse & Umwelt', fetch: 'dgm', keep: f => isLine(f.geometry) || isPoint(f.geometry), presets: ['einheitlich', 'hl_art'], def: 'hl_art', color: '#9A6B3F', statMode: 'none', opacity: 0.9 },
-    hangneigung: { label: 'Hangneigung', group: 'Analyse & Umwelt', fetch: 'dgm', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'neigung'], def: 'neigung', color: '#E07B39', statMode: 'centroid', opacity: 0.65, noOutline: true },
-    laerm: { label: 'Verkehrslärm (Straße)', group: 'Analyse & Umwelt', fetch: 'laerm', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'laerm_pegel'], def: 'laerm_pegel', color: '#CC463F', statMode: 'clip', opacity: 0.6, lz: true },
-    hochwasser: { label: 'Hochwasser', group: 'Analyse & Umwelt', fetch: 'hochwasser', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'hw_tiefe', 'hw_szenario', 'hw_lage'], def: 'hw_tiefe', color: '#3D7DD8', statMode: 'clip', opacity: 0.6, hw: true },
-    bevoelk: { label: 'Bevölkerung', group: 'Analyse & Umwelt', fetch: 'bevoelk', keep: f => isPoly(f.geometry), presets: ['ew_dichte', 'ew_alter', 'einheitlich'], def: 'ew_dichte', color: '#E09A4E', statMode: 'centroid', opacity: 0.75 },
-    flurst: { label: 'Flurstücke', group: 'Analyse & Umwelt', fetch: 'flurst', keep: f => isPoly(f.geometry), presets: ['flurst_grenzen', 'flurst_groesse', 'flurst_nutzung', 'einheitlich'], def: 'flurst_grenzen', color: '#A9A2B8', statMode: 'centroid', opacity: 0.8 },
+    hoehenlinien: { label: 'Höhenlinien', group: 'Analyse & Umwelt', fetch: 'dgm', keep: f => isLine(f.geometry) || isPoint(f.geometry), presets: ['einheitlich', 'hl_art'], def: 'hl_art', color: '#9A6B3F', statMode: 'none' },
+    hangneigung: { label: 'Hangneigung', group: 'Analyse & Umwelt', fetch: 'dgm', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'neigung'], def: 'neigung', color: '#E07B39', statMode: 'centroid', noOutline: true },
+    laerm: { label: 'Verkehrslärm (Straße)', group: 'Analyse & Umwelt', fetch: 'laerm', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'laerm_pegel'], def: 'laerm_pegel', color: '#CC463F', statMode: 'clip', lz: true },
+    hochwasser: { label: 'Hochwasser', group: 'Analyse & Umwelt', fetch: 'hochwasser', keep: f => isPoly(f.geometry), presets: ['einheitlich', 'hw_tiefe', 'hw_szenario', 'hw_lage'], def: 'hw_tiefe', color: '#3D7DD8', statMode: 'clip', hw: true },
+    bevoelk: { label: 'Bevölkerung', group: 'Analyse & Umwelt', fetch: 'bevoelk', keep: f => isPoly(f.geometry), presets: ['ew_dichte', 'ew_alter', 'einheitlich'], def: 'ew_dichte', color: '#E09A4E', statMode: 'centroid' },
+    flurst: { label: 'Flurstücke', group: 'Analyse & Umwelt', fetch: 'flurst', keep: f => isPoly(f.geometry), presets: ['flurst_grenzen', 'flurst_groesse', 'flurst_nutzung', 'einheitlich'], def: 'flurst_grenzen', color: '#A9A2B8', statMode: 'centroid' },
     sonnenbahn: { label: 'Sonnenbahn', group: 'Analyse & Umwelt', fetch: 'sun', keep: () => true, presets: ['sonne'], def: 'sonne', color: '#F2B134', statMode: 'none', sun: true },
     abfrage: { label: 'Eigene Abfrage', group: 'Eigene Abfragen', fetch: null, keep: () => true, presets: ['einheitlich'], def: 'einheitlich', color: '#F2D16B' }
   };
@@ -2210,7 +2264,7 @@ const UA = (function () {
       const mode = opt.onlyBy || opt.split || B.def, ctx = { landuse: data.landuse, pois: data.pois };
       raw = raw.filter(f => { const r = classifyPreset(mode, f, ctx); return r && opt.only.includes(r.cls); });
     }
-    const L = { id: opt.id || baseId, base: baseId, name: opt.name || B.label, group: B.group, raw, visible: true, opacity: B.opacity || 0.85,
+    const L = { id: opt.id || baseId, base: baseId, name: opt.name || B.label, group: B.group, raw, visible: true, opacity: B.opacity || 1,
       statMode: B.statMode || 'clip', outlineOnly: !!B.outlineOnly, styles: {}, merges: {}, query: opt.query || null, subset: !!opt.only,
       nonzero: !!B.nonzero, sun, sunInfo, hw, hwAll, lz, lzAll, iv: ivUsed, noOutline: !!B.noOutline };
     return applySplit(L, opt.split || B.def, { landuse: data.landuse, pois: data.pois });
@@ -2395,11 +2449,63 @@ const UA = (function () {
   }
 
   /* ---------- Plan-Export: Projektion ---------- */
-  function planFrame(selection) {
+  function planFrame(selection, northUp) {
     const c = centroid(selection.geometry); const zone = utmZone(c[0]);
+    let proj = p => toUTM(p[0], p[1], zone), rot = 0;
+    if (northUp) { // SVG/PDF: Plan um die Meridiankonvergenz drehen, damit „oben“ = geografisch Nord (wie die Karte im Browser); Meter bleiben exakt
+      const o = toUTM(c[0], c[1], zone), n = toUTM(c[0], c[1] + 0.01, zone);
+      rot = Math.atan2(n[0] - o[0], n[1] - o[1]); const cs = Math.cos(rot), sn = Math.sin(rot);
+      proj = p => { const [x, y] = toUTM(p[0], p[1], zone), dx = x - o[0], dy = y - o[1]; return [o[0] + dx * cs - dy * sn, o[1] + dx * sn + dy * cs]; };
+    }
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    eachCoord(selection.geometry, p => { const [x, y] = toUTM(p[0], p[1], zone); minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
-    return { zone, minX, minY, maxX, maxY, proj: p => toUTM(p[0], p[1], zone) };
+    eachCoord(selection.geometry, p => { const [x, y] = proj(p); minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
+    return { zone, minX, minY, maxX, maxY, proj, rot };
+  }
+  /* ---------- Zuschnitt für SVG/PDF: Objekte wirklich am Gebiet abschneiden (statt Maske) ---------- */
+  function makeCutter(selection, ops) {
+    const SG = selection.geometry, SB = bboxOf(SG), convex = SG.type === 'Polygon' && isConvex(SG.coordinates[0]);
+    const edges = []; (SG.type === 'Polygon' ? [SG.coordinates] : SG.coordinates).forEach(p => p.forEach(r => { for (let i = 1; i < r.length; i++) edges.push([r[i - 1], r[i]]); }));
+    const segT = (a, b, p, q) => { // Schnittpunkt Strecke a→b mit Gebietskante p→q als Anteil t (0…1) oder null
+      const rx = b[0] - a[0], ry = b[1] - a[1], sx = q[0] - p[0], sy = q[1] - p[1], d = rx * sy - ry * sx; if (d === 0) return null;
+      const t = ((p[0] - a[0]) * sy - (p[1] - a[1]) * sx) / d, u = ((p[0] - a[0]) * ry - (p[1] - a[1]) * rx) / d;
+      return t > 0 && t < 1 && u >= 0 && u <= 1 ? t : null;
+    };
+    const at = (a, b, t) => t === 0 ? a : t === 1 ? b : [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    const segCuts = (a, b) => { const ts = []; const x0 = Math.min(a[0], b[0]), x1 = Math.max(a[0], b[0]), y0 = Math.min(a[1], b[1]), y1 = Math.max(a[1], b[1]);
+      for (const [p, q] of edges) { if (Math.max(p[0], q[0]) < x0 || Math.min(p[0], q[0]) > x1 || Math.max(p[1], q[1]) < y0 || Math.min(p[1], q[1]) > y1) continue; const t = segT(a, b, p, q); if (t !== null) ts.push(t); }
+      return ts; };
+    function line(l) { // Linienzug → Teile innerhalb des Gebiets
+      const out = []; let cur = null;
+      for (let i = 1; i < l.length; i++) {
+        const a = l[i - 1], b = l[i], ts = [0, 1].concat(segCuts(a, b)).sort((x, y) => x - y);
+        for (let j = 1; j < ts.length; j++) {
+          const t0 = ts[j - 1], t1 = ts[j]; if (t1 - t0 < 1e-12) continue;
+          if (pointInPoly(at(a, b, (t0 + t1) / 2), SG)) { const P = at(a, b, t0), Q = at(a, b, t1); if (cur && cur[cur.length - 1] === P) cur.push(Q); else { cur = [P, Q]; out.push(cur); } }
+          else cur = null;
+        }
+      }
+      return out;
+    }
+    function inside(g) { // ganz im Gebiet: alle Punkte drin und keine Kante schneidet den Rand
+      let ok = true; eachCoord(g, p => { if (ok && !pointInPoly(p, SG)) ok = false; }); if (!ok || convex) return ok;
+      for (const p of g.type === 'Polygon' ? [g.coordinates] : g.coordinates) for (const r of p) for (let i = 1; i < r.length; i++) if (segCuts(r[i - 1], r[i]).length) return false;
+      return true;
+    }
+    function poly(g) {
+      if (!bboxHit(bboxOf(g), SB)) return null;
+      if (inside(g)) return g;
+      if (ops && ops.intersect) { try { const r = ops.intersect({ type: 'Feature', properties: {}, geometry: g }, selection); return r && r.geometry && isPoly(r.geometry) ? r.geometry : null; } catch (e) { /* weiter unten */ } }
+      if (convex) { const parts = []; for (const p of g.type === 'Polygon' ? [g.coordinates] : g.coordinates) { const o = clipRing(p[0], SG.coordinates[0]); if (o) parts.push([o].concat(p.slice(1).map(h => clipRing(h, SG.coordinates[0])).filter(Boolean))); }
+        return !parts.length ? null : parts.length === 1 ? { type: 'Polygon', coordinates: parts[0] } : { type: 'MultiPolygon', coordinates: parts }; }
+      return pointInPoly(centroid(g), SG) ? g : null; // Notlösung ohne Zuschnitt-Bibliothek
+    }
+    return function cut(g) {
+      if (!g) return null;
+      if (g.type === 'Point') return pointInPoly(g.coordinates, SG) ? g : null;
+      if (g.type === 'LineString' || g.type === 'MultiLineString') { if (!bboxHit(bboxOf(g), SB)) return null; const ls = (g.type === 'LineString' ? [g.coordinates] : g.coordinates).flatMap(line); return ls.length ? { type: 'MultiLineString', coordinates: ls } : null; }
+      if (isPoly(g)) return poly(g);
+      return g;
+    };
   }
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const safeName = s => String(s).replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
@@ -2422,58 +2528,61 @@ const UA = (function () {
   }
   function buildSVG(layers, selection, opt) {
     layers = visLayers(layers);
-    opt = Object.assign({ scale: 10000, clip: true, legend: true, title: 'Analyseplan', subtitle: '', date: '' }, opt || {});
-    const F = planFrame(selection); const k = 1000 / opt.scale; // mm pro Meter
+    opt = Object.assign({ scale: 10000, clip: true, legend: true, title: 'Analyseplan', subtitle: '', date: '', ops: null }, opt || {});
+    const F = planFrame(selection, true); const k = 1000 / opt.scale; // mm pro Meter
     const M = 12, mapW = (F.maxX - F.minX) * k, mapH = (F.maxY - F.minY) * k;
     const legW = opt.legend ? 75 : 0, titleH = opt.legend ? 26 : 0;
     const W = mapW + 2 * M + legW, H = mapH + 2 * M + titleH;
     const T = p => { const [x, y] = F.proj(p); return ((x - F.minX) * k + M).toFixed(2) + ' ' + ((F.maxY - y) * k + M).toFixed(2); };
     const ringD = r => 'M' + r.map(T).join('L') + 'Z';
     const lineD = l => 'M' + l.map(T).join('L');
-    const pathD = g => g.type === 'Polygon' ? g.coordinates.map(ringD).join('') : g.type === 'MultiPolygon' ? g.coordinates.map(p => p.map(ringD).join('')).join('')
-      : g.type === 'LineString' ? lineD(g.coordinates) : g.type === 'MultiLineString' ? g.coordinates.map(lineD).join('') : '';
+    const cut = opt.clip ? makeCutter(selection, opt.ops) : (g => g);
+    // je Objekt ein eigener Pfad (nicht gruppiert); nur Flächen mit Loch (Innenhof) brauchen einen zusammengesetzten Pfad
+    const polyEl = (g, st) => { g = cut(g); if (!g || !isPoly(g)) return ''; return (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map(p => `<path ${st} d="${p.map(ringD).join('')}"/>`).join(''); };
+    const lineEl = (g, st) => { g = cut(g); if (!g || !isLine(g)) return ''; return (g.type === 'LineString' ? [g.coordinates] : g.coordinates).filter(l => l.length > 1).map(l => `<path ${st} d="${lineD(l)}"/>`).join(''); };
     const out = [];
     out.push(`<?xml version="1.0" encoding="UTF-8"?>`);
     out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W.toFixed(1)}mm" height="${H.toFixed(1)}mm" viewBox="0 0 ${W.toFixed(2)} ${H.toFixed(2)}">`);
-    out.push(`<defs><clipPath id="Gebiet_Clip"><path d="${pathD(selection.geometry)}"/></clipPath></defs>`);
     out.push(`<g id="Hintergrund"><rect x="0" y="0" width="${W.toFixed(2)}" height="${H.toFixed(2)}" fill="#ffffff"/></g>`);
-    out.push(`<g id="Karte"${opt.clip ? ' clip-path="url(#Gebiet_Clip)"' : ''}>`);
     for (const L of layers) {
       out.push(`<g id="${safeName(L.name)}">`);
+      const op = L.opacity < 1 ? ` opacity="${L.opacity}"` : ''; // Deckkraft als Objekt-Deckkraft (Illustrator: Transparenz-Fenster)
       for (const c of L.classes.slice().reverse()) {
         const fs = L.features.filter(f => f.properties._cls === c.key); if (!fs.length) continue;
-        const polys = fs.filter(f => isPoly(f.geometry)), pts = fs.filter(f => isPoint(f.geometry));
-        out.push(`<g id="${safeName(L.name + '_' + c.label)}">`);
+        const polys = fs.filter(f => isPoly(f.geometry)), pts = fs.filter(f => isPoint(f.geometry)), body = [];
         if (polys.length) {
-          const st = L.solidOutline ? `fill="none" stroke="${c.color}" stroke-width="0.1"` : L.split === 'schatten_linien' ? `fill="${c.color}" fill-opacity="${L.opacity}" fill-rule="nonzero" stroke="${c.color}" stroke-width="0.1"` : L.outlineOnly ? `fill="none" stroke="${c.color}" stroke-width="${((c.width || 1.5) * 0.25).toFixed(2)}" stroke-dasharray="1.5 1"` : `fill="${c.color}" fill-opacity="${L.opacity}" fill-rule="${L.nonzero ? 'nonzero' : 'evenodd'}"`;
-          out.push(`<path ${st} d="${polys.map(f => pathD(f.geometry)).join('')}"/>`);
+          const st = L.solidOutline ? `fill="none" stroke="${c.color}" stroke-width="0.1"` : L.split === 'schatten_linien' ? `fill="${c.color}"${op} stroke="${c.color}" stroke-width="0.1"` : L.outlineOnly ? `fill="none" stroke="${c.color}" stroke-width="${((c.width || 1.5) * 0.25).toFixed(2)}" stroke-dasharray="1.5 1"` : `fill="${c.color}"${op} fill-rule="evenodd"`;
+          if (L.nonzero) { // Schatten: Teilflächen eines Gebäudes überlappen sich → zu einer Fläche vereinigen
+            const pieces = []; polys.forEach(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).forEach(p => p.forEach(r => { const g = cut({ type: 'Polygon', coordinates: [r] }); if (g) pieces.push({ type: 'Feature', properties: {}, geometry: g }); })));
+            let merged = null;
+            if (pieces.length > 1 && opt.ops && opt.ops.union) { try { const u = opt.ops.union({ type: 'FeatureCollection', features: pieces }); merged = u && u.geometry; } catch (e) { merged = null; } }
+            const draw = g => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map(p => `<path ${st} d="${p.map(ringD).join('')}"/>`).join('');
+            body.push(merged ? draw(merged) : pieces.map(f => draw(f.geometry)).join(''));
+          } else body.push(polys.map(f => polyEl(f.geometry, st)).join(''));
         }
         let lines = fs.filter(f => isLine(f.geometry));
         if (L.bandEdge) { // nur Außenlinien: Haarlinie 0,15 mm
-          const e = fs.filter(f => L.bandEdge[f.properties._i]);
-          if (e.length) out.push(`<path fill="none" stroke="${c.color}" stroke-width="0.15" stroke-linecap="round" stroke-linejoin="round" d="${e.map(f => pathD(L.bandEdge[f.properties._i])).join('')}"/>`);
+          const st = `fill="none" stroke="${c.color}" stroke-width="0.15" stroke-linecap="round" stroke-linejoin="round"`;
+          body.push(fs.filter(f => L.bandEdge[f.properties._i]).map(f => { const g = L.bandEdge[f.properties._i]; return isPoly(g) ? polyEl(g, st) : lineEl(g, st); }).join(''));
           lines = lines.filter(f => !L.bandEdge[f.properties._i] && !f.properties._bw);
         } else if (L.bandGeom) { // Flächen
-          const bands = fs.filter(f => L.bandGeom[f.properties._i]);
-          if (bands.length) out.push(`<path fill="${c.color}" fill-opacity="${L.opacity}" d="${bands.map(f => pathD(L.bandGeom[f.properties._i])).join('')}"/>`);
+          const st = `fill="${c.color}"${op} fill-rule="evenodd"`;
+          body.push(fs.filter(f => L.bandGeom[f.properties._i]).map(f => polyEl(L.bandGeom[f.properties._i], st)).join(''));
           lines = lines.filter(f => !L.bandGeom[f.properties._i]);
         } else if (L.bands) { // dicke Linien: Linienstärke = echte Breite im Maßstab (m × mm/m)
-          const byW = {}; lines.filter(f => f.properties._bw).forEach(f => { const w = (f.properties._bw * k).toFixed(2); (byW[w] = byW[w] || []).push(f); });
-          Object.keys(byW).forEach(w => out.push(`<path fill="none" stroke="${c.color}" stroke-width="${w}" stroke-opacity="${L.opacity}" stroke-linecap="round" stroke-linejoin="round" d="${byW[w].map(f => pathD(f.geometry)).join('')}"/>`));
+          body.push(lines.filter(f => f.properties._bw).map(f => lineEl(f.geometry, `fill="none" stroke="${c.color}" stroke-width="${(f.properties._bw * k).toFixed(2)}"${op} stroke-linecap="round" stroke-linejoin="round"`)).join(''));
           lines = lines.filter(f => !f.properties._bw);
         }
-        if (lines.length) out.push(`<path fill="none" stroke="${c.color}" stroke-width="${L.axis || L.bands ? '0.15' : ((c.width || 1.2) * 0.22).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" d="${lines.map(f => pathD(f.geometry)).join('')}"/>`);
+        if (lines.length) { const st = `fill="none" stroke="${c.color}" stroke-width="${L.axis || L.bands ? '0.15' : ((c.width || 1.2) * 0.22).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"`; body.push(lines.map(f => lineEl(f.geometry, st)).join('')); }
         if (pts.length) {
           const r = ((c.r || 3) * 0.22).toFixed(2);
-          out.push(pts.map(f => { const [x, y] = T(f.geometry.coordinates).split(' '); return (f.properties._lblonly ? '' : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.color}"/>`)
+          body.push(pts.filter(f => cut(f.geometry)).map(f => { const [x, y] = T(f.geometry.coordinates).split(' '); return (f.properties._lblonly ? '' : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.color}"/>`)
             + (f.properties._label ? `<text x="${x}" y="${(f.properties._lblonly ? +y + 0.7 : +y - 1.4).toFixed(2)}" font-size="${f.properties._lblonly ? '2' : '2.6'}" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="${c.color}">${esc(f.properties._label)}</text>` : ''); }).join(''));
         }
-        out.push(`</g>`);
+        const b = body.join(''); if (b) out.push(`<g id="${safeName(L.name + '_' + c.label)}">${b}</g>`);
       }
       out.push(`</g>`);
     }
-    out.push(`</g>`);
-    out.push(`<g id="Untersuchungsgebiet"><path d="${pathD(selection.geometry)}" fill="none" stroke="#1d1b22" stroke-width="0.5" stroke-dasharray="2 1.2"/></g>`);
     if (opt.legend) {
       const x0 = M + mapW + 10; let y = M + 4; const L2 = [];
       L2.push(`<g id="Legende" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`);
@@ -2491,7 +2600,7 @@ const UA = (function () {
           else if (geomPt) L2.push(`<circle cx="${x0 + 3}" cy="${y - 1.2}" r="1.4" fill="${c.color}"/>`);
           else if (geomLine) L2.push(`<line x1="${x0}" y1="${y - 1.2}" x2="${x0 + 7}" y2="${y - 1.2}" stroke="${c.color}" stroke-width="${L.bands ? '0.15' : L.axis ? '0.15' : Math.max(0.4, (c.width || 1.2) * 0.3).toFixed(2)}" stroke-linecap="round"/>`);
           else if (L.outlineOnly) L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="none" stroke="${c.color === '#F2EDF7' || c.color === '#E7DDF5' ? '#777' : c.color}" stroke-width="0.4" stroke-dasharray="1 0.6"/>`);
-          else L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="${c.color}" fill-opacity="${Math.max(L.opacity, 0.35)}"/>`);
+          else L2.push(`<rect x="${x0}" y="${y - 3}" width="7" height="3.6" fill="${c.color}"${L.opacity < 1 ? ` opacity="${Math.max(L.opacity, 0.35)}"` : ''}/>`);
           L2.push(`<text x="${x0 + 10}" y="${y}" font-size="2.6">${esc(c.label)}</text>`); y += 4.6;
         }
         y += 3;
@@ -2508,7 +2617,7 @@ const UA = (function () {
       out.push(`<g id="Planlayout" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`
         + `<text x="${M}" y="${ty + 3}" font-size="8" font-weight="700">${esc(opt.title.toUpperCase())}</text>`
         + (opt.subtitle ? `<text x="${M}" y="${ty + 9}" font-size="3">${esc(opt.subtitle)}</text>` : '')
-        + `<text x="${M}" y="${ty + 14}" font-size="2.3" fill="#555">Kartengrundlage: © OpenStreetMap-Mitwirkende (ODbL) ${amtl ? ' · Gebäudehöhen: Geoportal Berlin (Umweltatlas Gebäudehöhen, LoD2)' : ''}${amtlNI ? ' · Gebäudehöhen: © LGLN, 3D-Gebäudemodell LoD2 (CC BY 4.0)' : ''}${kat ? ' · Bäume: Geoportal Berlin (Baumbestand)' : ''}${flq.has(Q_FL_BE) ? ' · Flurstücke: Geoportal Berlin (ALKIS Berlin)' : ''}${flq.has(Q_FL_NI) ? ' · Flurstücke: © LGLN (CC BY 4.0)' : ''}${flq.has(Q_EW_BE) ? ' · Einwohner: Amt für Statistik Berlin-Brandenburg, Umweltatlas Berlin' : ''}${flq.has(Q_EW_Z) ? ' · Einwohner: Zensus 2022, © Statistische Ämter des Bundes und der Länder (dl-de/by-2-0)' : ''}${flq.has(Q_HW) ? ' · Hochwasser: Hochwassergefahrenkarten der Länder, bereitgestellt von der Bundesanstalt für Gewässerkunde (BfG)' : ''}${flq.has(Q_LAERM) ? ' · Verkehrslärm: Lärmkartierung 2022, © Umweltbundesamt' : ''}${flq.has(Q_DGM_NI) ? ' · Gelände: DGM1 © LGLN (CC BY 4.0)' : ''} · erstellt mit QUAVA${opt.date ? ' · ' + esc(opt.date) : ''} · UTM Zone ${F.zone}N</text>`
+        + `<text x="${M}" y="${ty + 14}" font-size="2.3" fill="#555">Kartengrundlage: © OpenStreetMap-Mitwirkende (ODbL) ${amtl ? ' · Gebäudehöhen: Geoportal Berlin (Umweltatlas Gebäudehöhen, LoD2)' : ''}${amtlNI ? ' · Gebäudehöhen: © LGLN, 3D-Gebäudemodell LoD2 (CC BY 4.0)' : ''}${kat ? ' · Bäume: Geoportal Berlin (Baumbestand)' : ''}${flq.has(Q_FL_BE) ? ' · Flurstücke: Geoportal Berlin (ALKIS Berlin)' : ''}${flq.has(Q_FL_NI) ? ' · Flurstücke: © LGLN (CC BY 4.0)' : ''}${flq.has(Q_EW_BE) ? ' · Einwohner: Amt für Statistik Berlin-Brandenburg, Umweltatlas Berlin' : ''}${flq.has(Q_EW_Z) ? ' · Einwohner: Zensus 2022, © Statistische Ämter des Bundes und der Länder (dl-de/by-2-0)' : ''}${flq.has(Q_HW) ? ' · Hochwasser: Hochwassergefahrenkarten der Länder, bereitgestellt von der Bundesanstalt für Gewässerkunde (BfG)' : ''}${flq.has(Q_LAERM) ? ' · Verkehrslärm: Lärmkartierung 2022, © Umweltbundesamt' : ''}${flq.has(Q_DGM_NI) ? ' · Gelände: DGM1 © LGLN (CC BY 4.0)' : ''} · erstellt mit QUAVA${opt.date ? ' · ' + esc(opt.date) : ''} · UTM Zone ${F.zone}N, nach geografisch Nord ausgerichtet (gedreht um ${Math.abs(F.rot * 180 / Math.PI).toFixed(2).replace('.', ',')}°)</text>`
         + `<text x="${M}" y="${ty + 17.5}" font-size="2.3" fill="#555">Hinweis: Fehlende OSM-Angaben sind als „unbekannt“ markiert; geschätzte Werte sind in den Attributen gekennzeichnet.</text>`
         + (bandNote ? `<text x="${M}" y="${ty + 21}" font-size="2.3" fill="#555">${esc(bandNote)}</text>` : '')
         + (gsNote ? `<text x="${M}" y="${ty + (bandNote ? 24.5 : 21)}" font-size="2.3" fill="#555">${esc(gsNote)}</text>` : '')
@@ -2544,19 +2653,43 @@ const UA = (function () {
     for (const [i, [R2, G2, B2]] of ACI) { const d = (r - R2) ** 2 + (g - G2) ** 2 + (b - B2) ** 2; if (d < bd) { bd = d; best = i; } }
     return best;
   }
+  /* DXF R12: Ebenennamen höchstens 31 Zeichen -> sinnvoll abkürzen, gleiche Namen durchnummerieren */
+  const DXF_ABBR = [[/strassen?/gi, 'Str'], [/Gebaeude/g, 'Geb'], [/gebaeude/g, 'geb'], [/Flaechen?/g, 'Fl'], [/flaechen?/g, 'fl'], [/Einrichtungen?/g, 'Einr'], [/Verwaltung/g, 'Verw'],
+    [/Haltestellen?/g, 'Halt'], [/Gewaesser/g, 'Gew'], [/Nutzung/g, 'Nutz'], [/nutzung/g, 'nutz'], [/Wohnen/g, 'Wohn'], [/Gewerbe/g, 'Gewerbe'], [/Industrie/g, 'Ind'],
+    [/Oeffentliche?/g, 'Oeff'], [/Gesundheit/g, 'Gesundh'], [/Soziales/g, 'Soz'], [/Bezirke?/g, 'Bez'], [/Ortsteile?/g, 'OT'], [/Einwohner/g, 'EW'], [/Hochwasser/g, 'HW'],
+    [/Hoehenlinien/g, 'Hoehenl'], [/Hangneigung/g, 'Neigung'], [/Verkehrslaerm/g, 'Laerm'], [/unbekannt/g, 'unbek'], [/Freiflaechen?/g, 'Freifl'], [/_(und|mit|oder|der|die|das)_/g, '_']];
+  function dxfShort(layerName, clsLabel) {
+    const ab = x => { let t = safeName(x); DXF_ABBR.forEach(([r, w]) => { t = t.replace(r, w); }); return t.replace(/_+/g, '_').replace(/^_|_$/g, ''); };
+    let a = ab(layerName), b = ab(clsLabel); if (b.toLowerCase() === a.toLowerCase()) b = '';
+    let n = b ? a + '_' + b : a;
+    if (n.length > 31) { a = a.slice(0, 12).replace(/_$/, ''); n = b ? a + '_' + b : a; }
+    return n.slice(0, 31).replace(/_$/, '');
+  }
+  function dxfNames(layers) { // Map 'layerId|klasse' -> eindeutiger Kurzname (max. 31 Zeichen)
+    const m = new Map(), used = new Set(['UNTERSUCHUNGSGEBIET']), long = [];
+    for (const ly of layers) for (const c of ly.classes) {
+      let n = dxfShort(ly.name, c.label), base = n, i = 2;
+      while (used.has(n.toUpperCase())) { const suf = '_' + i++; n = base.slice(0, 31 - suf.length).replace(/_$/, '') + suf; } // Namen ohne Groß/klein-Unterschied eindeutig
+      used.add(n.toUpperCase()); m.set(ly.id + '|' + c.key, n);
+      const full = safeName(ly.name + '_' + c.label); if (full !== n) long.push([n, ly.name + ' – ' + c.label]);
+    }
+    return { m, long };
+  }
   function buildDXF(layers, selection, opt) {
     layers = visLayers(layers);
     opt = Object.assign({ realCoords: false }, opt || {});
     const F = planFrame(selection); const ox = opt.realCoords ? 0 : F.minX, oy = opt.realCoords ? 0 : F.minY;
     const P = p => { const [x, y] = F.proj(p); return [(x - ox).toFixed(3), (y - oy).toFixed(3)]; };
     const L = []; const push = (...a) => { for (let i = 0; i < a.length; i += 2) L.push(String(a[i]), String(a[i + 1])); };
-    const layerDefs = [['Untersuchungsgebiet', 7]];
-    for (const ly of layers) for (const c of ly.classes) if (ly.features.some(f => f.properties._cls === c.key)) layerDefs.push([safeName(ly.name + '_' + c.label), nearestACI(c.color)]);
+    const layerDefs = [['Untersuchungsgebiet', 7]], DN = dxfNames(layers);
+    for (const ly of layers) for (const c of ly.classes) if (ly.features.some(f => f.properties._cls === c.key)) layerDefs.push([DN.m.get(ly.id + '|' + c.key), nearestACI(c.color)]);
     push(999, `QUAVA DXF - Einheit: Meter - UTM Zone ${F.zone}N (ETRS89)`);
     push(999, opt.realCoords ? 'Echte UTM-Koordinaten' : `Ursprung (0/0) = UTM E ${F.minX.toFixed(2)} N ${F.minY.toFixed(2)}`);
     push(999, 'Daten: (c) OpenStreetMap-Mitwirkende, ODbL');
     const dq = new Set(); layers.forEach(ly => { if (['flurst', 'bevoelk', 'hochwasser', 'laerm', 'hoehenlinien', 'hangneigung'].includes(ly.base)) ly.features.forEach(f => { if (f.properties.quelle) dq.add(f.properties.quelle); }); });
     dq.forEach(q => push(999, 'Quelle: ' + String(q).replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/[^\x20-\x7E]/g, '-')));
+    const asc = t => String(t).replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/–/g, '-').replace(/[^\x20-\x7E]/g, '');
+    const usedN = new Set(layerDefs.map(d => d[0])); DN.long.filter(([n]) => usedN.has(n)).forEach(([n, full]) => push(999, `Ebene ${n} = ${asc(full)}`)); // Kurzname = voller Name (nur zum Nachlesen)
     push(0, 'SECTION', 2, 'HEADER', 9, '$ACADVER', 1, 'AC1009', 0, 'ENDSEC');
     push(0, 'SECTION', 2, 'TABLES');
     push(0, 'TABLE', 2, 'LTYPE', 70, 1, 0, 'LTYPE', 2, 'CONTINUOUS', 70, 0, 3, 'Solid line', 72, 65, 73, 0, 40, '0.0', 0, 'ENDTAB');
@@ -2576,7 +2709,7 @@ const UA = (function () {
     let n = 0;
     for (const ly of layers) for (const f of ly.features) {
       const c = ly.classes.find(cc => cc.key === f.properties._cls); if (!c) continue;
-      const lname = safeName(ly.name + '_' + c.label), g = f.geometry;
+      const lname = DN.m.get(ly.id + '|' + c.key), g = f.geometry;
       if (g.type === 'Polygon') g.coordinates.forEach(r => poly(r, lname, true));
       else if (g.type === 'MultiPolygon') g.coordinates.forEach(p => p.forEach(r => poly(r, lname, true)));
       else if (g.type === 'LineString') poly(g.coordinates, lname, false, ly.bands && f.properties._bw);
@@ -3617,7 +3750,7 @@ if (typeof module !== 'undefined') module.exports = UA;
           ${L.classes.map(c => `<div class="cls ${c.visible === false ? 'off' : ''}" data-k="${esc(c.key)}">
               <span class="handle" draggable="true" data-drag="cls" title="Ziehen zum Verschieben">⋮⋮</span>
               <button class="eye ${c.visible === false ? 'off' : ''}" data-act="cvis" title="Untergruppe ein/aus">${c.visible === false ? '○' : '◉'}</button>
-              <input type="color" value="${c.color}" data-act="col" title="Farbe">
+              <button class="swatch" data-act="colpick" style="background:${c.color}" title="Farbe ändern"></button>
               <input class="lbl" value="${esc(c.label)}" data-act="lbl" title="Klicken zum Umbenennen">
               <em>${fmt(counts[c.key] || 0)}</em><button class="trash" data-act="cdel" title="Untergruppe löschen">${TRASH}</button>
             </div>`).join('')}
@@ -3792,14 +3925,16 @@ if (typeof module !== 'undefined') module.exports = UA;
     if (el.dataset.act === 'sunlive') { const first = (S.sun || L.sun).live == null; S.sun = { date: L.sun.date, times: L.sun.times.slice(), live: +el.value / 60 }; scheduleSun({ live: true, light: !first }); return; }
     if (el.dataset.act === 'op' && L.base === 'schatten') { L.opacity = +el.value; el.nextElementSibling.textContent = Math.round(L.opacity * 100) + ' %'; const r = `ua-${L.id}-raster`, o = `ua-${L.id}-outline`; if (map.getLayer(r)) map.setPaintProperty(r, 'raster-opacity', L.opacity); if (map.getLayer(o)) map.setPaintProperty(o, 'line-opacity', Math.min(1, L.opacity + 0.15)); return; }
     if (el.dataset.act === 'op') { L.opacity = +el.value; el.nextElementSibling.textContent = Math.round(L.opacity * 100) + ' %'; const [f, , o] = styleIds(L.id); if (map.getLayer(f)) map.setPaintProperty(f, 'fill-opacity', L.solidOutline ? 0 : L.opacity); if (map.getLayer(o) && !L.outlineOnly) map.setPaintProperty(o, 'line-opacity', Math.min(1, L.opacity + 0.15)); }
-    if (el.dataset.act === 'col') {
-      UA.setClassStyle(L, k, { color: el.value }); const col = matchExpr(L, 'color', '#999'); const [f, x, o, l, c] = styleIds(L.id);
+    if (el.dataset.act === 'col') applyClassColor(L, k, el.value);
+  });
+  function applyClassColor(L, k, hex) {
+    { UA.setClassStyle(L, k, { color: hex }); const col = matchExpr(L, 'color', '#999'); const [f, x, o, l, c] = styleIds(L.id);
       if (map.getLayer(f)) map.setPaintProperty(f, 'fill-color', col); if (map.getLayer(x)) map.setPaintProperty(x, 'fill-extrusion-color', col);
       [o, l].forEach(id => map.getLayer(id) && map.setPaintProperty(id, 'line-color', col)); if (map.getLayer(c)) map.setPaintProperty(c, 'circle-color', col);
       if (L.base === 'schatten') redrawShadow(L);
       renderLegend();
     }
-  });
+  }
   $('#layerList').addEventListener('change', e => {
     const el = e.target, L = layerOf(el); if (!L) return; const k = el.closest('.cls') && el.closest('.cls').dataset.k;
     if (el.dataset.act === 'lbl') { UA.setClassStyle(L, k, { label: el.value.trim() || k }); renderLegend(); }
@@ -4003,7 +4138,7 @@ if (typeof module !== 'undefined') module.exports = UA;
     const txt = i < H.pos ? 'Rückgängig: ' + H.list[H.pos].label : 'Wiederholt: ' + e.label;
     restoreState(e.snap); H.pos = i; renderHistUI(); hint((txt.startsWith('Rück') ? '↶ ' : '↷ ') + txt, 1000);
   }
-  const undoStep = () => goStep(H.pos - 1), redoStep = () => goStep(H.pos + 1);
+  const undoStep = () => { if (CP.el) closeColor(); goStep(H.pos - 1); }, redoStep = () => { if (CP.el) closeColor(); goStep(H.pos + 1); }; // offenes Farbfenster erst abschließen
   $('#btnUndo').onclick = undoStep; $('#btnRedo').onclick = redoStep;
   $('#log').addEventListener('click', e => { const r = e.target.closest('.hrow'); if (r && r._h) goStep(H.list.indexOf(r._h)); });
   document.addEventListener('keydown', e => { // Strg+Z / Strg+Y / Strg+Umschalt+Z
@@ -4066,7 +4201,7 @@ if (typeof module !== 'undefined') module.exports = UA;
     const fname = `${base()}_${UA.safeName(o.title)}`;
     try {
       if (fmtName === 'svg' || fmtName === 'pdf') {
-        const r = UA.buildSVG(layers, S.selection, { scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, subtitle: S.selection.properties.name + ' · ' + $('#projName').value, date: today() });
+        const r = UA.buildSVG(layers, S.selection, { scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, subtitle: S.selection.properties.name + ' · ' + $('#projName').value, date: today(), ops: { intersect, union: window.turf ? fc => turf.union(fc) : null } });
         if (fmtName === 'svg') { download(fname + '.svg', new Blob([r.svg], { type: 'image/svg+xml' })); return; }
         const w = window.open('', '_blank'); if (!w) { alert('Bitte Pop-ups für diese Datei erlauben, damit der Druckdialog öffnen kann.'); return; }
         w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(fname)}</title><style>@page{size:${r.widthMM.toFixed(1)}mm ${r.heightMM.toFixed(1)}mm;margin:0}html,body{margin:0}svg{display:block;width:${r.widthMM.toFixed(1)}mm;height:${r.heightMM.toFixed(1)}mm}</style></head><body>${r.svg.replace(/^<\?xml[^>]*>/, '')}<script>setTimeout(function(){print()},500)<\/script></body></html>`);
@@ -4087,6 +4222,8 @@ if (typeof module !== 'undefined') module.exports = UA;
       if (fmtName === 'png') map.getCanvas().toBlob(b => download(fname + '.png', b), 'image/png');
     } catch (e) { console.error(e); alert('Export fehlgeschlagen: ' + e.message); }
   }
+  const QUAVA_JSX = "// QUAVA_Ebenen.jsx – Illustrator-Skript\n// Macht aus den Gruppen einer geöffneten QUAVA-SVG echte Ebenen:\n// Baustein (z. B. Gebaeude) = Ebene, Untergruppe (z. B. Gebaeude Wohnen) = Unterebene, Objekte einzeln darin.\n// Start: Datei > Skripten > Anderes Skript ... > diese Datei wählen.\n(function () {\n  if (!app.documents.length) { alert('Bitte zuerst die QUAVA-SVG in Illustrator öffnen.'); return; }\n  var doc = app.activeDocument, n = 0;\n  function isGrp(it) { return it.typename === 'GroupItem' && !it.clipped && it.name !== ''; }\n  function convert(grp, parentLayers) {\n    var lay = parentLayers.add(); lay.name = grp.name; n++;\n    var kids = [], i; for (i = 0; i < grp.pageItems.length; i++) kids.push(grp.pageItems[i]);\n    for (i = kids.length - 1; i >= 0; i--) if (isGrp(kids[i])) convert(kids[i], lay.layers); // unterste zuerst, damit die Reihenfolge bleibt\n    for (i = 0; i < kids.length; i++) if (!isGrp(kids[i])) kids[i].move(lay, ElementPlacement.PLACEATEND);\n    try { grp.remove(); } catch (e) { /* leere Gruppe schon entfernt */ }\n  }\n  var start = [], i, j; for (i = 0; i < doc.layers.length; i++) start.push(doc.layers[i]);\n  for (i = 0; i < start.length; i++) {\n    var L = start[i], tops = []; for (j = 0; j < L.pageItems.length; j++) tops.push(L.pageItems[j]);\n    for (j = tops.length - 1; j >= 0; j--) if (isGrp(tops[j])) convert(tops[j], doc.layers);\n    if (L.pageItems.length === 0 && L.layers.length === 0) L.remove();\n  }\n  alert('QUAVA: ' + n + ' Ebenen und Unterebenen angelegt.');\n})();\n";
+  $('#exJsx').onclick = e => { e.preventDefault(); download('QUAVA_Ebenen.jsx', new Blob(['\ufeff' + QUAVA_JSX], { type: 'text/plain;charset=utf-8' })); };
   const dlg = $('#dlg');
   $('#btnExport').onclick = () => {
     if (!S.layers.length) { log({ title: 'Export', status: 'warn', body: 'Lade zuerst Daten in einem Gebiet.' }); return; }
@@ -4114,7 +4251,7 @@ if (typeof module !== 'undefined') module.exports = UA;
     try {
       const p = JSON.parse(await file.text()); if (!['QUAVA', 'URBAN' + ' ANALYST'].includes(p.app) || p.version !== 2) throw new Error('Keine passende QUAVA-Projektdatei');
       S.layers.slice().forEach(L => removeLayer(L.id, true));
-      $('#projName').value = p.name || 'Projekt'; S.selection = p.selection; S.chosen = new Set(p.chosen || []); S.cache = { key: null, data: {} };
+      $('#projName').value = p.name || 'Projekt'; renderTabs(); S.selection = p.selection; S.chosen = new Set(p.chosen || []); S.cache = { key: null, data: {} };
       if (p.views) { S.views = p.views; store.set('ua_views', S.views); renderViews(); }
       S.layers = (p.layers || []).map(L => UA.applySplit(L, L.split, {}));
       drawSelection(); syncLayers(); computeStats(); updateAreaInfo(); renderModules(); renderAll(); fitSel();
@@ -4129,6 +4266,249 @@ if (typeof module !== 'undefined') module.exports = UA;
     if (S.basemap === 'dark' || S.basemap === 'light') setBasemap(S.theme); else setBasemap(S.basemap);
   };
   $('#basemap').onchange = e => setBasemap(e.target.value);
+
+  /* ---------- Farbfenster (wie in Illustrator): öffnet links neben der Layer-Leiste ----------
+     Farbsprachen: Graustufen, RGB, HSB, CMYK, Websicheres RGB. Hexcode immer sichtbar.
+     CMYK ist eine einfache Bildschirm-Umrechnung ohne Druckprofil (Export bleibt RGB). */
+  const CP = { mode: store.get('ua_colmode', 'rgb'), el: null, L: null, k: null, start: null, rgb: [0, 0, 0], hsv: [0, 0, 0], raf: 0 };
+  const CP_MODES = [['gray', 'Graustufen'], ['rgb', 'RGB'], ['hsb', 'HSB'], ['cmyk', 'CMYK'], ['web', 'Websicheres RGB']];
+  const cpClamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const hex2rgb = h => { h = String(h).replace('#', '').trim(); if (/^[0-9a-f]{3}$/i.test(h)) h = h.split('').map(c => c + c).join(''); if (!/^[0-9a-f]{6}$/i.test(h)) return null; return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+  const rgb2hex = c => '#' + c.map(v => Math.round(cpClamp(v, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const rgb2hsv = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; let h = 0;
+    if (d) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [(h * 60 + 360) % 360, mx ? d / mx * 100 : 0, mx * 100]; };
+  const hsv2rgb = ([h, s, v]) => { s /= 100; v /= 100; const f = n => { const k = (n + h / 60) % 6; return 255 * (v - v * s * Math.max(0, Math.min(k, 4 - k, 1))); }; return [f(5), f(3), f(1)]; };
+  const rgb2cmyk = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const k = 1 - Math.max(r, g, b); if (k >= 1) return [0, 0, 0, 100]; return [(1 - r - k) / (1 - k) * 100, (1 - g - k) / (1 - k) * 100, (1 - b - k) / (1 - k) * 100, k * 100]; };
+  const cmyk2rgb = ([c, m, y, k]) => [c, m, y].map(v => 255 * (1 - v / 100) * (1 - k / 100));
+  const webSnap = c => c.map(v => Math.round(cpClamp(v, 0, 255) / 51) * 51);
+  const grayK = c => 100 - (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 2.55;
+  // Kanäle je Farbsprache: [Name, max, Einheit, Wert holen, Farbe aus Wert]
+  function cpChans(mode) {
+    const R = (i, nm) => [nm, 255, '', () => CP.rgb[i], v => { const c = CP.rgb.slice(); c[i] = v; return c; }];
+    if (mode === 'rgb' || mode === 'web') return [R(0, 'R'), R(1, 'G'), R(2, 'B')];
+    if (mode === 'hsb') return [['H', 360, '°', 360], ['S', 100, '%', 100], ['B', 100, '%', 100]].map(([nm, mx, u], i) => [nm, mx, u, () => CP.hsv[i], v => { const h = CP.hsv.slice(); h[i] = v; return { hsv: h }; }]);
+    if (mode === 'cmyk') return ['C', 'M', 'Y', 'K'].map((nm, i) => [nm, 100, '%', () => rgb2cmyk(CP.rgb)[i], v => { const q = rgb2cmyk(CP.rgb); q[i] = v; return cmyk2rgb(q); }]);
+    return [['K', 100, '%', () => grayK(CP.rgb), v => { const g = 255 * (1 - v / 100); return [g, g, g]; }]];
+  }
+  function cpSet(x, from) { // neue Farbe übernehmen (x = [r,g,b] oder {hsv})
+    if (x.hsv) { CP.hsv = x.hsv.map((v, i) => cpClamp(v, 0, [360, 100, 100][i])); CP.rgb = hsv2rgb(CP.hsv); }
+    else { CP.rgb = x.map(v => cpClamp(v, 0, 255)); const h = rgb2hsv(CP.rgb); if (h[1] < 0.01 || h[2] < 0.01) h[0] = CP.hsv[0]; if (h[2] < 0.01) h[1] = CP.hsv[1]; CP.hsv = h; }
+    if (CP.mode === 'web') CP.rgb = webSnap(CP.rgb);
+    cpPaint(from); cancelAnimationFrame(CP.raf); CP.raf = requestAnimationFrame(() => { if (CP.L) applyClassColor(CP.L, CP.k, rgb2hex(CP.rgb)); cpSwatch(); });
+  }
+  const cpSwatch = () => { const b = document.querySelector(`.layer[data-id="${CSS.escape(CP.L.id)}"] .cls[data-k="${CSS.escape(CP.k)}"] .swatch`); if (b) { b.style.background = rgb2hex(CP.rgb); b.classList.add('on'); } };
+  function cpPaint(from) { // alle Anzeigen auf den aktuellen Stand bringen
+    const el = CP.el; if (!el) return; const hex = rgb2hex(CP.rgb);
+    el.querySelector('.cp-big').style.background = hex;
+    if (from !== 'hex') el.querySelector('.cp-hex input').value = hex.slice(1).toUpperCase();
+    cpChans(CP.mode).forEach(([nm, mx, u, get, put], i) => {
+      const row = el.querySelectorAll('.cp-sl')[i], v = get(), stops = [];
+      for (let t = 0; t <= 6; t++) { const c = put(mx * t / 6); stops.push(rgb2hex(c.hsv ? hsv2rgb(c.hsv) : c)); }
+      row.querySelector('.cp-tr').style.background = `linear-gradient(to right,${stops.join(',')})`;
+      row.querySelector('.cp-th').style.left = (v / mx * 100) + '%'; row.querySelector('.cp-th').style.background = hex;
+      if (from !== 'n' + i) row.querySelector('.cp-n').value = Math.round(v);
+    });
+  }
+  function cpBuild() {
+    const el = CP.el, ch = cpChans(CP.mode), M = CP_MODES.find(m => m[0] === CP.mode);
+    const gray = CP.mode === 'gray';
+    el.innerHTML = `<div class="cp-h"><div class="cp-big"></div><div class="cp-t"><b>${esc(clsName(CP.L, CP.k))}</b><span${CP.mode === 'cmyk' ? ' title="Einfache Bildschirm-Umrechnung ohne Druckprofil – Illustrator kann leicht andere Werte zeigen. Der Export bleibt RGB."' : ''}>${esc(M[1])}${CP.mode === 'cmyk' ? ' (ungefähr)' : ''}</span></div>
+      ${window.EyeDropper ? '<button class="cp-ib" data-cp="drop" title="Pipette: Farbe vom Bildschirm aufnehmen">✒</button>' : ''}<button class="cp-ib" data-cp="menu" title="Farbsprache wählen">☰</button></div>
+      ${ch.map(([nm, mx, u], i) => `<div class="cp-sl" data-i="${i}"><label>${nm}</label><div class="cp-tr"><div class="cp-th"></div></div><input class="cp-n" type="number" min="0" max="${mx}" step="1" data-i="${i}"><span class="cp-u">${u}</span></div>`).join('')}
+      <div class="cp-r2"><button class="cp-q" data-q="000000" style="background:#000" title="Schwarz"></button><button class="cp-q" data-q="ffffff" style="background:#fff" title="Weiß"></button>
+        <div class="cp-rec" title="Zuletzt verwendete Farben">${cpRecent().map(h => `<button class="cp-q" data-q="${h.slice(1)}" style="background:${h}" title="Zuletzt verwendet: ${h.toUpperCase()}"></button>`).join('')}</div>
+        <label class="cp-hex">#<input maxlength="7" spellcheck="false" title="Hexcode, z. B. E2B33C"></label></div>
+      <div class="cp-sp" style="background:${gray ? 'linear-gradient(to right,#fff,#000)' : 'linear-gradient(to bottom,#fff 0%,rgba(255,255,255,0) 50%,rgba(0,0,0,0) 50%,#000 100%),linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)'}" title="Klicken oder ziehen, um eine Farbe zu wählen"></div>${cpPalHTML()}`;
+    cpPaint();
+  }
+
+  /* Zuletzt verwendete Farben (bis 8, neueste zuerst, für alle Tabs) */
+  const cpRecent = () => { const r = store.get('ua_colrecent', []); return Array.isArray(r) ? r.filter(h => hex2rgb(h)).slice(0, 8) : []; };
+  const cpAddRecent = h => { h = h.toLowerCase(); store.set('ua_colrecent', [h].concat(cpRecent().filter(x => x !== h)).slice(0, 8)); };
+  /* Paletten-Vorschläge passend zum Layer: Stufen -> Verläufe hell→dunkel, Kategorien -> gut unterscheidbare Farben, Monochrom -> Einzelfarben.
+     Untergruppen ohne Daten („unbekannt“, „keine Angabe“ …) behalten immer ihre graue Farbe. */
+  const PAL_SEQ = [
+    ['Sand → Rotbraun', ['#F3DDB0', '#E3A562', '#B8562F', '#6E2B2B']], ['Gold → Braun', ['#F6E7B0', '#E2B33C', '#B07A22', '#5E3B12']],
+    ['Violett', ['#E6DDF5', '#BBA6E6', '#8B6BC0', '#5B3F8C', '#2E1F4F']], ['Blau', ['#DCEEFF', '#99CCFF', '#3D66FF', '#0B3D91']],
+    ['Grün', ['#E8F1D4', '#BFD98A', '#6FA84F', '#2F6B33']], ['Grün → Rot', ['#BFD98A', '#F2E08A', '#F2A65A', '#D9573B', '#8E2F2F']],
+    ['Grautöne', ['#E6E4EA', '#B3AFBB', '#7E7A88', '#4A4752', '#1E1C22']],
+    // ColorBrewer (Cynthia Brewer, colorbrewer2.org) – Standard der thematischen Kartografie
+    ['Gelb → Rot', ['#FFFFB2', '#FECC5C', '#FD8D3C', '#F03B20', '#BD0026']], ['Gelb → Blau', ['#FFFFCC', '#A1DAB4', '#41B6C4', '#2C7FB8', '#253494']],
+    ['Orange → Rot', ['#FEF0D9', '#FDCC8A', '#FC8D59', '#E34A33', '#B30000']], ['Rosa → Purpur', ['#FEEBE2', '#FBB4B9', '#F768A1', '#C51B8A', '#7A0177']],
+    ['Gelb → Grün', ['#FFFFCC', '#C2E699', '#78C679', '#31A354', '#006837']], ['Blau → Lila', ['#EDF8FB', '#B3CDE3', '#8C96C6', '#8856A7', '#810F7C']],
+    ['Petrol', ['#F6EFF7', '#BDC9E1', '#67A9CF', '#1C9099', '#016C59']],
+    // eigene Stadtplan-Paletten
+    ['Ziegel', ['#F6E2D3', '#E8A87C', '#C8653B', '#8E3B1F', '#4A1E10']], ['Beton', ['#EEEBE5', '#C9C3B8', '#9C958A', '#6B655D', '#3A3631']],
+    ['Hitze', ['#FFF3B0', '#FFC857', '#F18F01', '#C73E1D', '#6A040F']], ['QUAVA-Lila', ['#EDE6FF', '#C4B5FD', '#8B5CF6', '#5B21B6', '#2E1065']]];
+  const PAL_CAT = [
+    ['Kräftig', ['#E2B33C', '#D9578C', '#3D8FD9', '#4E9F4A', '#8B5CF6', '#E07B39', '#2BB3A8', '#B23A2E', '#7A6A55', '#C9C3D6']],
+    ['Pastell', ['#F4D6A0', '#F2B8C6', '#BFD9EE', '#C9E4B8', '#D9C8EE', '#F6E3B4', '#B8E0D9', '#EEC9B8', '#D4D0DA', '#E8D1F0']],
+    ['Erdtöne', ['#C9A36B', '#8B6A55', '#A3B07A', '#6E7F5D', '#D9B48F', '#7F5F4A', '#B8A890', '#5E6B4F', '#E3CFA8', '#9C8270']],
+    ['Graustufen', ['#1E1C22', '#E6E4EA', '#7E7A88', '#B3AFBB', '#4A4752', '#CFCCD5', '#64606D', '#99959F', '#34313A', '#F4F3F6']],
+    // ColorBrewer
+    ['Set 2 (sanft)', ['#66C2A5', '#FC8D62', '#8DA0CB', '#E78AC3', '#A6D854', '#FFD92F', '#E5C494', '#B3B3B3']],
+    ['Set 3 (hell)', ['#8DD3C7', '#FFFFB3', '#BEBADA', '#FB8072', '#80B1D3', '#FDB462', '#B3DE69', '#FCCDE5', '#D9D9D9', '#BC80BD', '#CCEBC5', '#FFED6F']],
+    ['Dark 2 (dunkel)', ['#1B9E77', '#D95F02', '#7570B3', '#E7298A', '#66A61E', '#E6AB02', '#A6761D', '#666666']],
+    // eigene Stadtplan-Paletten
+    ['Skandinavisch', ['#8FA9A3', '#D4A373', '#A3B18A', '#C9ADA7', '#6D7F8C', '#E9D8A6', '#9A8C98', '#B5C99A', '#BFA6A0', '#7A9E9F']],
+    ['Neon (dunkle Karte)', ['#FF3CAC', '#00E5FF', '#B6FF00', '#FFD600', '#8B5CF6', '#FF6D00', '#00FFA3', '#FF1744', '#2979FF', '#F5F5F5']]];
+  const PAL_MONO = { gebaeude: ['#E2B33C', '#9C7BD6', '#8D8999', '#C9C3D6', '#2A2833', '#FFFFFF'], strassen: ['#D8D3E3', '#FFFFFF', '#8D8999', '#2A2833', '#E2B33C'],
+    bahn: ['#E86FA0', '#D9578C', '#8D8999', '#2A2833'], wasser: ['#6BB7E8', '#99CCFF', '#3D8FD9', '#4A8FC9', '#BFD9EE'], gruen: ['#6FA84F', '#9DC47E', '#4E8F4A', '#BFD98A', '#2F6B33'],
+    baeume: ['#4E8F4A', '#6FA84F', '#2F6B33', '#9DC47E'], flurst: ['#A9A2B8', '#8D8999', '#2A2833', '#FFFFFF'] };
+  const PLAN_COLS = ['#E2B33C', '#D98CB3', '#8B6A55', '#6FA84F', '#6BB7E8', '#D8D3E3', '#9C7BD6', '#8D8999', '#2A2833', '#FFFFFF'];
+  const SEQ_SPLITS = new Set(['hoehe', 'geschosse', 'ew_dichte', 'ew_alter', 'laerm_pegel', 'neigung', 'hw_tiefe', 'hw_szenario', 'flurst_groesse', 'schatten', 'schatten_linien']);
+  const NODATA = /unbekannt|keine angabe|ohne .*angabe|nicht erfasst/i;
+  const lum = h => { const c = hex2rgb(h) || [0, 0, 0]; return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]; };
+  const mixHex = (a, b, t) => rgb2hex(hex2rgb(a).map((v, i) => v + (hex2rgb(b)[i] - v) * t));
+  const ramp = (stops, n) => n === 1 ? [stops[Math.floor(stops.length / 2)]] : Array.from({ length: n }, (_, i) => { const x = i / (n - 1) * (stops.length - 1), j = Math.min(stops.length - 2, Math.floor(x)); return mixHex(stops[j], stops[j + 1], x - j); });
+  function cpPals(L) { // -> { kind, list:[{name, cols:{key:hex}}] }
+    const data = L.classes.filter(c => !NODATA.test(c.label)), n = data.length;
+    if (n <= 1) { const c = data[0]; if (!c) return { kind: 'none', list: [] }; const mono = PAL_MONO[String(L.base).split('__')[0]] || [];
+      const one = cols => cols.map(h => ({ [c.key]: h }));
+      return { kind: 'mono', list: [{ name: 'Passend zum Baustein', single: true, cols: mono.length ? mono : [UA.BASES[L.base] ? UA.BASES[L.base].color : '#9C7BD6'] }, { name: 'Plan-Farben', single: true, cols: PLAN_COLS }] };
+    }
+    const P = UA.PRESETS[L.split] || {}, seq = SEQ_SPLITS.has(L.split), mk = arr => { const o = {}; data.forEach((c, i) => o[c.key] = arr[i]); return o; };
+    const list = [];
+    if (P.cls && UA.CL[P.cls]) { const d = {}; data.forEach(c => { const x = UA.CL[P.cls].find(y => y.key === c.key); if (x) d[c.key] = x.color; }); if (Object.keys(d).length) list.push({ name: seq ? 'Standard' : 'Standard (Plan)', cols: d }); }
+    if (seq) { const darkFirst = lum(data[0].color) < lum(data[n - 1].color); PAL_SEQ.forEach(([nm, st]) => { const r = ramp(st, n); list.push({ name: nm, cols: mk(darkFirst ? r.reverse() : r) }); }); }
+    else PAL_CAT.forEach(([nm, cl]) => list.push({ name: nm, cols: mk(nm === 'Graustufen' && n <= 6 ? ramp(['#1E1C22', '#E6E4EA'], n) : data.map((_, i) => cl[i % cl.length])) }));
+    return { kind: seq ? 'seq' : 'cat', list };
+  }
+  function cpPalHTML() {
+    const P = cpPals(CP.L); if (!P.list.length) return ''; CP.pals = P;
+    const sub = P.kind === 'seq' ? 'Stufen: hell → dunkel' : P.kind === 'cat' ? 'Kategorien: unterscheidbar' : 'Einzelfarben';
+    return `<div class="cp-pals"><div class="cp-ph"><b>Passende Paletten</b><span>${sub} · ${P.list.length}</span></div><div class="cp-plist">` + P.list.map((p, i) => p.single
+      ? `<div class="cp-pal"><span class="cp-pn" title="${esc(p.name)}">${esc(p.name)}</span><div class="cp-ps">${p.cols.map(h => `<button data-q="${h.slice(1)}" style="background:${h}" title="${h} für diese Untergruppe"></button>`).join('')}</div></div>`
+      : `<div class="cp-pal"><button class="cp-pn" data-pal="${i}" title="Ganzen Layer mit „${esc(p.name)}“ färben">${esc(p.name)}</button><div class="cp-ps">${CP.L.classes.filter(c => p.cols[c.key]).map(c => `<button data-q="${p.cols[c.key].slice(1)}" style="background:${p.cols[c.key]}" title="${esc(c.label)}: ${p.cols[c.key]} – Klick: nur für „${esc(clsName(CP.L, CP.k))}“"></button>`).join('')}</div><button class="cp-pa" data-pal="${i}" title="Alle Untergruppen des Layers so färben">alle</button></div>`).join('') + '</div></div>';
+  }
+  function cpApplyPal(i) {
+    const p = CP.pals && CP.pals.list[i], L = CP.L; if (!p || !L) return; cancelAnimationFrame(CP.raf);
+    Object.entries(p.cols).forEach(([k, h]) => UA.setClassStyle(L, k, { color: h }));
+    applyClassColor(L, CP.k, L.classes.find(c => c.key === CP.k).color); // Karte + Legende einmal neu
+    const cur = L.classes.find(c => c.key === CP.k).color; CP.start = cur; CP.rgb = hex2rgb(cur); CP.hsv = rgb2hsv(CP.rgb);
+    record(`${L.name}: Palette „${p.name}“`); renderLayers(); cpBuild(); cpSwatch();
+  }
+  function cpPlace(anchor) {
+    const el = CP.el, rr = $('#right').getBoundingClientRect(), ar = anchor.getBoundingClientRect(), h = el.offsetHeight;
+    el.style.left = Math.max(8, rr.left - el.offsetWidth - 10) + 'px';
+    el.style.top = cpClamp(ar.top - 20, 8, window.innerHeight - h - 8) + 'px';
+  }
+  function openColor(L, k, anchor) {
+    if (CP.el) closeColor(); const c = L.classes.find(x => x.key === k); if (!c) return;
+    CP.L = L; CP.k = k; CP.start = c.color; CP.rgb = hex2rgb(c.color) || [128, 128, 128]; CP.hsv = rgb2hsv(CP.rgb);
+    CP.el = document.createElement('div'); CP.el.className = 'cp'; document.body.appendChild(CP.el); cpBuild(); cpPlace(anchor); anchor.classList.add('on');
+    cpWire(CP.el);
+  }
+  function closeColor() {
+    if (!CP.el) return; cancelAnimationFrame(CP.raf);
+    const L = CP.L, k = CP.k, now = rgb2hex(CP.rgb); if (S.layers.includes(L) && now.toLowerCase() !== String(CP.start).toLowerCase()) { applyClassColor(L, k, now); cpAddRecent(now); record(`${L.name}: Farbe „${clsName(L, k)}“`); renderLayers(); }
+    document.querySelectorAll('.cls .swatch.on').forEach(b => b.classList.remove('on'));
+    CP.el.remove(); CP.el = CP.L = CP.k = null;
+  }
+  function cpWire(el) {
+    const drag = (node, fn) => node.addEventListener('pointerdown', e => { e.preventDefault(); node.setPointerCapture(e.pointerId); fn(e);
+      const mv = ev => fn(ev), up = () => { node.removeEventListener('pointermove', mv); node.removeEventListener('pointerup', up); }; node.addEventListener('pointermove', mv); node.addEventListener('pointerup', up); });
+    el.querySelectorAll('.cp-sl').forEach(row => { const i = +row.dataset.i, tr = row.querySelector('.cp-tr');
+      drag(tr, e => { const r = tr.getBoundingClientRect(), ch = cpChans(CP.mode)[i]; cpSet(ch[4](cpClamp((e.clientX - r.left) / r.width, 0, 1) * ch[1])); }); });
+    const sp = el.querySelector('.cp-sp');
+    drag(sp, e => { const r = sp.getBoundingClientRect(), x = cpClamp((e.clientX - r.left) / r.width, 0, 1), y = cpClamp((e.clientY - r.top) / r.height, 0, 1);
+      if (CP.mode === 'gray') { const g = 255 * (1 - x); cpSet([g, g, g]); return; }
+      const base = hsv2rgb([x * 360 % 360, 100, 100]); cpSet(y < .5 ? base.map(v => v + (255 - v) * (1 - 2 * y)) : base.map(v => v * (2 - 2 * y))); });
+    el.addEventListener('input', e => { const t = e.target;
+      if (t.classList.contains('cp-n')) { const i = +t.dataset.i, ch = cpChans(CP.mode)[i]; if (t.value === '') return; cpSet(ch[4](cpClamp(+t.value, 0, ch[1])), 'n' + i); }
+      else if (t.closest('.cp-hex')) { const c = hex2rgb(t.value); if (c) cpSet(c, 'hex'); } });
+    el.addEventListener('change', e => { if (e.target.closest('.cp-hex') || e.target.classList.contains('cp-n')) cpPaint(); });
+    el.addEventListener('click', async e => {
+      const pa = e.target.closest('[data-pal]'); if (pa) { cpApplyPal(+pa.dataset.pal); return; }
+      const q = e.target.closest('[data-q]'); if (q) { cpSet(hex2rgb(q.dataset.q)); return; }
+      const m = e.target.closest('[data-mode]'); if (m) { CP.mode = m.dataset.mode; store.set('ua_colmode', CP.mode); if (CP.mode === 'web') CP.rgb = webSnap(CP.rgb); cpBuild(); cpSet(CP.rgb); return; }
+      const b = e.target.closest('[data-cp]'); if (!b) { const mn = el.querySelector('.cp-menu'); if (mn) mn.remove(); return; }
+      if (b.dataset.cp === 'menu') { const old = el.querySelector('.cp-menu'); if (old) { old.remove(); return; }
+        const mn = document.createElement('div'); mn.className = 'cp-menu'; mn.innerHTML = CP_MODES.map(([id, nm]) => `<button data-mode="${id}" class="${id === CP.mode ? 'on' : ''}">${nm}</button>`).join(''); el.appendChild(mn); }
+      if (b.dataset.cp === 'drop') { try { const r = await new EyeDropper().open(); const c = hex2rgb(r.sRGBHex); if (c && CP.el) cpSet(c); } catch (err) { } }
+    });
+  }
+  document.addEventListener('pointerdown', e => { if (CP.el && !CP.el.contains(e.target) && !e.target.closest('.swatch')) closeColor(); }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && CP.el) { e.stopImmediatePropagation(); closeColor(); } }, true);
+  window.addEventListener('resize', () => closeColor());
+  $('#layerList').addEventListener('click', e => { const b = e.target.closest('[data-act="colpick"]'); if (!b) return; const row = b.closest('.layer'), L = row && S.layers.find(x => x.id === row.dataset.id), k = b.closest('.cls').dataset.k;
+    if (CP.el && CP.L === L && CP.k === k) { closeColor(); return; } openColor(L, k, b); });
+
+  /* ---------- Tabs: mehrere Projekte nebeneinander (jedes mit eigenem Gebiet, Layern, Verlauf, Namen, Kartenposition) ---------- */
+  const TABS = { list: [], cur: 0, max: 5 };
+  const tabSave = () => { const t = TABS.list[TABS.cur];
+    Object.assign(t, { name: $('#projName').value, layers: S.layers, selection: S.selection, areaMode: S.areaMode, cache: S.cache, sun: S.sun, stats: S.stats, open: S.open, chosen: S.chosen,
+      hList: H.list, hPos: H.pos, logEls: [...$('#log').childNodes], view: { center: map.getCenter().toArray(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch() } }); };
+  const tabOffMap = () => S.layers.forEach(L => { styleIds(L.id).forEach(s => map.getLayer(s) && map.removeLayer(s));
+    ['ua-src-', 'ua-cvs-'].forEach(p => map.getSource(p + L.id) && map.removeSource(p + L.id)); }); // nur von der Karte nehmen, Daten bleiben im Tab
+  function tabLoad(t) {
+    $('#projName').value = t.name; S.layers = t.layers; S.selection = t.selection; S.areaMode = t.areaMode; S.cache = t.cache; S.sun = t.sun; S.stats = t.stats; S.open = t.open; S.chosen = t.chosen;
+    H.list = t.hList; H.pos = t.hPos; $('#log').replaceChildren(...t.logEls); $('#log').scrollTop = 0;
+    S.selectedRef = null; highlight();
+    document.querySelectorAll('#areaMode button').forEach(x => x.classList.toggle('on', x.dataset.m === S.areaMode));
+    if (t.view) map.jumpTo(t.view);
+    drawSelection(); updateAreaInfo(); syncLayers();
+    S.layers.filter(L => L.base === 'schatten').forEach(L => { try { shadowFull(L); redrawShadow(L); } catch (e) { console.warn(e); } });
+    renderModules(); renderAll(); renderHistUI(); renderTabs();
+  }
+  function tabGo(i) {
+    if (i === TABS.cur || !TABS.list[i]) return;
+    if (S.busy) { hint('Bitte warten, bis das Laden fertig ist', 1500); return; }
+    if (draw.mode) setTool(null); closeTabAsk(); closeColor(); $('#results').hidden = true;
+    tabSave(); tabOffMap(); TABS.cur = i; tabLoad(TABS.list[i]);
+  }
+  function tabNew() {
+    if (TABS.list.length >= TABS.max) { hint(`Höchstens ${TABS.max} Tabs – schließe zuerst einen`, 1800); return; }
+    if (S.busy) { hint('Bitte warten, bis das Laden fertig ist', 1500); return; }
+    if (draw.mode) setTool(null); closeTabAsk(); closeColor();
+    tabSave(); tabOffMap();
+    let n = 2; const used = TABS.list.map(x => x.name); while (used.includes('Projekt ' + n)) n++;
+    const t = { name: 'Projekt ' + n, layers: [], selection: null, areaMode: 'sel', cache: { key: null, data: {} }, sun: undefined, stats: {}, open: {}, chosen: new Set(UA.STANDARD),
+      hList: [], hPos: -1, logEls: [], view: null }; // Kartenposition bleibt erst mal, wo sie ist
+    TABS.list.push(t); TABS.cur = TABS.list.length - 1; tabLoad(t);
+    log({ title: 'Neuer Tab', status: 'ok', body: 'Leeres Projekt: Gebiet wählen, Bausteine anklicken, „Auswahl laden“.' }); record('Start');
+  }
+  function tabClose(i) {
+    if (TABS.list.length < 2) return; closeTabAsk();
+    if (i === TABS.cur) { if (S.busy) { hint('Bitte warten, bis das Laden fertig ist', 1500); return; }
+      if (draw.mode) setTool(null); tabOffMap(); TABS.list.splice(i, 1); TABS.cur = Math.min(i, TABS.list.length - 1); tabLoad(TABS.list[TABS.cur]); }
+    else { TABS.list.splice(i, 1); if (i < TABS.cur) TABS.cur--; renderTabs(); }
+  }
+  const tabLayers = i => i === TABS.cur ? S.layers.length : TABS.list[i].layers.length;
+  function closeTabAsk() { const a = $('#tabAsk'); if (a) a.remove(); }
+  function askClose(i, btn) {
+    const n = tabLayers(i); if (!n) { tabClose(i); return; }
+    closeTabAsk(); const a = document.createElement('div'); a.id = 'tabAsk'; a.className = 'tab-ask';
+    const name = i === TABS.cur ? $('#projName').value : TABS.list[i].name;
+    a.innerHTML = `Tab <b>„${esc(name)}“</b> mit ${n} Layer${n > 1 ? 'n' : ''} schließen? Nicht gespeicherte Arbeit geht verloren.<div class="row"><button class="btn sm" data-a="no">Abbrechen</button><button class="btn sm primary" data-a="yes">Schließen</button></div>`;
+    const r = btn.closest('.tab').getBoundingClientRect(), w = $('#mapwrap').getBoundingClientRect();
+    a.style.left = Math.max(8, Math.min(r.left - w.left, w.width - 250)) + 'px'; a.style.top = (r.bottom - w.top + 6) + 'px';
+    a.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.a === 'yes') tabClose(i); else closeTabAsk(); };
+    $('#mapwrap').appendChild(a);
+  }
+  function renderTabs() {
+    const names = TABS.list.map((t, i) => i === TABS.cur ? ($('#projName').value || 'Projekt') : t.name), one = TABS.list.length < 2;
+    $('#tabbar').innerHTML = names.map((n, i) => `<div class="tab ${i === TABS.cur ? 'on' : ''}" data-i="${i}" title="${esc(n)}"><span class="tn">${esc(n)}</span>${one ? '' : `<button class="tx" data-x="${i}" title="Tab schließen">×</button>`}</div>`).join('')
+      + `<button class="tab-add" id="tabAdd" ${TABS.list.length >= TABS.max ? 'disabled' : ''} title="${TABS.list.length >= TABS.max ? `Höchstens ${TABS.max} Tabs` : 'Neuen Tab öffnen (leeres Projekt)'}">+</button>`;
+    if (typeof tabFit === 'function') tabFit();
+  }
+  $('#tabbar').addEventListener('click', e => {
+    const x = e.target.closest('.tx'); if (x) { e.stopPropagation(); askClose(+x.dataset.x, x); return; }
+    if (e.target.closest('#tabAdd')) { tabNew(); return; }
+    const t = e.target.closest('.tab'); if (t) tabGo(+t.dataset.i);
+  });
+  function tabFit() { // Suchfeld wird schmaler, wenn Tabs dazukommen; reicht der Platz nicht, kommen die Tabs in eine zweite Zeile
+    const tr = $('#mapwrap .float.tr'), tl = $('#mapwrap .float.tl'), bar = $('#tabbar'), n = TABS.list.length;
+    const w = $('#mapwrap').clientWidth, trw = tr ? tr.offsetWidth : 270, avail = w - trw - 24 - 18;
+    const want = n * 156 + 44, need = n * 96 + 44;
+    if (avail - 240 >= need) { const sw = Math.min(380, Math.max(240, avail - want)); tl.style.width = sw + 'px';
+      Object.assign(bar.style, { top: '12px', left: (12 + sw + 10) + 'px', right: (trw + 20) + 'px' }); $('#mapwrap').classList.remove('tabs2'); }
+    else { tl.style.width = Math.max(200, Math.min(380, w - trw - 36)) + 'px'; Object.assign(bar.style, { top: '58px', left: '12px', right: '12px' }); $('#mapwrap').classList.add('tabs2'); }
+  }
+  new ResizeObserver(tabFit).observe($('#mapwrap')); tabFit();
+  $('#projName').addEventListener('input', renderTabs);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTabAsk(); });
+  TABS.list.push({ name: $('#projName').value }); renderTabs();
 
   /* ---------- Start ---------- */
   $('#basemap').value = S.basemap;

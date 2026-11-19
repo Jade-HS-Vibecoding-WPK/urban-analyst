@@ -326,24 +326,54 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
 
 - [x] **29. GitHub aktualisiert** (Mi 18.11., 20:05): Stand 3.51 (QUAVA) mit README, CLAUDE.md, PLAN.md und allen neuen Sicherungen hochgeladen; GitHub Pages liefert 3.51 (Intro, Logo, Name geprüft).
 
-- [ ] **30. Schneller laden + Niedersachsen-Cache** (Version 3.52, nur im Branch `schneller-laden`, **Test steht aus**; `main` bleibt unverändert der Stand 3.51 (QUAVA), darum keine Sicherung in `versionen/`).
-  Grund (gemessen 18.11.): Fast die ganze Ladezeit war Warten beim Overpass-Server, 30–55 s **je Abfrage**, oft „Server voll“. Deshalb halfen 3.22/3.38 nicht. Der Branch ändert:
-  - **Niedersachsen-Cache** (neu): fertige OSM-Daten für 10 Städte (8 Großstädte + Wilhelmshaven, Delmenhorst, je 3 km Rand) und seit 19.11. auch für das Umland von Oldenburg (alle Gemeinden über 5.000 Einwohner bis ca. 90 km, z. B. Rastede, Bad Zwischenahn, Brake, Varel, Cloppenburg, Leer, Emden), wöchentlich neu, Repo `niedersachsen-cache` (GitHub Pages).
-    Die App fragt dort zuerst. Gebiet nicht drin, Cache nicht erreichbar oder „Frisch vom Server laden“ → wie bisher Overpass. Je Baustein steht „Quelle: Niedersachsen-Cache (OpenStreetMap, Stand …)“.
-    Ergebnis gleich wie Overpass, nur das technische OSM-Merkmal `created_by` (Name des Editors) fehlt. Daten bis ca. 8 Tage alt.
-  - **Zwischenspeicher im Browser:** gleiches Gebiet lädt beim 2. Mal in unter 1 s (bis 7 Tage, mit Hinweis und Knopf „↻ Frisch vom Server laden“).
-  - **OSM-Sammelabfrage:** alle OSM-Bausteine in 1 Overpass-Abfrage statt 7. **Serverwahl:** bei „Server voll“ kurz warten und neu fragen statt zu Ersatzservern, die nicht antworten.
-  - **Amtliche Daten:** LGLN-Höhen 4 Kacheln gleichzeitig und Rechnen im Hintergrund (Oberfläche friert nicht ein), Geländemodell weniger Anfragen, Flurstücke weniger Daten, Zeitlimits statt endlos warten.
-  - **Korrekturen:** Traufhöhe Niedersachsen jetzt über Boden statt über Meeresspiegel (war in Wilhelmshaven ca. 1,5 m, in Hannover ca. 55 m zu hoch → zu viele Geschosse geschätzt). Zensus: fehlende Gitterzellen werden mit ⚠ angezeigt.
-  Gemessen (1 km², Grundauswahl): Wilhelmshaven 1,2–2,0 s mit Cache (3.39: 5–13 min, nur Sammelabfrage: 44–55 s), Hannover-Mitte 1,4–2,4 s, Berlin weiter über Overpass (44–49 s).
-  **Testen:** 1. `index.html` doppelklicken, „Wilhelmshaven“ suchen, Rechteck (ca. 1 km²) zeichnen, Grundauswahl → „Auswahl laden“ → nach wenigen Sekunden fertig, bei jedem Baustein „Quelle: Niedersachsen-Cache (OpenStreetMap, Stand …)“.
-  2. Noch einmal „Auswahl laden“ → unter 1 s, „aus dem Zwischenspeicher“. 3. „↻ Frisch vom Server laden“ → lädt über Overpass (ca. 1 Minute, Cache-Hinweis weg).
-  4. „Hannover“ suchen, Rechteck in der Mitte, „Gebäude“ laden, beim Layer „Aufteilen nach“ → „Geschosszahl“: Farben gemischt (1–2, 3–4, 5–6, 7+); Gebäude anklicken → Tab „Element“: Traufhöhe ca. 5–25 m, nicht 60–80 m.
-  5. Berlin-Mitte laden → wie bisher über Overpass, ohne Cache-Hinweis.
+- [x] **30. Tabs für mehrere Projekte** (Version 3.52, ok): Leiste rechts neben dem Suchfeld wie im Browser; „+“ öffnet einen leeren Tab. Jeder Tab hat eigenes Gebiet, eigene Layer, eigenen Verlauf (Strg+Z nur im Tab), eigenen Namen (= Projektname) und eigene Kartenposition. „ד schließt; Tab mit Layern fragt erst nach. Höchstens 5 Tabs; Wechsel gesperrt, solange geladen wird. Bei wenig Platz wird das Suchfeld schmaler bzw. die Tabs kommen in eine zweite Zeile. Tabs werden nicht automatisch gespeichert (Projektdatei ⤓ pro Tab). Sicherung vorher: `…v3.51_vor-tabs_2026-11-18.html`
 
-### Stand Mi 18.11., 20:05 (Pause) – hier weitermachen
+- [x] **31. Eigenes Farbfenster wie Illustrator** (Version 3.53, ok): Klick aufs Farbkästchen einer Untergruppe öffnet ein Fenster links neben der Layer-Leiste: große Farbvorschau, Regler mit Verlauf + Zahlenfeld, #-Hexcode, Schwarz/Weiß, Spektrum-Feld (klicken/ziehen), Pipette (Edge/Chrome), Menü ☰ mit Graustufen · RGB · HSB · CMYK · Websicheres RGB (Wahl wird gemerkt, Start: RGB). Karte ändert sich sofort; beim Schließen (Klick daneben/Esc) **ein** Verlaufsschritt. CMYK = einfache Umrechnung ohne Druckprofil (Export bleibt RGB). Sicherung vorher: `…v3.52_vor-farbfenster_2026-11-18.html`
+
+- [x] **32. Farbfenster: zuletzt verwendet + passende Paletten** (Version 3.54, ok): Neben Schwarz/Weiß bis zu 8 zuletzt vergebene Farben (gemerkt, für alle Tabs). Unter dem Spektrum „Passende Paletten“ je nach Aufteilung: Stufen (Höhe, Geschosse, Flächengröße, Dichte, Lärm, Neigung, Wassertiefe …) → Verläufe hell→dunkel (Standard, Sand→Rotbraun, Gold→Braun, Violett, Blau, Grün, Grün→Rot, Grautöne; Richtung wie die Standardfarben); Kategorien → Standard (Plan), Kräftig, Pastell, Erdtöne, Graustufen; Monochrom → Einzelfarben passend zum Baustein + Plan-Farben. Name oder „alle“ = ganzer Layer (ein Verlaufsschritt „Palette …“), einzelnes Kästchen = nur diese Untergruppe. „unbekannt/keine Angabe“ bleibt grau. Sicherung vorher: `…v3.53_vor-paletten_2026-11-19.html`
+
+- [x] **33. Mehr Farbpaletten** (Version 3.55, ok): Stufen jetzt 19 (dazu ColorBrewer: Gelb→Rot, Gelb→Blau, Orange→Rot, Rosa→Purpur, Gelb→Grün, Blau→Lila, Petrol; eigene: Ziegel, Beton, Hitze, QUAVA-Lila). Kategorien jetzt 10 (dazu ColorBrewer Set 2, Set 3, Dark 2; eigene: Skandinavisch, Neon für dunkle Karte). Liste scrollt (ca. 8 Zeilen sichtbar). Quelle ColorBrewer: Cynthia Brewer, colorbrewer2.org. PlanZV- und Farbschwäche-Paletten bewusst nicht gewählt. Sicherung vorher: `…v3.54_vor-mehr-paletten_2026-11-19.html`
+
+- [x] **34. DXF-Ebenennamen max. 31 Zeichen** (Version 3.56, ok – Öffnen in Archicad/Revit/Allplan folgt im Export-Test): Namen werden sinnvoll abgekürzt (Straße→Str, Gebäude→Geb, Fläche→Fl, Einrichtung→Einr …, Füllwörter „und/mit“ raus), notfalls gekürzt; gleiche Namen bekommen _2, _3 (ohne Groß/klein-Unterschied). Kurzname = voller Name steht als Kommentar oben in der DXF (Texteditor). Geprüft: 155 Ebenen aus allen Klassen, längster Name 31, keine doppelt. Beispiel: `Strassen_Wege_Nebenstrasse_Wohnstrasse` → `Str_Wege_NebenStr_WohnStr`. Sicherung vorher: `…v3.55_vor-dxf-namen_2026-11-19.html`
+- [ ] **35. Export-Test mit echten Daten** (Do 19.11.): SVG → Illustrator, PDF, DXF → Archicad, Revit, Allplan. Ergebnisse hier eintragen.
+  - [x] **35a. SVG für Illustrator** (Version 3.57, ok – „alles perfekt“): Plan nach geografisch Nord gedreht (Meridiankonvergenz, Wilhelmshaven ca. 0,7°) → Gebietsrahmen parallel zum Blattrand, Meter/Maßstab unverändert, Drehung steht in der Fußzeile (DXF unverändert in UTM). Keine gestrichelte Gebietslinie, keine Ebene „Untersuchungsgebiet“.
+    Objekte werden wirklich am Gebiet abgeschnitten (Flächen mit turf.intersect, Linien an den Randkanten geteilt, Punkte drin/draußen) statt Maske → keine Beschnittgruppe, nichts außerhalb. Keine Gruppe „Karte“: Baustein = Gruppe, Untergruppe = Gruppe, darin jedes Objekt ein eigener Pfad (zusammengesetzt nur bei Innenhof). Schatten je Uhrzeit zu einer Fläche vereinigt (turf.union).
+    Neu im Export-Fenster: „QUAVA_Ebenen.jsx herunterladen“ (Illustrator: Datei → Skripten → Anderes Skript) macht daraus echte Ebenen/Unterebenen – Illustrator selbst macht aus SVG immer nur „Ebene 1“ mit Gruppen. Gilt auch für PDF. Sicherung vorher: `index_v3.56_vor-svg-ebenen-zuschnitt_2026-11-19.html`
+  - [x] **35b. Deckkraft 100 %** (Version 3.58, ok): Alle Bausteine starten mit 100 % (auch Flächennutzung, Höhenlinien, Hangneigung, Lärm, Hochwasser, Bevölkerung, Flurstücke), nur Schatten 50 %; ÖPNV-Einzugsradien bleiben 15 %. Export: bei 100 % keine Transparenz; sonst als Objekt-Deckkraft (`opacity`) → in Illustrator im Transparenz-Fenster sichtbar. Alte Projektdateien behalten ihre Deckkraft. Sicherung vorher: `index_v3.57_vor-deckkraft-100_2026-11-19.html`
+  - [ ] **35c. PDF** – offen. - [ ] **35d. DXF in Archicad, Revit, Allplan** – offen.
+
+- [ ] **36. Branch `schneller-laden` (Dozent, Niedersachsen-Cache)** – getestet, **noch nicht übernommen** (Entscheidung: erst Export-Test fertig). Messung Do 19.11., 09:30, 1 km² Wilhelmshaven-Innenstadt, gleiche Abfragen wie die App: Cache alle 8 OSM-Bausteine zusammen 0,5 s; live Overpass je Baustein 28–49 s (Gebäude 33,7 s, Straßen 49,4 s, Bahn 38,0 s, Haltestellen 27,9 s), Grünflächen Fehler 502; Objektzahlen gleich (944/383/28/27). Cache-Stand 17.11. Nicht getestet: ganzer Ablauf in der Oberfläche, Zwischenspeicher, amtliche Daten, Traufhöhen-Korrektur.
+  Achtung: Branch baut auf 3.51 auf → nicht einfach mergen (Tabs, Farbfenster, Paletten, DXF-Namen, 3.57/3.58 fehlen), sondern Änderungen gezielt in die aktuelle Version einbauen (ca. 45–60 min + Test).
+  - **Update Do 19.11. (Kursleitung): Branch auf 3.58 nachgezogen.** `main` (3.58) wurde in den Branch gemergt; im Code gab es keine Konflikte.
+    Der Branch enthält jetzt alles aus 3.58 **plus** die Änderungen unten und lässt sich ohne Nacharbeit in `main` übernehmen (Pull Request oder Merge).
+    Keine eigene Versionsnummer, damit sie nicht mit deinen kollidiert (die alte Bezeichnung „3.52“ des Branches ist hinfällig). `main` bleibt unverändert – ob und wann du übernimmst, entscheidest du.
+    Grund (gemessen 18.11.): Fast die ganze Ladezeit war Warten beim Overpass-Server, 30–55 s **je Abfrage**, oft „Server voll“. Deshalb halfen 3.22/3.38 nicht. Was der Branch ändert:
+    - **Niedersachsen-Cache** (neu): fertige OSM-Daten für 10 Städte (8 Großstädte + Wilhelmshaven, Delmenhorst, je 3 km Rand) und seit 19.11. auch für das Umland von Oldenburg (alle Gemeinden über 5.000 Einwohner bis ca. 90 km, z. B. Rastede, Bad Zwischenahn, Brake, Varel, Cloppenburg, Leer, Emden), wöchentlich neu, Repo `niedersachsen-cache` (GitHub Pages).
+      Die App fragt dort zuerst. Gebiet nicht drin, Cache nicht erreichbar oder „Frisch vom Server laden“ → wie bisher Overpass. Je Baustein steht „Quelle: Niedersachsen-Cache (OpenStreetMap, Stand …)“.
+      Ergebnis gleich wie Overpass, nur das technische OSM-Merkmal `created_by` (Name des Editors) fehlt. Daten bis ca. 8 Tage alt.
+    - **Zwischenspeicher im Browser:** gleiches Gebiet lädt beim 2. Mal in unter 1 s (bis 7 Tage, mit Hinweis und Knopf „↻ Frisch vom Server laden“).
+    - **OSM-Sammelabfrage:** alle OSM-Bausteine in 1 Overpass-Abfrage statt 7. **Serverwahl:** bei „Server voll“ kurz warten und neu fragen statt zu Ersatzservern, die nicht antworten.
+    - **Amtliche Daten:** LGLN-Höhen 4 Kacheln gleichzeitig und Rechnen im Hintergrund (Oberfläche friert nicht ein), Geländemodell weniger Anfragen, Flurstücke weniger Daten, Zeitlimits statt endlos warten.
+    - **Korrekturen:** Traufhöhe Niedersachsen jetzt über Boden statt über Meeresspiegel (war in Wilhelmshaven ca. 1,5 m, in Hannover ca. 55 m zu hoch → zu viele Geschosse geschätzt). Zensus: fehlende Gitterzellen werden mit ⚠ angezeigt.
+    Gemessen (1 km², Grundauswahl): Wilhelmshaven 1,2–2,0 s mit Cache (3.39: 5–13 min, nur Sammelabfrage: 44–55 s), Hannover-Mitte 1,4–2,4 s, Berlin weiter über Overpass (44–49 s).
+    **Testen:** 1. `index.html` doppelklicken, „Wilhelmshaven“ suchen, Rechteck (ca. 1 km²) zeichnen, Grundauswahl → „Auswahl laden“ → nach wenigen Sekunden fertig, bei jedem Baustein „Quelle: Niedersachsen-Cache (OpenStreetMap, Stand …)“.
+    2. Noch einmal „Auswahl laden“ → unter 1 s, „aus dem Zwischenspeicher“. 3. „↻ Frisch vom Server laden“ → lädt über Overpass (ca. 1 Minute, Cache-Hinweis weg).
+    4. „Hannover“ suchen, Rechteck in der Mitte, „Gebäude“ laden, beim Layer „Aufteilen nach“ → „Geschosszahl“: Farben gemischt (1–2, 3–4, 5–6, 7+); Gebäude anklicken → Tab „Element“: Traufhöhe ca. 5–25 m, nicht 60–80 m.
+    5. Berlin-Mitte laden → wie bisher über Overpass, ohne Cache-Hinweis.
+
+### Stand Do 19.11., 09:55 – hier weitermachen
+- Aktuelle Version: **3.58** (`index.html`). Getestet und ok: 35a (SVG für Illustrator), 35b (Deckkraft 100 %).
+- Als Nächstes: Export-Test **PDF**, dann **DXF** in Archicad, Revit, Allplan (Checkliste im Chat vom 19.11.). Danach ggf. Punkt 36 (Niedersachsen-Cache) einbauen.
+- Freeze **Do 19.11., 12 Uhr**. Bis Abgabe Fr 16 Uhr: README ausbauen, Poster.
+
+### Stand Do 19.11., 01:20 (Pause) – (erledigt, siehe 09:55)
+- Aktuelle Version: **3.56** (`index.html`). Laptop, GitHub und GitHub Pages auf demselben Stand.
+- Getestet und ok: 30 (Tabs), 31 (Farbfenster), 32 (zuletzt verwendet + Paletten), 33 (mehr Paletten), 34 (DXF-Namen).
+- Als Nächstes: **Export-Test** nach Checkliste (SVG → Illustrator zuerst, dann PDF, dann DXF in Archicad, Revit, Allplan), Fehler einzeln beheben.
+- Nach jedem behobenen Export-Fehler: GitHub hochladen. Freeze **Do 19.11., 12 Uhr**. Bis Abgabe Fr 16 Uhr: README ausbauen, Poster.
+
+### Stand Mi 18.11., 20:05 (Pause) – (erledigt, siehe Do 19.11.)
 - Aktuelle Version: **3.51** (`index.html`, QUAVA), Sicherung: `versionen/urban-analyst-v3.51_2026-11-18.html`. GitHub + Pages auf demselben Stand (https://jade-hs-vibecoding-wpk.github.io/urban-analyst/).
-- **Branch `schneller-laden`** (von der Kursleitung, 18./19.11.): Version **3.52** = Punkt 30 (schneller laden + Niedersachsen-Cache), **Test steht aus**. `main` = 3.51 unverändert – ob gemergt wird, entscheidest du.
 - Noch nicht vom Nutzer mit echten Daten bestätigt: 3.34 Höhenlinien/Hangneigung (Gelände) – beim nächsten Mal kurz prüfen.
 - **Nächste Schritte (vor Freeze Do 19.11., 12 Uhr):** 1. **Export-Test** SVG/PDF (Illustrator) und DXF (CAD-Programm erfragen) mit echten Daten. 2. DXF-Layernamen ≤ 31 Zeichen.
   3. Starkregen besprechen (BKG-Hinweiskarte nur als Bild → Flächen zurückrechnen). Klima/Hitze eher weglassen.
