@@ -328,7 +328,7 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
 
 - [ ] **30. Schneller laden + Niedersachsen-Cache** (Version 3.52, nur im Branch `schneller-laden`, **Test steht aus**; `main` bleibt unverändert der Stand 3.51 (QUAVA), darum keine Sicherung in `versionen/`).
   Grund (gemessen 18.11.): Fast die ganze Ladezeit war Warten beim Overpass-Server, 30–55 s **je Abfrage**, oft „Server voll“. Deshalb halfen 3.22/3.38 nicht. Der Branch ändert:
-  - **Niedersachsen-Cache** (neu): fertige OSM-Daten für 10 Städte (8 Großstädte + Wilhelmshaven, Delmenhorst, je 3 km Rand), wöchentlich neu, Repo `niedersachsen-cache` (GitHub Pages).
+  - **Niedersachsen-Cache** (neu): fertige OSM-Daten für 10 Städte (8 Großstädte + Wilhelmshaven, Delmenhorst, je 3 km Rand) und seit 19.11. auch für das Umland von Oldenburg (alle Gemeinden über 5.000 Einwohner bis ca. 90 km, z. B. Rastede, Bad Zwischenahn, Brake, Varel, Cloppenburg, Leer, Emden), wöchentlich neu, Repo `niedersachsen-cache` (GitHub Pages).
     Die App fragt dort zuerst. Gebiet nicht drin, Cache nicht erreichbar oder „Frisch vom Server laden“ → wie bisher Overpass. Je Baustein steht „Quelle: Niedersachsen-Cache (OpenStreetMap, Stand …)“.
     Ergebnis gleich wie Overpass, nur das technische OSM-Merkmal `created_by` (Name des Editors) fehlt. Daten bis ca. 8 Tage alt.
   - **Zwischenspeicher im Browser:** gleiches Gebiet lädt beim 2. Mal in unter 1 s (bis 7 Tage, mit Hinweis und Knopf „↻ Frisch vom Server laden“).

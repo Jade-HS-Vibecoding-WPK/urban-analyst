@@ -11,7 +11,7 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.1.0/turf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<!-- Niedersachsen-Cache: fertige OSM-Daten für 10 Städte (wöchentlich neu). „async“: hängt der Server, startet die App trotzdem. Fehlt er, lädt die App wie bisher live. -->
+<!-- Niedersachsen-Cache: fertige OSM-Daten für 10 Städte und das Umland von Oldenburg (wöchentlich neu). „async“: hängt der Server, startet die App trotzdem. Fehlt er, lädt die App wie bisher live. -->
 <script async src="https://jade-hs-vibecoding-wpk.github.io/niedersachsen-cache/nds-cache.js"></script>
 <style>
 [hidden]{display:none!important}
@@ -2983,11 +2983,13 @@ if (typeof module !== 'undefined') module.exports = UA;
   }
 
   /* ---------- Niedersachsen-Cache: fertige OSM-Daten von GitHub Pages (github.com/Jade-HS-Vibecoding-WPK/niedersachsen-cache) ----------
-     10 Städte in Niedersachsen mit 3 km Rand, wöchentlich aus OpenStreetMap gebaut (Datenstand bis ca. 8 Tage alt).
+     10 Städte in Niedersachsen mit 3 km Rand, dazu rund um Oldenburg alle Gemeinden über 5.000 Einwohner (bis ca. 90 km),
+     wöchentlich aus OpenStreetMap gebaut (Datenstand bis ca. 8 Tage alt).
      NdsCache.overpass(abfrage) antwortet wie Overpass („out geom“) – ohne Warteschlange – oder mit null
      (Gebiet nicht abgedeckt, Cache nicht erreichbar): dann lädt die App wie bisher bei Overpass.
      Achtung bei neuen OSM-Bausteinen: Der Cache enthält nur Objekte mit bestimmten Schlüsseln (building, highway, railway, landuse,
-     natural, amenity, shop … – Liste im README des Caches). Fragt ein Baustein nach anderen (z. B. power, barrier), liefert er LEER statt null. */
+     natural, amenity, shop … – Liste im README des Caches). Fragt ein Baustein nach anderen (z. B. power, barrier), liefert er LEER statt null.
+     (NdsCache.laden() ab nds-cache.js 1.1.0 würde solche Teile selbst an Overpass weiterleiten.) */
   const ndsDate = s => s ? new Date(s).toLocaleDateString('de-DE') : 'unbekannt';
   async function ndsAsk(ids, P) { // -> { baustein: Overpass-Antwort } (nur, was der Cache hat)
     const stop = new Promise(res => { if (S.abort) S.abort.signal.addEventListener('abort', () => res([]), { once: true }); }); // „Abbrechen“ wirkt sofort
