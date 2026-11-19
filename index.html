@@ -2510,13 +2510,13 @@ const UA = (function () {
     }
     const ox = fx + (fw - mapW) / 2 + (P ? pan.x * k : 0), oy = fy + (fh - mapH) / 2 + (P ? pan.y * k : 0); // linke obere Ecke der Karte
     const e = 0.05, whole = !P || (ox >= fx - e && oy >= fy - e && ox + mapW <= fx + fw + e && oy + mapH <= fy + fh + e);
-    const sx0 = R, sx1 = W - R, descX = sx0 + titleW + 6, descW = Math.max(20, sx1 - rightW - 6 - descX);
+    const sx0 = R, sx1 = W - R, sepX = W - R - legW - gap, descX = sx0 + titleW + 6, descW = Math.max(20, sepX - 6 - descX); // Trennlinie bündig mit der rechten Kante des Karten-Ausschnitts
     const desc = leg && opt.desc ? wrapText(opt.desc, DFS, descW, 3, (t, sz) => mw(t, sz, 'b')) : [];
     const legBottom = (leg ? stripY : H - R) - 3;
     // Quelle (Lizenzpflicht) unten rechts in der Kartenecke
     const qx = P ? Math.min(fx + fw, ox + mapW) : ox + mapW, qy = P ? Math.min(fy + fh, oy + mapH) : oy + mapH;
     return { F, k, mapW, mapH, W, H, R, frame: P ? [fx, fy, fx + fw, fy + fh] : null, fx, fy, fw, fh, ox, oy,
-      strip: leg ? { x0: sx0, x1: sx1, y: stripY, h: stripH, titleX: sx0, descX, desc, TFS, DFS, MFS, scaleTxt, sepX: sx1 - rightW } : null, qx, qy,
+      strip: leg ? { x0: sx0, x1: sx1, y: stripY, h: stripH, titleX: sx0, descX, desc, TFS, DFS, MFS, scaleTxt, sepX } : null, qx, qy,
       legX: W - R - legW, legY: R, legBottom, legCut: leg && legH > legBottom - R + 0.5, title, src, whole, fits: true, paper: P ? opt.paper : null, orient: opt.orient };
   }
   function lineInRect(q, B) { // Linienzug (mm) am Rechteck B=[x0,y0,x1,y1] schneiden (Liang-Barsky)
