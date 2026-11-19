@@ -2617,12 +2617,11 @@ const UA = (function () {
         y += 3;
       }
       L2.push(`</g>`); out.push(L2.join(''));
-      // Schriftfeld (nach Vorlage): Linie oben · Überschrift (schmal, Versalien) · Beschreibung · | M 1 : … · Nordpfeil
+      // Schriftfeld (nach Vorlage): Überschrift (schmal, Versalien) · Beschreibung · | M 1 : … · Nordpfeil
       const S2 = PL.strip, my = S2.y + S2.h / 2, f2 = v => v.toFixed(2);
       const sepX = S2.sepX;
       const dl = S2.desc, dy0 = my - (dl.length - 1) * S2.DFS * 1.25 / 2 + S2.DFS * 0.35;
       out.push(`<g id="Schriftfeld" fill="#1d1b22">`
-        + `<line x1="${f2(S2.x0)}" y1="${f2(S2.y)}" x2="${f2(S2.sepX)}" y2="${f2(S2.y)}" stroke="#1d1b22" stroke-width="0.25"/>`
         + `<text x="${f2(S2.titleX)}" y="${f2(my + S2.TFS * 0.36 - 1)}" font-size="${S2.TFS}" font-family="${FONT_T}" font-weight="600" font-stretch="condensed">${esc(PL.title)}</text>`
         + (dl.length ? `<text font-size="${S2.DFS}" font-family="${FONT_B}">` + dl.map((t, i) => `<tspan x="${f2(S2.descX)}" y="${f2(dy0 + i * S2.DFS * 1.25)}">${esc(t)}</tspan>`).join('') + `</text>` : '')
         + `<line x1="${f2(sepX)}" y1="${f2(S2.y + 2.5)}" x2="${f2(sepX)}" y2="${f2(S2.y + S2.h - 2.5)}" stroke="#1d1b22" stroke-width="0.25"/>`
