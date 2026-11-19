@@ -326,7 +326,24 @@ Bewusst so lassen: Gebäude dürfen über das Gebiet hinausragen; bei mehreren G
 
 - [x] **29. GitHub aktualisiert** (Mi 18.11., 20:05): Stand 3.51 (QUAVA) mit README, CLAUDE.md, PLAN.md und allen neuen Sicherungen hochgeladen; GitHub Pages liefert 3.51 (Intro, Logo, Name geprüft).
 
-### Stand Mi 18.11., 20:05 (Pause) – hier weitermachen
+- [x] **30. Tabs für mehrere Projekte** (Version 3.52, ok): Leiste rechts neben dem Suchfeld wie im Browser; „+“ öffnet einen leeren Tab. Jeder Tab hat eigenes Gebiet, eigene Layer, eigenen Verlauf (Strg+Z nur im Tab), eigenen Namen (= Projektname) und eigene Kartenposition. „ד schließt; Tab mit Layern fragt erst nach. Höchstens 5 Tabs; Wechsel gesperrt, solange geladen wird. Bei wenig Platz wird das Suchfeld schmaler bzw. die Tabs kommen in eine zweite Zeile. Tabs werden nicht automatisch gespeichert (Projektdatei ⤓ pro Tab). Sicherung vorher: `…v3.51_vor-tabs_2026-11-18.html`
+
+- [x] **31. Eigenes Farbfenster wie Illustrator** (Version 3.53, ok): Klick aufs Farbkästchen einer Untergruppe öffnet ein Fenster links neben der Layer-Leiste: große Farbvorschau, Regler mit Verlauf + Zahlenfeld, #-Hexcode, Schwarz/Weiß, Spektrum-Feld (klicken/ziehen), Pipette (Edge/Chrome), Menü ☰ mit Graustufen · RGB · HSB · CMYK · Websicheres RGB (Wahl wird gemerkt, Start: RGB). Karte ändert sich sofort; beim Schließen (Klick daneben/Esc) **ein** Verlaufsschritt. CMYK = einfache Umrechnung ohne Druckprofil (Export bleibt RGB). Sicherung vorher: `…v3.52_vor-farbfenster_2026-11-18.html`
+
+- [x] **32. Farbfenster: zuletzt verwendet + passende Paletten** (Version 3.54, ok): Neben Schwarz/Weiß bis zu 8 zuletzt vergebene Farben (gemerkt, für alle Tabs). Unter dem Spektrum „Passende Paletten“ je nach Aufteilung: Stufen (Höhe, Geschosse, Flächengröße, Dichte, Lärm, Neigung, Wassertiefe …) → Verläufe hell→dunkel (Standard, Sand→Rotbraun, Gold→Braun, Violett, Blau, Grün, Grün→Rot, Grautöne; Richtung wie die Standardfarben); Kategorien → Standard (Plan), Kräftig, Pastell, Erdtöne, Graustufen; Monochrom → Einzelfarben passend zum Baustein + Plan-Farben. Name oder „alle“ = ganzer Layer (ein Verlaufsschritt „Palette …“), einzelnes Kästchen = nur diese Untergruppe. „unbekannt/keine Angabe“ bleibt grau. Sicherung vorher: `…v3.53_vor-paletten_2026-11-19.html`
+
+- [x] **33. Mehr Farbpaletten** (Version 3.55, ok): Stufen jetzt 19 (dazu ColorBrewer: Gelb→Rot, Gelb→Blau, Orange→Rot, Rosa→Purpur, Gelb→Grün, Blau→Lila, Petrol; eigene: Ziegel, Beton, Hitze, QUAVA-Lila). Kategorien jetzt 10 (dazu ColorBrewer Set 2, Set 3, Dark 2; eigene: Skandinavisch, Neon für dunkle Karte). Liste scrollt (ca. 8 Zeilen sichtbar). Quelle ColorBrewer: Cynthia Brewer, colorbrewer2.org. PlanZV- und Farbschwäche-Paletten bewusst nicht gewählt. Sicherung vorher: `…v3.54_vor-mehr-paletten_2026-11-19.html`
+
+- [x] **34. DXF-Ebenennamen max. 31 Zeichen** (Version 3.56, ok – Öffnen in Archicad/Revit/Allplan folgt im Export-Test): Namen werden sinnvoll abgekürzt (Straße→Str, Gebäude→Geb, Fläche→Fl, Einrichtung→Einr …, Füllwörter „und/mit“ raus), notfalls gekürzt; gleiche Namen bekommen _2, _3 (ohne Groß/klein-Unterschied). Kurzname = voller Name steht als Kommentar oben in der DXF (Texteditor). Geprüft: 155 Ebenen aus allen Klassen, längster Name 31, keine doppelt. Beispiel: `Strassen_Wege_Nebenstrasse_Wohnstrasse` → `Str_Wege_NebenStr_WohnStr`. Sicherung vorher: `…v3.55_vor-dxf-namen_2026-11-19.html`
+- [ ] **35. Export-Test mit echten Daten** (Do 19.11.): SVG → Illustrator, PDF, DXF → Archicad, Revit, Allplan. Ergebnisse hier eintragen.
+
+### Stand Do 19.11., 01:20 (Pause) – hier weitermachen
+- Aktuelle Version: **3.56** (`index.html`). Laptop, GitHub und GitHub Pages auf demselben Stand.
+- Getestet und ok: 30 (Tabs), 31 (Farbfenster), 32 (zuletzt verwendet + Paletten), 33 (mehr Paletten), 34 (DXF-Namen).
+- Als Nächstes: **Export-Test** nach Checkliste (SVG → Illustrator zuerst, dann PDF, dann DXF in Archicad, Revit, Allplan), Fehler einzeln beheben.
+- Nach jedem behobenen Export-Fehler: GitHub hochladen. Freeze **Do 19.11., 12 Uhr**. Bis Abgabe Fr 16 Uhr: README ausbauen, Poster.
+
+### Stand Mi 18.11., 20:05 (Pause) – (erledigt, siehe Do 19.11.)
 - Aktuelle Version: **3.51** (`index.html`, QUAVA), Sicherung: `versionen/urban-analyst-v3.51_2026-11-18.html`. GitHub + Pages auf demselben Stand (https://jade-hs-vibecoding-wpk.github.io/urban-analyst/).
 - Noch nicht vom Nutzer mit echten Daten bestätigt: 3.34 Höhenlinien/Hangneigung (Gelände) – beim nächsten Mal kurz prüfen.
 - **Nächste Schritte (vor Freeze Do 19.11., 12 Uhr):** 1. **Export-Test** SVG/PDF (Illustrator) und DXF (CAD-Programm erfragen) mit echten Daten. 2. DXF-Layernamen ≤ 31 Zeichen.
