@@ -448,10 +448,11 @@ details>summary{list-style:none}details>summary::-webkit-details-marker{display:
           <div><span class="ex-lab">Maßstab</span><div class="ex-scale"><span>1 :</span><input id="exScale" class="inp" list="exScales" inputmode="numeric" autocomplete="off" value="10000" title="Eigene Zahl eintippen oder Vorschlag wählen"></div>
             <datalist id="exScales"><option value="500"><option value="1000"><option value="2000"><option value="2500"><option value="5000"><option value="10000"><option value="15000"><option value="20000"><option value="25000"></datalist></div>
         </div>
+        <div class="ex-row ex-plan"><span class="ex-lab">Beschreibung <span class="tiny">(steht im Schriftfeld neben der Überschrift)</span></span><textarea id="exDesc" class="inp" rows="2" style="resize:vertical;width:100%;font:inherit;font-size:12px" placeholder="z. B. Die städtischen Erschließungsstrukturen im Zusammenspiel von …"></textarea></div>
         <div class="ex-row ex-plan"><span class="ex-lab">Papier</span>
           <div class="ex-two"><div class="seg" id="exPaper"><button data-v="A4">A4</button><button data-v="A3">A3</button><button data-v="">keine</button></div>
             <div class="seg" id="exOrient"><button data-v="hoch">Hoch</button><button data-v="quer">Quer</button></div></div>
-          <div class="tiny muted">A4/A3: 10 mm Druckrand, Legende rechts, Titel unten, Karte im Ausschnitt · keine: Blatt = Plangröße, ohne Rand</div></div>
+          <div class="tiny muted">A4/A3: 10 mm Rand, Karte im Ausschnitt · keine: Blatt = Plangröße</div></div>
         <div class="ex-row"><span class="ex-lab">Optionen</span>
           <div class="opts">
             <label><input type="checkbox" id="exVisible" checked> nur sichtbare Layer</label>
@@ -2475,26 +2476,48 @@ const UA = (function () {
   const legendGroups = layers => layers.slice().reverse().map(L => ({ L, used: L.classes.filter(c => L.features.some(f => f.properties._cls === c.key)) })).filter(x => x.used.length);
   const legendHeight = layers => legendGroups(layers).reduce((h, g) => h + 5 + 4.6 * g.used.length + 3, 12);
   const textW = (t, size, bold) => (t || '').length * size * (bold ? 0.62 : 0.52); // geschätzte Breite in mm (Helvetica)
+  const FONT_T = "'Bahnschrift SemiBold Condensed', 'Bahnschrift Condensed', Bahnschrift, 'Arial Narrow', sans-serif", FONT_B = "Bahnschrift, Arial, sans-serif";
+  function wrapText(t, size, maxW, maxLines, tw) { // Beschreibung auf Zeilen verteilen
+    tw = tw || ((x, sz) => textW(x, sz));
+    const out = []; let line = '';
+    for (const w of String(t || '').trim().split(/\s+/).filter(Boolean)) {
+      const tryL = line ? line + ' ' + w : w;
+      if (line && tw(tryL, size) > maxW) { out.push(line); line = w; } else line = tryL;
+    }
+    if (line) out.push(line);
+    if (out.length > maxLines) { out.length = maxLines; out[maxLines - 1] = out[maxLines - 1].replace(/\s*\S*$/, '') + ' …'; }
+    return out;
+  }
   function planLayout(layers, selection, opt) {
-    opt = Object.assign({ scale: 10000, legend: true, title: 'Analyseplan', subtitle: '', paper: null, orient: 'quer', pan: null }, opt || {});
+    opt = Object.assign({ scale: 10000, legend: true, title: 'Analyseplan', desc: '', paper: null, orient: 'quer', pan: null, measure: null }, opt || {});
+    const ms = opt.measure, mw = (t, sz, kind) => { if (ms) { try { const v = ms(t, sz, kind); if (v > 0) return v; } catch (e) { /* Schätzung */ } } return kind === 't' ? textW(t, sz, true) * 0.78 : textW(t, sz, kind === 'bb'); };
     const F = planFrame(selection, true), k = 1000 / opt.scale; // mm pro Meter
     const mapW = (F.maxX - F.minX) * k, mapH = (F.maxY - F.minY) * k;
-    const leg = !!opt.legend, legW = leg ? 62 : 0, gap = leg ? 6 : 0, titleH = leg ? 18 : 0, tgap = leg ? 4 : 0;
-    const title = opt.title.toUpperCase(), sub = opt.subtitle || '', src = leg ? sourceLine(layers) : '', legH = leg ? legendHeight(layers) : 0;
+    const leg = !!opt.legend, legW = leg ? 62 : 0, gap = leg ? 6 : 0, stripH = leg ? 14 : 0;
+    const title = opt.title.replace(/ß/g, 'ẞ').toUpperCase(), src = sourceLine(layers), legH = leg ? legendHeight(layers) : 0;
+    const TFS = 8, DFS = 3, MFS = 3.6, scaleTxt = `M 1 : ${opt.scale}`;
+    const titleW = mw(title, TFS, 't'), rightW = mw(scaleTxt, MFS, 'bb') + 22; // Schrift schmal (Condensed); rechts: Trennlinie, Maßstab, Nordpfeil
     const P = PAPER[opt.paper], R = P ? PAPER_RAND : 0, pan = opt.pan || { x: 0, y: 0 };
-    let W, H, fx = R, fy = R, fw, fh, rowW;
+    let W, H, fx = R, fy = R, fw, fh, stripY;
     if (P) {
       [W, H] = opt.orient === 'hoch' ? P : [P[1], P[0]];
-      fw = W - 2 * R - legW - gap; fh = H - 2 * R - titleH - tgap; rowW = fw;
+      stripY = H - R - stripH; fw = W - 2 * R - legW - gap; fh = stripY - R;
     } else {
       fw = mapW; fh = mapH;
-      rowW = Math.max(mapW, leg ? Math.max(textW(title, 8, true), textW(sub, 3), textW(src, 2)) + 50 : 0); // Platz für Titel + Maßstab/Nordpfeil
-      W = rowW + gap + legW; H = Math.max(mapH + tgap + titleH, legH);
+      const descMin = opt.desc ? 70 : 0;
+      W = Math.max(mapW + gap + legW, leg ? titleW + 6 + descMin + rightW : 0);
+      stripY = Math.max(mapH, legH) + (legH > mapH ? 2 : 0); H = stripY + stripH;
     }
     const ox = fx + (fw - mapW) / 2 + (P ? pan.x * k : 0), oy = fy + (fh - mapH) / 2 + (P ? pan.y * k : 0); // linke obere Ecke der Karte
     const e = 0.05, whole = !P || (ox >= fx - e && oy >= fy - e && ox + mapW <= fx + fw + e && oy + mapH <= fy + fh + e);
-    return { F, k, mapW, mapH, W, H, R, frame: P ? [fx, fy, fx + fw, fy + fh] : null, fx, fy, fw, fh, ox, oy, rowX: fx, rowW, rowY: P ? H - R - titleH : mapH + tgap,
-      legX: W - R - legW, legBottom: H - R, legCut: leg && legH > H - 2 * R + 0.5, title, sub, src, whole, fits: true, paper: P ? opt.paper : null, orient: opt.orient };
+    const sx0 = R, sx1 = W - R, descX = sx0 + titleW + 6, descW = Math.max(20, sx1 - rightW - 6 - descX);
+    const desc = leg && opt.desc ? wrapText(opt.desc, DFS, descW, 3, (t, sz) => mw(t, sz, 'b')) : [];
+    const legBottom = (leg ? stripY : H - R) - 3;
+    // Quelle (Lizenzpflicht) unten rechts in der Kartenecke
+    const qx = P ? Math.min(fx + fw, ox + mapW) : ox + mapW, qy = P ? Math.min(fy + fh, oy + mapH) : oy + mapH;
+    return { F, k, mapW, mapH, W, H, R, frame: P ? [fx, fy, fx + fw, fy + fh] : null, fx, fy, fw, fh, ox, oy,
+      strip: leg ? { x0: sx0, x1: sx1, y: stripY, h: stripH, titleX: sx0, descX, desc, TFS, DFS, MFS, scaleTxt, sepX: sx1 - rightW } : null, qx, qy,
+      legX: W - R - legW, legY: R, legBottom, legCut: leg && legH > legBottom - R + 0.5, title, src, whole, fits: true, paper: P ? opt.paper : null, orient: opt.orient };
   }
   function lineInRect(q, B) { // Linienzug (mm) am Rechteck B=[x0,y0,x1,y1] schneiden (Liang-Barsky)
     const out = []; let cur = null;
@@ -2572,7 +2595,7 @@ const UA = (function () {
     }
     if (pv) out.push(`</g></g>`);
     if (opt.legend) {
-      const x0 = PL.legX; let y = PL.R + 4; const L2 = [];
+      const x0 = PL.legX; let y = PL.legY + 4; const L2 = [];
       L2.push(`<g id="Legende" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`);
       L2.push(`<text x="${x0}" y="${y}" font-size="5" font-weight="700">LEGENDE</text>`); y += 8;
       for (const { L, used } of legendGroups(layers)) {
@@ -2594,18 +2617,22 @@ const UA = (function () {
         y += 3;
       }
       L2.push(`</g>`); out.push(L2.join(''));
-      // Planlayout: Titel, Untertitel, Quelle unten links · Maßstab und Nordpfeil unten rechts
-      const ty = PL.rowY, X = PL.rowX, RX = PL.rowX + PL.rowW, SR = RX - 17;
-      const sbM = [50, 100, 200, 250, 500, 1000, 2000].find(v => v * k >= 25) || 2000; const sbW = sbM * k;
-      out.push(`<g id="Planlayout" font-family="Helvetica, Arial, sans-serif" fill="#1d1b22">`
-        + `<text x="${X.toFixed(2)}" y="${(ty + 7).toFixed(2)}" font-size="8" font-weight="700">${esc(PL.title)}</text>`
-        + (PL.sub ? `<text x="${X.toFixed(2)}" y="${(ty + 12).toFixed(2)}" font-size="3">${esc(PL.sub)}</text>` : '')
-        + `<text x="${X.toFixed(2)}" y="${(ty + 16.5).toFixed(2)}" font-size="2" fill="#555">${esc(PL.src)}</text>`
-        + `<g id="Massstab"><rect x="${(SR - sbW).toFixed(2)}" y="${(ty + 3).toFixed(2)}" width="${(sbW / 2).toFixed(2)}" height="1.5" fill="#1d1b22"/><rect x="${(SR - sbW / 2).toFixed(2)}" y="${(ty + 3).toFixed(2)}" width="${(sbW / 2).toFixed(2)}" height="1.5" fill="none" stroke="#1d1b22" stroke-width="0.3"/>`
-        + `<text x="${(SR - sbW).toFixed(2)}" y="${(ty + 7.5).toFixed(2)}" font-size="2.4">0</text><text x="${SR.toFixed(2)}" y="${(ty + 7.5).toFixed(2)}" font-size="2.4" text-anchor="end">${sbM} m</text>`
-        + `<text x="${SR.toFixed(2)}" y="${(ty + 14).toFixed(2)}" font-size="4" font-weight="700" text-anchor="end">M 1:${opt.scale}</text></g>`
-        + `<g id="Nordpfeil" transform="translate(${(RX - 7).toFixed(2)} ${(ty + 4).toFixed(2)})"><circle cx="0" cy="5" r="6" fill="none" stroke="#1d1b22" stroke-width="0.4"/><path d="M0 0 L2.4 8 L0 6.4 L-2.4 8 Z" fill="#1d1b22"/><text x="0" y="-2" font-size="3" text-anchor="middle" font-weight="700">N</text></g>`
+      // Schriftfeld (nach Vorlage): Linie oben · Überschrift (schmal, Versalien) · Beschreibung · | M 1 : … · Nordpfeil
+      const S2 = PL.strip, my = S2.y + S2.h / 2, f2 = v => v.toFixed(2);
+      const sepX = S2.sepX;
+      const dl = S2.desc, dy0 = my - (dl.length - 1) * S2.DFS * 1.25 / 2 + S2.DFS * 0.35;
+      out.push(`<g id="Schriftfeld" fill="#1d1b22">`
+        + `<line x1="${f2(S2.x0)}" y1="${f2(S2.y)}" x2="${f2(S2.x1)}" y2="${f2(S2.y)}" stroke="#1d1b22" stroke-width="0.25"/>`
+        + `<text x="${f2(S2.titleX)}" y="${f2(my + S2.TFS * 0.36)}" font-size="${S2.TFS}" font-family="${FONT_T}" font-weight="600" font-stretch="condensed">${esc(PL.title)}</text>`
+        + (dl.length ? `<text font-size="${S2.DFS}" font-family="${FONT_B}">` + dl.map((t, i) => `<tspan x="${f2(S2.descX)}" y="${f2(dy0 + i * S2.DFS * 1.25)}">${esc(t)}</tspan>`).join('') + `</text>` : '')
+        + `<line x1="${f2(sepX)}" y1="${f2(S2.y + 2.5)}" x2="${f2(sepX)}" y2="${f2(S2.y + S2.h - 2.5)}" stroke="#1d1b22" stroke-width="0.25"/>`
+        + `<text x="${f2(S2.x1 - 14)}" y="${f2(my + S2.MFS * 0.36)}" font-size="${S2.MFS}" font-family="${FONT_B}" font-weight="700" text-anchor="end">${esc(S2.scaleTxt)}</text>`
+        + `<g id="Nordpfeil"><circle cx="${f2(S2.x1 - 5)}" cy="${f2(my)}" r="4" fill="none" stroke="#1d1b22" stroke-width="0.35"/><line x1="${f2(S2.x1 - 5)}" y1="${f2(my - 4)}" x2="${f2(S2.x1 - 5)}" y2="${f2(my + 0.6)}" stroke="#1d1b22" stroke-width="0.6"/></g>`
         + `</g>`);
+    }
+    { // Quellenangabe (Lizenzpflicht) winzig unten rechts in der Kartenecke
+      const qs = 1.6, qw = textW(PL.src, qs) + 1.2;
+      out.push(`<g id="Quelle"><rect x="${(PL.qx - qw).toFixed(2)}" y="${(PL.qy - 2.4).toFixed(2)}" width="${qw.toFixed(2)}" height="2.4" fill="#ffffff" fill-opacity="0.85"/><text x="${(PL.qx - 0.6).toFixed(2)}" y="${(PL.qy - 0.7).toFixed(2)}" font-size="${qs}" font-family="${FONT_B}" fill="#555" text-anchor="end">${esc(PL.src)}</text></g>`);
     }
     out.push(`</svg>`);
     return { svg: out.join('\n'), widthMM: W, heightMM: H, fits: PL.fits, layout: PL };
@@ -2721,7 +2748,7 @@ const UA = (function () {
     isArea, joinWays, osmToFeatures, FETCHES, HEAD, polyString, CL, BASES, BASE_ORDER, STANDARD, ZRANK, PRESETS, makeBaseLayer, applySplit, splitOptions, attrLabel, valDE,
     PALETTE, GROUPS, ITEMS, itemTask, setClassStyle, setClassOrder, mergeClass, removeClassFeatures, customQuery, queryName, valLabel, DE, detailType, visLayers,
     buildingUse, buildingHeight, roadClass, greenClass, waterClass, landuseClass, layerStats,
-    buildSVG, planLayout, buildDXF, exportGeoJSON, levelsQuality, flurstBerlin, flurstNdsGml, niFlurstUrl, ewBerlin, zensusCells, zensusUrl, zensusFeature, ewSum, LAEA, Q_EW_Z, Q_HW, HW_SZ, Q_LAERM, LZ, laermUrl, laermFeatures, laermNote, Q_DGM_NI, dgmIndexUrl, dgmTiles, tiffIfd, tiffMeta, lzwDecode, tiffBlock, dgmBox, dgmRes, dgmBlocks, blockGaps, dgmGrid, gridCoarse, gridRange, dgmAutoIv, dgmContours, dgmSlopes, slopeGrid, dgmStats, HW_ORDER, hwBox, hwJobs, hwUrl, hwFeatures, hwRaw, hwDefault, hwNote, clipToBox, hwDecode, HB_BOXES, bboxHit, sunPos, sunDefault, shadowFeatures, sunPathFeatures, sunPathSamples, timeLabel, parseTimes, dmy, fnUse, fnLabel, FN_NAMES, Q_FN, inNiedersachsen, niStacUrl, niTileFeatures, fromUTM, parseShp, parseDbf, Q_AMTL_NI, berlinWfsUrl, treeFeatures, inBerlin, berlinHeightsUrl, Q_AMTL, roadWidth, bandQuality, nearestACI, safeName, isPoly, isLine, isPoint
+    buildSVG, planLayout, FONT_T, FONT_B, buildDXF, exportGeoJSON, levelsQuality, flurstBerlin, flurstNdsGml, niFlurstUrl, ewBerlin, zensusCells, zensusUrl, zensusFeature, ewSum, LAEA, Q_EW_Z, Q_HW, HW_SZ, Q_LAERM, LZ, laermUrl, laermFeatures, laermNote, Q_DGM_NI, dgmIndexUrl, dgmTiles, tiffIfd, tiffMeta, lzwDecode, tiffBlock, dgmBox, dgmRes, dgmBlocks, blockGaps, dgmGrid, gridCoarse, gridRange, dgmAutoIv, dgmContours, dgmSlopes, slopeGrid, dgmStats, HW_ORDER, hwBox, hwJobs, hwUrl, hwFeatures, hwRaw, hwDefault, hwNote, clipToBox, hwDecode, HB_BOXES, bboxHit, sunPos, sunDefault, shadowFeatures, sunPathFeatures, sunPathSamples, timeLabel, parseTimes, dmy, fnUse, fnLabel, FN_NAMES, Q_FN, inNiedersachsen, niStacUrl, niTileFeatures, fromUTM, parseShp, parseDbf, Q_AMTL_NI, berlinWfsUrl, treeFeatures, inBerlin, berlinHeightsUrl, Q_AMTL, roadWidth, bandQuality, nearestACI, safeName, isPoly, isLine, isPoint
   };
 })();
 if (typeof module !== 'undefined') module.exports = UA;
@@ -4005,7 +4032,12 @@ if (typeof module !== 'undefined') module.exports = UA;
   function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
   const base = () => UA.safeName($('#projName').value || 'Projekt');
   const today = () => new Date().toLocaleDateString('de-DE');
-  const svgOpts = o => ({ scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, subtitle: S.selection.properties.name + ' · ' + $('#projName').value, date: today(), paper: o.paper, orient: o.orient, pan: o.pan, ops: { intersect, union: window.turf ? fc => turf.union(fc) : null } });
+  const measureCv = document.createElement('canvas').getContext('2d');
+  const measure = (t, size, kind) => { // Textbreite in mm mit der echten Schrift im Browser (Bahnschrift auf Windows)
+    measureCv.font = kind === 't' ? `600 100px ${UA.FONT_T}` : `${kind === 'bb' ? 700 : 400} 100px ${UA.FONT_B}`;
+    try { measureCv.fontStretch = kind === 't' ? 'condensed' : 'normal'; } catch (e) { /* ältere Browser */ }
+    return measureCv.measureText(t).width / 100 * size; };
+  const svgOpts = o => ({ scale: o.scale, clip: o.clip, legend: o.legend, title: o.title, desc: o.desc, measure, date: today(), paper: o.paper, orient: o.orient, pan: o.pan, ops: { intersect, union: window.turf ? fc => turf.union(fc) : null } });
   async function exportLayers(fmtName, layers, o) {
     o = Object.assign({ title: 'Analyseplan', scale: 10000, clip: true, legend: true, realCoords: false, paper: null, orient: 'quer', pan: null }, o || {});
     if (!S.selection) { alert('Bitte zuerst ein Gebiet wählen und Daten laden.'); return; }
@@ -4054,7 +4086,7 @@ if (typeof module !== 'undefined') module.exports = UA;
   const exScaleVal = () => { // Maßstab frei eingeben: „3000“, „1:3000“, „3.000“ → 3000 (100 … 200 000), sonst null
     let t = String($('#exScale').value || '').trim(); if (t.includes(':')) t = t.split(':').pop();
     const n = parseInt(t.replace(/[\s.']/g, ''), 10); return n >= 100 && n <= 200000 && /^\d+$/.test(t.replace(/[\s.']/g, '')) ? n : null; };
-  const exOpts = () => ({ title: $('#exTitle').value || 'Analyseplan', scale: exScaleVal() || 10000, clip: $('#exClip').checked, legend: $('#exLegend').checked, realCoords: $('#exReal').checked, paper: exPaper || null, orient: exOrient, pan: exPan });
+  const exOpts = () => ({ title: $('#exTitle').value || 'Analyseplan', scale: exScaleVal() || 10000, clip: $('#exClip').checked, legend: $('#exLegend').checked, realCoords: $('#exReal').checked, paper: exPaper || null, orient: exOrient, pan: exPan, desc: $('#exDesc').value.trim() });
   const mm = v => Math.round(v) + '';
   function exUpdate() {
     document.querySelectorAll('#exPaper button').forEach(b => b.classList.toggle('on', b.dataset.v === exPaper));
@@ -4116,7 +4148,7 @@ if (typeof module !== 'undefined') module.exports = UA;
   $('#exOrient').onclick = e => { const b = e.target.closest('button'); if (!b) return; exOrient = b.dataset.v; exSave(); exUpdate(); };
   ['#exScale', '#exVisible', '#exClip', '#exLegend'].forEach(id => $(id).addEventListener('change', exUpdate));
   $('#exScale').addEventListener('input', exUpdate);
-  $('#exTitle').addEventListener('input', exUpdate);
+  $('#exTitle').addEventListener('input', exUpdate); $('#exDesc').addEventListener('input', exUpdate);
   document.querySelectorAll('input[name=fmt]').forEach(x => x.addEventListener('change', exUpdate));
   $('#btnDoExport').onclick = () => {
     exportLayers(exFmt(), exLayersSel(), exOpts());
